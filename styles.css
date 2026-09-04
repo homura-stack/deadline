@@ -151,7 +151,8 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 .demo-freeze-world .demo-bullet { animation-name: demo-freeze-bullet; }
 .demo-freeze .demo-grid { animation: demo-freeze-grid 3.2s steps(1,end) infinite; }
 .demo-stop-wash { fill: #020911; opacity: 0; animation: demo-freeze-wash 3.2s steps(1,end) infinite; }
-.demo-freeze-key, .demo-freeze-button, .demo-execute-key, .demo-execute-button { animation: demo-key-press 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.demo-freeze-key, .demo-freeze-button { --demo-input-x:126px;--demo-input-y:204px;transform:translate(var(--demo-input-x),var(--demo-input-y));animation:demo-key-press 3.2s ease-in-out infinite; }
+.demo-execute-key, .demo-execute-button { --demo-input-x:92px;--demo-input-y:207px;transform:translate(var(--demo-input-x),var(--demo-input-y));animation:demo-key-press 2.8s ease-in-out infinite; }
 .demo-freeze-frame, .demo-stop-label { opacity: 0; fill: none; stroke: var(--cyan); stroke-width: 1; animation: demo-freeze-state 3.2s steps(1,end) infinite; }
 .demo-stop-label { fill: #d9fbff; stroke: none; }
 .demo-normal-label { animation: demo-normal-state 3.2s steps(1,end) infinite; }
@@ -161,7 +162,6 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 .demo-draw .demo-target-two { animation: demo-target-two 3.2s steps(1,end) infinite; }
 .demo-route-complete { opacity: .45; }
 .demo-player-execute { offset-path: path("M70 175C120 155 170 112 235 92S330 128 395 155L445 130"); animation: demo-execute-player 2.8s cubic-bezier(.12,.7,.22,1) infinite; }
-.demo-execute-key, .demo-execute-button { animation-duration: 2.8s; }
 .demo-kill-one { animation: demo-kill-one 2.8s steps(1,end) infinite; }
 .demo-kill-two { animation: demo-kill-two 2.8s steps(1,end) infinite; }
 .demo-impact { opacity: 0; fill: none; stroke: #e9feff; stroke-width: 2.5; filter: drop-shadow(0 0 7px #79e4f2); }
@@ -350,8 +350,8 @@ canvas { display: block; width: 100%; height: clamp(280px, calc(100svh - 272px),
 @keyframes demo-freeze-state { 0%,43% { opacity:0 } 44%,100% { opacity:.86 } }
 @keyframes demo-normal-state { 0%,43% { opacity:1 } 44%,100% { opacity:0 } }
 @keyframes demo-key-press {
-  0%,35%,50%,100% { opacity:1;filter:drop-shadow(0 0 4px #79e4f24d) }
-  40%,46% { opacity:.72;filter:drop-shadow(0 0 10px #79e4f2) }
+  0%,35%,50%,100% { opacity:1;transform:translate(var(--demo-input-x),var(--demo-input-y)) scale(1);filter:drop-shadow(0 0 4px #79e4f24d) }
+  40%,46% { opacity:.82;transform:translate(var(--demo-input-x),calc(var(--demo-input-y) + 3px)) scale(.92);filter:drop-shadow(0 0 10px #79e4f2) }
 }
 @keyframes demo-route-draw {
   0%,10% { stroke-dashoffset:1 }
