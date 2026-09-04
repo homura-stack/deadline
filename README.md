@@ -23,7 +23,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
+タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。本編と同じ自機・敵・弾・ルートに、マウス／指／キーの入力図を重ね、入力と結果を短い同期デモで示します。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
 
 スマートフォンのMOVE PADは指の移動量で自機を相対移動します。小さなドラッグは精密に、大きなドラッグは素早く反応し、TIME STOP中はLOCKEDになります。ゲームフィールド上のタッチは停止中のDRAW専用です。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）で感度を保存できます。
 

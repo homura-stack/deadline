@@ -70,6 +70,48 @@
       else { g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.stroke(); }
       g.restore();
     }
+    inputCue(x, y, touch, pressed = false) {
+      const g = this.ctx; g.save(); g.translate(x, y); g.lineCap = 'round'; g.lineJoin = 'round';
+      g.shadowColor = '#79e4f2'; g.shadowBlur = 7; g.strokeStyle = '#c8fbff'; g.fillStyle = '#071522'; g.lineWidth = 1.8;
+      if (touch) {
+        g.beginPath(); g.moveTo(-5, 12); g.lineTo(-5, -7); g.quadraticCurveTo(-5, -12, 0, -12); g.quadraticCurveTo(5, -12, 5, -7);
+        g.lineTo(5, 1); g.lineTo(9, -1); g.quadraticCurveTo(16, -4, 17, 4); g.lineTo(14, 14); g.lineTo(-1, 14); g.closePath(); g.fill(); g.stroke();
+        this.circle(0, -8, pressed ? 8 : 12, `rgba(121,228,242,${pressed ? 0.72 : 0.34})`, null, 1.2);
+      } else {
+        g.beginPath(); g.moveTo(-9, -6); g.quadraticCurveTo(-9, -14, 0, -14); g.quadraticCurveTo(9, -14, 9, -6);
+        g.lineTo(9, 7); g.quadraticCurveTo(9, 14, 0, 14); g.quadraticCurveTo(-9, 14, -9, 7); g.closePath(); g.fill(); g.stroke();
+        g.beginPath(); g.moveTo(0, -13); g.lineTo(0, -3); g.stroke();
+        if (pressed) { g.fillStyle = 'rgba(121,228,242,.48)'; g.fillRect(-7.5, -12, 6.5, 8); }
+      }
+      g.restore();
+    }
+    practiceGuide(app) {
+      if (!app.practice?.active || app.practice.step === 'running' || app.practice.step === 'complete') return;
+      const g = this.ctx, w = app.world, touch = !!app.touchControls, time = performance.now() * 0.001;
+      if (app.practice.step === 'move') {
+        if (touch) return;
+        const phase = app.reducedMotion ? 0.72 : (Math.sin(time * 3.4) + 1) * 0.5;
+        const x = w.player.x + 34 + phase * 70, y = w.player.y - 28 - phase * 18;
+        g.save(); g.setLineDash([5, 6]); g.strokeStyle = 'rgba(121,228,242,.55)'; g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(w.player.x + 17, w.player.y - 10); g.lineTo(x - 13, y + 5); g.stroke(); g.setLineDash([]);
+        this.circle(w.player.x + 72, w.player.y - 43, 7, 'rgba(121,228,242,.62)', 'rgba(121,228,242,.08)', 1.2);
+        g.restore(); this.inputCue(x, y, false, false); return;
+      }
+      if (app.practice.step !== 'draw' || app.practice.drawStarted || w.phase !== 'stopped') return;
+      const enemies = w.enemies.filter(enemy => enemy.alive), points = [{ ...w.player }, ...enemies.map(enemy => ({ x: enemy.x, y: enemy.y }))];
+      if (points.length < 2) return;
+      const last = points[points.length - 1]; points.push({ x: Math.min(C.world.width - 45, last.x + 105), y: Math.min(C.world.height - 45, last.y + 70) });
+      const legs = []; let total = 0;
+      for (let i = 1; i < points.length; i++) { const length = S.distance(points[i - 1], points[i]); legs.push({ a: points[i - 1], b: points[i], start: total, length }); total += length; }
+      const progress = app.reducedMotion ? 0.62 : (time % 2.35) / 2.35, along = total * progress;
+      let point = points[0]; for (const leg of legs) if (along >= leg.start && along <= leg.start + leg.length) { const t = (along - leg.start) / leg.length; point = { x: leg.a.x + (leg.b.x - leg.a.x) * t, y: leg.a.y + (leg.b.y - leg.a.y) * t }; break; }
+      g.save(); this.path(points); g.setLineDash([8, 9]); g.lineDashOffset = app.reducedMotion ? 0 : -time * 18; g.strokeStyle = 'rgba(121,228,242,.42)'; g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], angle = Math.atan2(b.y - a.y, b.x - a.x), x = a.x + (b.x - a.x) * .72, y = a.y + (b.y - a.y) * .72;
+        g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = 'rgba(216,251,255,.72)'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.restore();
+      }
+      g.restore(); this.inputCue(point.x + 13, point.y + 17, touch, true);
+    }
     timeShock(app) {
       const g = this.ctx, fx = app.timeFx, settings = C.feedback.timeStopVisual;
       if (!fx) return;
@@ -150,6 +192,7 @@
       if (stopBlend > 0) { g.shadowColor = '#79e4f2'; g.shadowBlur = 6 + stopBlend * 12; }
       g.fillStyle = w.failed ? '#af4a60' : mix('#50b9ff', stopVisual.playerFill, stopBlend); g.strokeStyle = mix('#d8faff', stopVisual.playerStroke, stopBlend); g.lineWidth = 1.8 + stopBlend * 0.7;
       const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2); g.restore();
+      this.practiceGuide(app);
       this.timeShock(app);
       if (damage > 0) { g.fillStyle = `rgba(255,53,70,${0.16 * damage})`; g.fillRect(0, 0, C.world.width, C.world.height); }
       if (app.debugEnabled && app.debugShapes) {

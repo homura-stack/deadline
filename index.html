@@ -46,46 +46,60 @@
       <div class="briefing-pages">
         <article class="briefing-page" data-briefing-page="0">
           <div class="briefing-copy"><span class="briefing-number">01 / EVADE</span><h2>MOVE AND AVOID<br>ENEMY FIRE.</h2><p>通常時は自機を動かして<br>敵の攻撃を避けよう。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">TOUCH PAD</span></div></div>
-          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="敵弾を横へ動いて回避する自機の図">
+          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="入力位置へ追従する自機が敵弾を大きく避ける図">
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
-            <g class="demo-enemy" transform="translate(390 120)"><path d="M0-17 16 13-16 13Z"/><path class="demo-barrel" d="M-25-3H-7V3H-25Z"/></g>
-            <g class="demo-bullet demo-bullet-a"><circle r="6"/><path d="M8 0H24"/></g><g class="demo-bullet demo-bullet-b"><circle r="5"/><path d="M7 0H20"/></g>
-            <g class="demo-player demo-player-evade"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
-            <path class="demo-guide" d="M105 142V82"/><path class="demo-guide-head" d="m99 91 6-10 6 10"/>
-            <text x="18" y="25">NORMAL TIME / EVADE</text>
+            <g class="demo-enemy" transform="translate(400 150)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><path class="demo-enemy-part" d="M-27-3H-7V3H-27Z"/><circle class="demo-enemy-core" r="3"/></g>
+            <g class="demo-bullet demo-bullet-evade"><circle r="6"/><path d="M8 0H24"/></g>
+            <path class="demo-motion-lane" d="M118 150V67"/>
+            <g class="demo-player demo-player-evade"><rect class="demo-player-halo" x="-14" y="-14" width="28" height="28" rx="2"/><rect class="demo-player-body" x="-6.75" y="-6.75" width="13.5" height="13.5"/></g>
+            <g class="demo-input demo-input-pc demo-input-evade"><rect class="demo-mouse-shell" x="-9" y="-14" width="18" height="28" rx="8"/><path d="M0-13V-3"/><path class="demo-mouse-button" d="M-7-12H0V-3H-8Z"/></g>
+            <g class="demo-input demo-input-touch demo-input-evade"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/><circle class="demo-touch-ring" cy="-8" r="9"/></g>
+            <text x="18" y="25">MOVE</text>
           </svg>
         </article>
         <article class="briefing-page" data-briefing-page="1" hidden>
           <div class="briefing-copy"><span class="briefing-number">02 / FREEZE</span><h2>STOP THE<br>ENTIRE WORLD.</h2><p>TIME STOPすると敵と弾丸が停止。<br>止まった弾幕の中で攻撃ルートを考えられる。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">TIME STOP BUTTON</span></div></div>
-          <svg class="briefing-demo demo-freeze" viewBox="0 0 480 240" role="img" aria-label="動いていた敵と弾が時間停止で静止する図">
+          <svg class="briefing-demo demo-freeze" viewBox="0 0 480 240" role="img" aria-label="SPACEまたはボタン入力で敵本体・砲身・実弾が同時に静止する図">
+            <rect class="demo-stop-wash" width="480" height="240"/>
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
-            <g class="demo-enemy" transform="translate(390 120)"><path d="M0-17 16 13-16 13Z"/><path class="demo-barrel" d="M-25-3H-7V3H-25Z"/></g>
-            <g class="demo-bullet demo-bullet-freeze"><circle r="6"/><path d="M8 0H24"/></g>
-            <g class="demo-player" transform="translate(100 150)"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
+            <g class="demo-freeze-world">
+              <g class="demo-enemy" transform="translate(400 130)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><path class="demo-enemy-part" d="M-27-3H-7V3H-27Z"/><circle class="demo-enemy-core" r="3"/></g>
+              <g class="demo-bullet demo-bullet-freeze"><circle r="6"/><path d="M8 0H24"/></g>
+            </g>
+            <g class="demo-player" transform="translate(92 140)"><rect class="demo-player-halo" x="-14" y="-14" width="28" height="28" rx="2"/><rect class="demo-player-body" x="-6.75" y="-6.75" width="13.5" height="13.5"/></g>
+            <g class="demo-input demo-input-pc demo-freeze-key" transform="translate(126 204)"><rect class="demo-keycap" x="-34" y="-14" width="68" height="28" rx="3"/><text x="0" y="4">SPACE</text></g>
+            <g class="demo-input demo-input-touch demo-freeze-button" transform="translate(126 204)"><rect class="demo-touch-button" x="-47" y="-15" width="94" height="30" rx="3"/><text x="0" y="4">TIME STOP</text><g class="demo-tap-finger" transform="translate(40 -9)"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/></g></g>
             <rect class="demo-freeze-frame" x="7" y="7" width="466" height="226"/>
-            <text class="demo-normal-label" x="18" y="25">NORMAL TIME</text><text class="demo-stop-label" x="18" y="25">TIME STOP</text>
+            <text class="demo-normal-label" x="18" y="25">RUNNING</text><text class="demo-stop-label" x="18" y="25">FROZEN</text>
           </svg>
         </article>
         <article class="briefing-page" data-briefing-page="2" hidden>
           <div class="briefing-copy"><span class="briefing-number">03 / DRAW</span><h2>DRAW THROUGH<br>THE ENEMIES.</h2><p>自機から敵を貫くように一筆書き。<br>線が敵を通るとTARGETになる。</p><div class="briefing-input"><span class="device-pc">MOUSE DRAG</span><span class="device-touch">TOUCH / DRAG</span></div></div>
-          <svg class="briefing-demo demo-draw" viewBox="0 0 480 240" role="img" aria-label="自機から2体の敵を通るルートを描いてTARGETにする図">
+          <svg class="briefing-demo demo-draw" viewBox="0 0 480 240" role="img" aria-label="自機を押したまま2体の敵を順に通る一筆書き操作の図">
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
-            <g class="demo-player" transform="translate(70 175)"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
-            <g class="demo-enemy demo-target-one" transform="translate(235 92)"><path d="M0-17 16 13-16 13Z"/><circle class="demo-target-ring" r="29"/><text x="-4" y="-24">1</text></g>
-            <g class="demo-enemy demo-target-two" transform="translate(395 155)"><path d="M0-17 16 13-16 13Z"/><circle class="demo-target-ring" r="29"/><text x="-4" y="-24">2</text></g>
-            <path class="demo-route" pathLength="1" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
-            <text x="18" y="25">LINE → TARGET 01 → TARGET 02</text>
+            <g class="demo-player" transform="translate(70 175)"><rect class="demo-player-halo" x="-14" y="-14" width="28" height="28" rx="2"/><rect class="demo-player-body" x="-6.75" y="-6.75" width="13.5" height="13.5"/></g>
+            <g class="demo-enemy demo-target-one" transform="translate(235 92)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><circle class="demo-enemy-core" r="3"/><circle class="demo-target-ring" r="29"/><text x="0" y="-25">1</text></g>
+            <g class="demo-enemy demo-target-two" transform="translate(395 155)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><circle class="demo-enemy-core" r="3"/><circle class="demo-target-ring" r="29"/><text x="0" y="-25">2</text></g>
+            <path class="demo-route demo-route-guide" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <path class="demo-route demo-route-drawing" pathLength="1" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <g class="demo-input demo-input-pc demo-input-draw"><rect class="demo-mouse-shell" x="-9" y="-14" width="18" height="28" rx="8"/><path d="M0-13V-3"/><path class="demo-mouse-button" d="M-7-12H0V-3H-8Z"/></g>
+            <g class="demo-input demo-input-touch demo-input-draw"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/><circle class="demo-touch-ring" cy="-8" r="9"/></g>
+            <text x="18" y="25">PRESS · HOLD · DRAW</text>
           </svg>
         </article>
         <article class="briefing-page" data-briefing-page="3" hidden>
           <div class="briefing-copy"><span class="briefing-number">04 / EXECUTE</span><h2>EXECUTE THE<br>DRAWN ROUTE.</h2><p>時間切れになる前に実行。<br>自機が線上を高速移動しTARGETを連続撃破する。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">EXECUTE BUTTON</span></div></div>
-          <svg class="briefing-demo demo-execute" viewBox="0 0 480 240" role="img" aria-label="描いたルート上を自機が高速移動して敵を撃破する図">
+          <svg class="briefing-demo demo-execute" viewBox="0 0 480 240" role="img" aria-label="実行入力後に自機がルートを走り、通過した瞬間に敵を連続撃破する図">
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
             <path class="demo-route demo-route-complete" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
-            <g class="demo-enemy demo-kill-one" transform="translate(235 92)"><path d="M0-17 16 13-16 13Z"/></g><g class="demo-enemy demo-kill-two" transform="translate(395 155)"><path d="M0-17 16 13-16 13Z"/></g>
-            <g class="demo-player demo-player-execute"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
-            <path class="demo-slash demo-slash-one" d="m216 111 38-38"/><path class="demo-slash demo-slash-two" d="m376 174 38-38"/>
-            <text x="18" y="25">SPACE → EXECUTE → 2 KILLS</text>
+            <g class="demo-enemy demo-kill-one" transform="translate(235 92)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><circle class="demo-enemy-core" r="3"/></g>
+            <g class="demo-enemy demo-kill-two" transform="translate(395 155)"><path class="demo-enemy-body" d="M0-17 16 13-16 13Z"/><circle class="demo-enemy-core" r="3"/></g>
+            <g class="demo-player demo-player-execute"><rect class="demo-player-halo" x="-14" y="-14" width="28" height="28" rx="2"/><rect class="demo-player-body" x="-6.75" y="-6.75" width="13.5" height="13.5"/></g>
+            <g class="demo-input demo-input-pc demo-execute-key" transform="translate(92 207)"><rect class="demo-keycap" x="-34" y="-14" width="68" height="28" rx="3"/><text x="0" y="4">SPACE</text></g>
+            <g class="demo-input demo-input-touch demo-execute-button" transform="translate(92 207)"><rect class="demo-touch-button" x="-42" y="-15" width="84" height="30" rx="3"/><text x="0" y="4">EXECUTE</text><g class="demo-tap-finger" transform="translate(36 -9)"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/></g></g>
+            <g class="demo-impact demo-impact-one" transform="translate(235 92)"><circle r="12"/><path d="M-22 22 22-22M-15-19 18 14"/></g>
+            <g class="demo-impact demo-impact-two" transform="translate(395 155)"><circle r="12"/><path d="M-22 22 22-22M-15-19 18 14"/></g>
+            <text x="18" y="25">EXECUTE</text>
           </svg>
         </article>
       </div>
@@ -120,9 +134,9 @@
       <div class="mobile-command-zone">
         <section id="move-pad" class="move-pad" aria-label="自機を相対移動する仮想タッチパッド" aria-disabled="false">
           <header><span>MOVE PAD</span><strong id="move-pad-state">ACTIVE</strong></header>
-          <div class="move-pad-surface" aria-hidden="true"><i class="move-pad-origin"></i><i class="move-pad-vector"></i><i class="move-pad-cursor"></i></div>
+          <div class="move-pad-surface" aria-hidden="true"><i class="move-pad-origin"></i><i class="move-pad-vector"></i><i class="move-pad-cursor"></i><svg class="practice-pad-finger" viewBox="0 0 30 38"><path d="M8 31V11a4 4 0 0 1 8 0v8l3-2c5-2 8 1 7 6l-2 10H11Z"/><circle cx="12" cy="11" r="9"/></svg></div>
         </section>
-        <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span></button></div>
+        <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span><svg class="practice-button-finger" aria-hidden="true" viewBox="0 0 30 38"><path d="M8 31V11a4 4 0 0 1 8 0v8l3-2c5-2 8 1 7 6l-2 10H11Z"/><circle cx="12" cy="11" r="9"/></svg></button></div>
       </div>
     </section>
     <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span>マウス・TOUCH PAD対応</span></footer>
