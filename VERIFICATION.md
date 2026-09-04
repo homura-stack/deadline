@@ -1,3 +1,26 @@
+# 検証記録 — ビジュアルチュートリアル＋仮想タッチパッド
+
+実施日: 2026-09-05。
+
+## 結果
+
+- BRIEFINGをEVADE / FREEZE / DRAW / EXECUTEの4ページへ変更し、各ページに本編と同じ図形・色を使ったSVG模式図と1〜3秒の短いループを追加した。`prefers-reduced-motion`では静止図になる。
+- BEGIN TRAINING後に安全なPRACTICEを開始し、移動、TIME STOP、静止した2体を一筆書きでTARGET、EXECUTEの実入力を確認してからWave 1へ移る。PRACTICE中は接触無効でGAME OVERへ進まない。
+- スマートフォンはMOVE PADのPointer Events差分をrequestAnimationFrameごとに集約し、既存`movePlayer()`へ相対座標として渡す。小入力は0.68倍から始まり、28pxで通常感度へ滑らかに移る。入力上限は1フレーム64px、感度50〜150%、初期100%。
+- タッチパッドは単一`activePointerId`とpointer captureを使い、通常時間だけ有効。停止中はLOCKED。Canvasの通常時タッチ移動を無効化し、Canvasは停止中DRAW、MOVE PADは通常時移動に分離した。
+- Windows Chrome **152.0.7977.82**でPRACTICE全工程、小／大ドラッグ、境界制限、STOP後のPADロック、PAD操作でルートが増えないこと、タッチボタン操作、PCマウス回帰を確認。rAF 70サンプルは60.2fps。
+- 320×800、360×800、390×844、430×860、844×390、768×800、1280×720で横はみ出しと操作領域を確認。横持ちはフィールド左、PADとボタン右の2列にし、Canvas表示領域を約426×266px確保した。
+- Nodeロジック **57 / 57 PASS**、タイトル／BRIEFING **2 / 2 PASS**、新規チュートリアル・タッチパッド **2 / 2 PASS**、EXECUTE演出 **9 / 9 PASS**、ルート演出 **2 / 2 PASS**、180弾負荷 **2 / 2 PASS**。確認範囲のpageerror／console errorは0件。
+
+## 確認の境界
+
+- Android / iOS物理端末は未確認。スマートフォン結果はWindows Chromeのタッチエミュレーションであり、端末固有の指の滑り、発熱、OSジェスチャーは実機確認が必要。
+- チュートリアルの情報順と模式図は目視確認済みだが、初見プレイヤーが説明だけで理解できるかは第三者試遊で最終評価が必要。
+
+変更: `config.js`, `game.js`, `index.html`, `styles.css`, `README.md`, `VERIFICATION.md`, `tests/browser.cjs`, `tests/execute-feedback-browser.cjs`, `tests/final-polish-mobile-browser.cjs`, `tests/route-visual-browser.cjs`, `tests/title-browser.cjs`。追加: `tests/tutorial-touchpad-browser.cjs`。ファイル削除なし。
+
+---
+
 # 検証記録 — tick / tock可聴性調整
 
 実施日: 2026-09-05。

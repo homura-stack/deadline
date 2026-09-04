@@ -15,7 +15,7 @@ async function open(page, options = {}) {
     if (settings.stopSeconds != null) Deadline.config.waves.definitions[0].timeStopSeconds = settings.stopSeconds;
   }, options);
   await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('title-screen').hidden);
-  await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);
+  await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);
 }
 async function coords(page, point) {
   const box = await page.locator('#arena').boundingBox(), scale = Math.min(box.width / 960, box.height / 600);

@@ -32,22 +32,65 @@
         <section id="title-settings" class="settings-panel" data-title-panel="settings" aria-label="音量設定" hidden>
           <label for="master-volume"><span>MASTER</span><input id="master-volume" type="range" min="0" max="100" step="1"><output id="master-value" for="master-volume">80</output></label>
           <label for="sfx-volume"><span>SFX</span><input id="sfx-volume" type="range" min="0" max="100" step="1"><output id="sfx-value" for="sfx-volume">90</output></label>
+          <label class="touch-setting" for="touch-sensitivity"><span>TOUCH</span><input id="touch-sensitivity" type="range" min="50" max="150" step="5" value="100"><output id="touch-sensitivity-value" for="touch-sensitivity">100%</output></label>
           <button id="setting-mute" class="setting-mute" type="button" aria-pressed="false"><span>MUTE</span><strong>OFF</strong></button>
         </section>
-        <p id="title-how" data-title-panel="how" hidden>MOVE — マウス / タッチ　·　TIME STOP — SPACE　·　DRAW — ドラッグ</p>
+        <p id="title-how" data-title-panel="how" hidden><span class="device-pc">MOVE — マウス　·　TIME STOP — SPACE　·　DRAW — ドラッグ</span><span class="device-touch">MOVE — TOUCH PAD　·　TIME STOP / EXECUTE — 画面ボタン　·　DRAW — フィールドをドラッグ</span></p>
         <p id="title-credits" data-title-panel="credits" hidden>PROTOTYPE — HTML · CSS · JAVASCRIPT</p>
       </div>
     </div>
   </section>
   <section id="briefing-screen" class="briefing-screen" aria-label="初回操作説明" aria-modal="true" role="dialog" hidden>
     <div class="briefing-panel">
-      <header class="briefing-header"><span>BRIEFING / 01</span><strong>MISSION PROCEDURE</strong></header>
-      <ol class="briefing-steps">
-        <li><span class="briefing-number">01</span><h2>FREEZE</h2><div class="briefing-input"><kbd>SPACE</kbd></div><p>STOP TIME.<small>時間を止める</small></p></li>
-        <li><span class="briefing-number">02</span><h2>DRAW</h2><div class="briefing-input"><span>MOUSE / TOUCH</span></div><p>DRAW THROUGH ENEMIES.<small>敵を通るルートを描く</small></p></li>
-        <li><span class="briefing-number">03</span><h2>EXECUTE</h2><div class="briefing-input"><kbd>SPACE</kbd></div><p>EXECUTE BEFORE TIME RUNS OUT.<small>時間内にルートを実行</small></p></li>
-      </ol>
-      <button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>BEGIN</span></button>
+      <header class="briefing-header"><span id="briefing-counter">BRIEFING / 01 OF 04</span><strong>MISSION PROCEDURE</strong></header>
+      <div class="briefing-pages">
+        <article class="briefing-page" data-briefing-page="0">
+          <div class="briefing-copy"><span class="briefing-number">01 / EVADE</span><h2>MOVE AND AVOID<br>ENEMY FIRE.</h2><p>通常時は自機を動かして<br>敵の攻撃を避けよう。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">TOUCH PAD</span></div></div>
+          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="敵弾を横へ動いて回避する自機の図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-enemy" transform="translate(390 120)"><path d="M0-17 16 13-16 13Z"/><path class="demo-barrel" d="M-25-3H-7V3H-25Z"/></g>
+            <g class="demo-bullet demo-bullet-a"><circle r="6"/><path d="M8 0H24"/></g><g class="demo-bullet demo-bullet-b"><circle r="5"/><path d="M7 0H20"/></g>
+            <g class="demo-player demo-player-evade"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
+            <path class="demo-guide" d="M105 142V82"/><path class="demo-guide-head" d="m99 91 6-10 6 10"/>
+            <text x="18" y="25">NORMAL TIME / EVADE</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="1" hidden>
+          <div class="briefing-copy"><span class="briefing-number">02 / FREEZE</span><h2>STOP THE<br>ENTIRE WORLD.</h2><p>TIME STOPすると敵と弾丸が停止。<br>止まった弾幕の中で攻撃ルートを考えられる。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">TIME STOP BUTTON</span></div></div>
+          <svg class="briefing-demo demo-freeze" viewBox="0 0 480 240" role="img" aria-label="動いていた敵と弾が時間停止で静止する図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-enemy" transform="translate(390 120)"><path d="M0-17 16 13-16 13Z"/><path class="demo-barrel" d="M-25-3H-7V3H-25Z"/></g>
+            <g class="demo-bullet demo-bullet-freeze"><circle r="6"/><path d="M8 0H24"/></g>
+            <g class="demo-player" transform="translate(100 150)"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
+            <rect class="demo-freeze-frame" x="7" y="7" width="466" height="226"/>
+            <text class="demo-normal-label" x="18" y="25">NORMAL TIME</text><text class="demo-stop-label" x="18" y="25">TIME STOP</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="2" hidden>
+          <div class="briefing-copy"><span class="briefing-number">03 / DRAW</span><h2>DRAW THROUGH<br>THE ENEMIES.</h2><p>自機から敵を貫くように一筆書き。<br>線が敵を通るとTARGETになる。</p><div class="briefing-input"><span class="device-pc">MOUSE DRAG</span><span class="device-touch">TOUCH / DRAG</span></div></div>
+          <svg class="briefing-demo demo-draw" viewBox="0 0 480 240" role="img" aria-label="自機から2体の敵を通るルートを描いてTARGETにする図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-player" transform="translate(70 175)"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
+            <g class="demo-enemy demo-target-one" transform="translate(235 92)"><path d="M0-17 16 13-16 13Z"/><circle class="demo-target-ring" r="29"/><text x="-4" y="-24">1</text></g>
+            <g class="demo-enemy demo-target-two" transform="translate(395 155)"><path d="M0-17 16 13-16 13Z"/><circle class="demo-target-ring" r="29"/><text x="-4" y="-24">2</text></g>
+            <path class="demo-route" pathLength="1" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <text x="18" y="25">LINE → TARGET 01 → TARGET 02</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="3" hidden>
+          <div class="briefing-copy"><span class="briefing-number">04 / EXECUTE</span><h2>EXECUTE THE<br>DRAWN ROUTE.</h2><p>時間切れになる前に実行。<br>自機が線上を高速移動しTARGETを連続撃破する。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">EXECUTE BUTTON</span></div></div>
+          <svg class="briefing-demo demo-execute" viewBox="0 0 480 240" role="img" aria-label="描いたルート上を自機が高速移動して敵を撃破する図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <path class="demo-route demo-route-complete" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <g class="demo-enemy demo-kill-one" transform="translate(235 92)"><path d="M0-17 16 13-16 13Z"/></g><g class="demo-enemy demo-kill-two" transform="translate(395 155)"><path d="M0-17 16 13-16 13Z"/></g>
+            <g class="demo-player demo-player-execute"><path d="M0-13 12 10 0 6-12 10Z"/><circle r="3"/></g>
+            <path class="demo-slash demo-slash-one" d="m216 111 38-38"/><path class="demo-slash demo-slash-two" d="m376 174 38-38"/>
+            <text x="18" y="25">SPACE → EXECUTE → 2 KILLS</text>
+          </svg>
+        </article>
+      </div>
+      <div class="briefing-progress" aria-hidden="true"><i class="is-active"></i><i></i><i></i><i></i></div>
+      <div class="briefing-actions"><button id="briefing-back" class="briefing-back" type="button" disabled>BACK</button><button id="briefing-skip" class="briefing-skip" type="button">SKIP TUTORIAL</button><button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>NEXT</span></button></div>
     </div>
   </section>
   <main id="game-shell" class="shell" aria-hidden="true" inert>
@@ -74,9 +117,15 @@
         <div id="one-stop-result" class="result incomplete" hidden><span id="incomplete-title">EXECUTION INCOMPLETE</span><strong id="incomplete-count">0 / 0</strong><p id="incomplete-reason">未ロックの敵が残っています</p><button id="retry-wave"><kbd>SPACE</kbd> RETRY WAVE <span id="retry-one-stop-number">7</span></button><div id="one-stop-assist" class="assist-choices" hidden><p>TIME STOPの制限時間を選べます</p><button id="one-stop-assist-15"><kbd>1</kbd> TIME LIMIT ×1.5</button><button id="one-stop-assist-20"><kbd>2</kbd> TIME LIMIT ×2.0</button></div></div>
         <div id="complete" class="result formal-result complete" hidden><img src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE"><span>ALL WAVES COMPLETE</span><strong>MISSION COMPLETE</strong><dl><div><dt>SCORE</dt><dd id="final-score">0</dd></div><div><dt>CLEAR TIME</dt><dd id="final-time">0:00</dd></div><div><dt>KILLS</dt><dd id="final-kills">0</dd></div><div><dt>MAX EXECUTION</dt><dd id="final-chain">0</dd></div><div hidden><dt>PERFECT</dt><dd id="final-perfect">0</dd></div><div hidden><dt>HITS</dt><dd id="final-hits">0</dd></div></dl><div class="result-actions"><button id="play-again">RETRY <kbd>SPACE</kbd></button><button id="game-clear-title" class="secondary-action">TITLE</button></div></div>
       </div>
-      <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span></button></div>
+      <div class="mobile-command-zone">
+        <section id="move-pad" class="move-pad" aria-label="自機を相対移動する仮想タッチパッド" aria-disabled="false">
+          <header><span>MOVE PAD</span><strong id="move-pad-state">ACTIVE</strong></header>
+          <div class="move-pad-surface" aria-hidden="true"><i class="move-pad-origin"></i><i class="move-pad-vector"></i><i class="move-pad-cursor"></i></div>
+        </section>
+        <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span></button></div>
+      </div>
     </section>
-    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span>マウス・タッチ対応</span></footer>
+    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span>マウス・TOUCH PAD対応</span></footer>
     <details id="debug" hidden><summary>DEBUG</summary><label><input id="debug-shapes" type="checkbox"> 自機・敵・弾の当たり判定／ロック範囲</label><output id="debug-values"></output></details>
   </main>
 </body>

@@ -14,7 +14,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 | 操作 | PC | スマートフォン |
 | --- | --- | --- |
-| 自機移動 | ゲームフィールド内でマウス移動 | タップ / ドラッグ |
+| 自機移動 | ゲームフィールド内でマウス移動 | 画面下のMOVE PADをドラッグ |
 | TIME STOP | ゲージ満タン時にSPACE | TIME STOPボタン |
 | ルート描画 | ドラッグ | ドラッグ |
 | UNDO | Z | UNDOボタン |
@@ -23,7 +23,9 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面のSTARTまたはSPACEでBRIEFINGへ進み、BEGINまたはSPACEでWave 1を開始します。音量はSETTINGSで変更できます。
+タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
+
+スマートフォンのMOVE PADは指の移動量で自機を相対移動します。小さなドラッグは精密に、大きなドラッグは素早く反応し、TIME STOP中はLOCKEDになります。ゲームフィールド上のタッチは停止中のDRAW専用です。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）で感度を保存できます。
 
 ## ゲームルール
 
@@ -55,7 +57,7 @@ python -m http.server 4186 --bind 127.0.0.1
 - Web Audio API
 - Pointer Events
 - `requestAnimationFrame`
-- `localStorage`（音量設定のみ）
+- `localStorage`（音量・タッチ感度設定）
 
 ゲーム本体は外部JavaScriptライブラリ、ゲームフレームワーク、CDN、外部API、外部フォントを使用していません。GitHub Pagesへそのまま配置できる相対パスの静的構成です。
 
@@ -83,6 +85,6 @@ python -m http.server 4186 --bind 127.0.0.1
 
 ## 検証
 
-Nodeロジックテスト、PC Chrome、スマートフォン相当のタッチ操作、1280×720 / 390×844 / 844×390を含むレスポンシブ表示、180弾負荷を確認しています。詳細な結果と実行コマンドは[VERIFICATION.md](VERIFICATION.md)を参照してください。
+Nodeロジックテスト、PC Chrome、スマートフォン相当のタッチ操作、1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390のレスポンシブ表示、180弾負荷を確認しています。詳細な結果と実行コマンドは[VERIFICATION.md](VERIFICATION.md)を参照してください。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

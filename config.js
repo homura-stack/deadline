@@ -4,6 +4,12 @@
   const config = {
     world: { width: 960, height: 600, margin: 24, fixedStep: 1 / 120 },
     player: { radius: 9, start: { x: 160, y: 430 } },
+    controls: { touchStorageKey: 'deadline.controls.v1', touchSensitivityDefault: 100,
+      touchSensitivityMin: 50, touchSensitivityMax: 150, touchPrecisionScale: 0.68,
+      touchPrecisionDistance: 10, touchFullSpeedDistance: 28, touchMaxFrameDelta: 64 },
+    practice: { moveDistance: 64, completeSeconds: 1.05,
+      enemies: [{ x: 430, y: 210 }, { x: 690, y: 360 }],
+      bullets: [{ x: 300, y: 105, vx: -24, vy: 0 }, { x: 790, y: 510, vx: 20, vy: 0 }] },
     drawing: { pointSpacing: 3, maxPoints: 4096 },
     timeStop: { seconds: 5, lockRadius: 48 },
     gauge: { max: 100, initial: 20, recoveryPerSecond: 20, nearMissGain: 8, nearMissRadius: 32, cost: 100, cancelCost: 40 },
