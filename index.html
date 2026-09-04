@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101a29">
+  <meta name="description" content="時間を止めてルートを描き、自機だけが超高速で敵を連続撃破する操作検証用プロトタイプ。">
+  <title>DEAD/LINE — 時間停止ルート</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="config.js"></script>
+  <script defer src="simulation.js"></script>
+  <script defer src="audio.js"></script>
+  <script defer src="renderer.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body class="title-open">
+  <section id="title-screen" class="title-screen" aria-label="DEAD/LINE タイトル画面">
+    <span class="title-cut" aria-hidden="true"></span>
+    <div class="title-content">
+      <h1 class="title-heading"><img class="title-logo" src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE" decoding="async"></h1>
+      <p class="title-tagline">FREEZE. DRAW. EXECUTE.</p>
+      <button id="title-start" class="title-start" type="button"><span>START</span><kbd>SPACE</kbd></button>
+      <nav class="title-secondary" aria-label="タイトルメニュー">
+        <button type="button" data-title-info="settings" aria-controls="title-settings" aria-expanded="false">SETTINGS</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" data-title-info="how" aria-controls="title-how" aria-expanded="false">HOW TO PLAY</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" data-title-info="credits" aria-controls="title-credits" aria-expanded="false">CREDITS</button>
+      </nav>
+      <div class="title-info" aria-live="polite">
+        <section id="title-settings" class="settings-panel" data-title-panel="settings" aria-label="音量設定" hidden>
+          <label for="master-volume"><span>MASTER</span><input id="master-volume" type="range" min="0" max="100" step="1"><output id="master-value" for="master-volume">80</output></label>
+          <label for="sfx-volume"><span>SFX</span><input id="sfx-volume" type="range" min="0" max="100" step="1"><output id="sfx-value" for="sfx-volume">90</output></label>
+          <button id="setting-mute" class="setting-mute" type="button" aria-pressed="false"><span>MUTE</span><strong>OFF</strong></button>
+        </section>
+        <p id="title-how" data-title-panel="how" hidden>MOVE — マウス / タッチ　·　TIME STOP — SPACE　·　DRAW — ドラッグ</p>
+        <p id="title-credits" data-title-panel="credits" hidden>PROTOTYPE — HTML · CSS · JAVASCRIPT</p>
+      </div>
+    </div>
+  </section>
+  <section id="briefing-screen" class="briefing-screen" aria-label="初回操作説明" aria-modal="true" role="dialog" hidden>
+    <div class="briefing-panel">
+      <header class="briefing-header"><span>BRIEFING / 01</span><strong>MISSION PROCEDURE</strong></header>
+      <ol class="briefing-steps">
+        <li><span class="briefing-number">01</span><h2>FREEZE</h2><div class="briefing-input"><kbd>SPACE</kbd></div><p>STOP TIME.<small>時間を止める</small></p></li>
+        <li><span class="briefing-number">02</span><h2>DRAW</h2><div class="briefing-input"><span>MOUSE / TOUCH</span></div><p>DRAW THROUGH ENEMIES.<small>敵を通るルートを描く</small></p></li>
+        <li><span class="briefing-number">03</span><h2>EXECUTE</h2><div class="briefing-input"><kbd>SPACE</kbd></div><p>EXECUTE BEFORE TIME RUNS OUT.<small>時間内にルートを実行</small></p></li>
+      </ol>
+      <button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>BEGIN</span></button>
+    </div>
+  </section>
+  <main id="game-shell" class="shell" aria-hidden="true" inert>
+    <header class="masthead">
+      <div class="masthead-logo"><img src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE"></div>
+      <div class="utilities"><button id="sound" aria-pressed="true">音 ON</button><button id="restart" title="最初から / R">最初から ↻</button></div>
+    </header>
+    <section class="game" aria-label="時間停止ルートゲーム">
+      <div class="hud">
+        <div class="status-stat"><span>STATUS</span><strong id="phase">NORMAL</strong><small id="status-action">MOVE / EVADE</small></div>
+        <div class="wave-stat"><span>WAVE</span><strong id="wave" aria-label="Wave 1 of 10"><b id="wave-current">1</b><i> / </i><small id="wave-total">10</small></strong></div>
+        <div class="hud-secondary"><div class="score-stat"><span>SCORE</span><strong id="score">0</strong></div><div class="lock-stat"><span id="lock-label">LOCK</span><strong id="lock-count">0</strong></div><div class="life-stat"><span>LIFE</span><strong id="life">1</strong></div></div>
+      </div>
+      <div class="charge"><label for="stop-gauge"><span id="stop-gauge-label">TIME STOP</span><strong id="stop-time">—</strong></label><progress id="stop-gauge" max="100" value="20"></progress><span id="gauge-value">20%</span></div>
+      <div class="arena-wrap">
+        <canvas id="arena" width="960" height="600" tabindex="0" aria-label="通常はカーソルや指で移動。満タン時にSPACEで時間停止。ドラッグでルートを描き、ZでUndo、XでClear、CでCancel、SPACEキーで実行。タッチでは画面ボタンで操作します。"></canvas>
+        <div id="wave-banner" class="wave-banner" aria-live="polite">WAVE 01 / 10</div>
+        <div id="tutorial-prompt" class="tutorial-prompt" aria-live="polite" hidden></div>
+        <div id="lock-ready" class="lock-ready" hidden>ALL TARGETS LOCKED<small>SPACEで実行</small></div>
+        <div id="callout" class="callout" aria-live="polite"></div>
+        <div id="result" class="result formal-result game-over" hidden><span>RUN TERMINATED</span><strong>GAME OVER</strong><dl><div><dt>WAVE</dt><dd id="game-over-wave">01 / 10</dd></div><div><dt>SCORE</dt><dd id="game-over-score">0</dd></div><div><dt>KILLS</dt><dd id="result-kills">0</dd></div></dl><div class="result-actions"><button id="retry"><kbd>SPACE</kbd> RETRY WAVE <span id="retry-wave-number">1</span></button><button id="game-over-title" class="secondary-action">TITLE</button></div><div id="retry-assist" class="assist-choices" hidden><p>TIME STOPの制限時間を選べます</p><button id="retry-assist-15"><kbd>1</kbd> TIME LIMIT ×1.5</button><button id="retry-assist-20"><kbd>2</kbd> TIME LIMIT ×2.0</button></div></div>
+        <div id="one-stop-preview" class="result rule-intro rule-preview" hidden><span>NEXT WAVE</span><strong>ONE STOP<br>ONE EXECUTION</strong><p>次のWaveから、1回のTIME STOPで全敵を倒す必要があります。</p><div id="preview-perfect" class="practice-note" hidden>PERFECT EXECUTION<br><small>次からはこれがクリア条件になります。</small></div><button id="one-stop-preview-next"><kbd>SPACE</kbd> NEXT</button></div>
+        <div id="one-stop-intro" class="result rule-intro" hidden><span>NEW RULE</span><strong>ONE STOP<br>ONE EXECUTION</strong><p>1回のTIME STOPで<br>全敵をロックして撃破せよ</p><div id="rule-target-example" class="rule-diagram">TARGETS <span id="rule-target-count">5 / 5</span> <b>→</b> SPACE</div><button id="one-stop-start"><kbd>SPACE</kbd> START WAVE 7</button></div>
+        <div id="one-stop-result" class="result incomplete" hidden><span id="incomplete-title">EXECUTION INCOMPLETE</span><strong id="incomplete-count">0 / 0</strong><p id="incomplete-reason">未ロックの敵が残っています</p><button id="retry-wave"><kbd>SPACE</kbd> RETRY WAVE <span id="retry-one-stop-number">7</span></button><div id="one-stop-assist" class="assist-choices" hidden><p>TIME STOPの制限時間を選べます</p><button id="one-stop-assist-15"><kbd>1</kbd> TIME LIMIT ×1.5</button><button id="one-stop-assist-20"><kbd>2</kbd> TIME LIMIT ×2.0</button></div></div>
+        <div id="complete" class="result formal-result complete" hidden><img src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE"><span>ALL WAVES COMPLETE</span><strong>MISSION COMPLETE</strong><dl><div><dt>SCORE</dt><dd id="final-score">0</dd></div><div><dt>CLEAR TIME</dt><dd id="final-time">0:00</dd></div><div><dt>KILLS</dt><dd id="final-kills">0</dd></div><div><dt>MAX EXECUTION</dt><dd id="final-chain">0</dd></div><div hidden><dt>PERFECT</dt><dd id="final-perfect">0</dd></div><div hidden><dt>HITS</dt><dd id="final-hits">0</dd></div></dl><div class="result-actions"><button id="play-again">RETRY <kbd>SPACE</kbd></button><button id="game-clear-title" class="secondary-action">TITLE</button></div></div>
+      </div>
+      <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span></button></div>
+    </section>
+    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span>マウス・タッチ対応</span></footer>
+    <details id="debug" hidden><summary>DEBUG</summary><label><input id="debug-shapes" type="checkbox"> 自機・敵・弾の当たり判定／ロック範囲</label><output id="debug-values"></output></details>
+  </main>
+</body>
+</html>
