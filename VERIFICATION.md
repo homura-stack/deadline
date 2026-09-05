@@ -436,3 +436,17 @@ Wave開始には0.8秒の接触無効時間を設定し、既存の初弾待ち1
 - コンソールerror、pageerror、未処理例外なし。
 
 物理スマートフォンの端末スピーカー聴感、発熱、指での長時間操作は未確認です。Gitステージ・コミット・プッシュ・ファイル削除は実施していません。
+
+---
+
+# MOVE PAD＋ボタン入力統一の再検証（2026-09-05）
+
+スマートフォン入力をNORMAL時のMOVE PAD移動、TIME STOP時のMOVE PADルート描画、画面ボタンによる状態操作へ限定しました。Canvasのtouch pointerは入力開始時点で破棄し、長押し由来のcontextmenuもUNDOへ接続しません。タッチUI中のCanvasは縦スクロールとピンチ操作をブラウザへ委ねます。
+
+- 390×844と844×390の新規Chromeコンテキストで、START→4 STEP BRIEFING→PRACTICE→PAD MOVE→TIME STOP→PAD DRAW→2 TARGET→EXECUTE→Wave 1を完走。
+- 両サイズでCanvas dragによる自機移動・ルート描画が発生しないことを確認。
+- PADから指を離した後もルートとDRAWカーソルを保持し、再接触後に同じ末尾から描画を継続。
+- CLEARで開始点と自機位置へ同期、CANCEL／EXECUTEでDRAWカーソルを破棄。
+- STEP 1のモバイル入力図をフィールド上の指からMOVE PAD上の指へ変更。STEP 3とPRACTICEもPAD→仮想カーソル→ルート→TARGETの表示を維持。
+- Nodeロジック57 / 57、Chrome既存ブラウザテスト群、180弾負荷、コンソールerror／pageerror 0件。
+- Windows Chrome 152.0.7977.82のタッチエミュレーションで確認。物理スマートフォンでの指触りとOSジェスチャーは未確認。

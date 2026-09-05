@@ -432,7 +432,7 @@
   }
   ui.arena.addEventListener('pointerdown', event => {
     if (event.button !== 0 || gesture || !['normal', 'stopped'].includes(app.world.phase)) return;
-    if (event.pointerType === 'touch' && touchControls) return;
+    if (event.pointerType === 'touch') return;
     const p = renderer.position(event); if (!renderer.contains(p)) return;
     if (app.world.phase === 'normal' && !insideField(p)) return;
     sound.unlock(); ui.arena.focus({ preventScroll: true });
@@ -489,7 +489,12 @@
     Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
     accumulator = 0; lastTime = 0; lastDrawSound = 0; ui.callout.textContent = ''; handleEvents(); ui.arena.focus({ preventScroll: true });
   }
-  ui.arena.addEventListener('contextmenu', event => { event.preventDefault(); undo(); });
+  ui.arena.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    // A long press may synthesize contextmenu after pointerup. Canvas touch never edits the route.
+    if (event.pointerType === 'touch' || (coarsePointer && event.pointerType !== 'mouse')) return;
+    undo();
+  });
   function bindTouchSafeCommand(button, action) {
     let touchUpAt = -Infinity;
     button.addEventListener('pointerup', event => {

@@ -57,6 +57,11 @@ async function within(inner, outer, label) {
       assert.equal(await page.locator('.briefing-page:visible .demo-player-body').count(), 1);
       assert.equal(await page.locator('.briefing-page:visible .demo-player > path').count(), 0, 'tutorial player must use the same diamond geometry as the game');
       assert.equal(await page.locator('.briefing-page:visible .demo-input-touch').isVisible(), true);
+      if (index === 0) {
+        assert.equal(await page.locator('.briefing-page:visible .demo-pad-move').isVisible(), true);
+        assert.equal(await page.locator('.briefing-page:visible .demo-input-touch.demo-input-evade').count(), 0, 'STEP 1 must not show a finger moving on the game field');
+        await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-move-pad.png'), fullPage: true });
+      }
       if (index === 2) { await page.waitForTimeout(650); await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-draw-pad.png'), fullPage: true }); }
       if (index < headings.length - 1) {
         await page.locator('#briefing-begin').tap();
@@ -69,6 +74,10 @@ async function within(inner, outer, label) {
     assert.equal(await page.locator('body').evaluate(body => body.classList.contains('practice-move')), true);
     assert.equal(await page.locator('.practice-pad-finger').isVisible(), true);
     await page.screenshot({ path: path.join(artifacts, 'practice-mobile-move-pad.png'), fullPage: true });
+    const normalCanvas = await page.locator('#arena').boundingBox(), normalBefore = await page.evaluate(() => Deadline.inspect().world.player);
+    assert.match(await page.locator('#arena').evaluate(element => getComputedStyle(element).touchAction), /pan-y/);
+    await drag(cdp, normalCanvas, [{ x: normalCanvas.width * .2, y: normalCanvas.height * .7 }, { x: normalCanvas.width * .8, y: normalCanvas.height * .25 }]);
+    assert.deepEqual(await page.evaluate(() => Deadline.inspect().world.player), normalBefore, 'Canvas drag must not move the player on touch devices');
     const pad = await page.locator('#move-pad').boundingBox(), center = { x: pad.width / 2, y: pad.height / 2 };
     const opening = await page.evaluate(() => Deadline.inspect().world.player);
     await drag(cdp, pad, [center, { x: center.x + 5, y: center.y }]);
@@ -98,6 +107,9 @@ async function within(inner, outer, label) {
     assert.equal(await page.evaluate(() => Deadline.inspect().world.route.points.length), routeBefore);
     await drag(cdp,pad,[center,{x:center.x+3,y:center.y+1}]);assert.equal(await page.evaluate(()=>Deadline.inspect().world.route.points.length),routeBefore,'touch placement under threshold must not draw');
     await padTo(cdp,page,practice.enemies[0]);let held=await page.evaluate(()=>Deadline.inspect());assert.ok(held.world.route.points.length>1);assert.ok(Math.hypot(held.touchDraw.cursor.x-practice.enemies[0].x,held.touchDraw.cursor.y-practice.enemies[0].y)<10);
+    const pointsBeforeLongPress = held.world.route.points.length;
+    await page.locator('#arena').evaluate(element => element.dispatchEvent(new PointerEvent('contextmenu', { pointerType: 'touch', button: 2, bubbles: true, cancelable: true })));
+    assert.equal(await page.evaluate(() => Deadline.inspect().world.route.points.length), pointsBeforeLongPress, 'Canvas long press/contextmenu must not undo on touch UI');
     await page.locator('#clear-route').tap();let cleared=await page.evaluate(()=>Deadline.inspect());assert.equal(cleared.world.route.points.length,1);assert.deepEqual(cleared.touchDraw.cursor,cleared.world.player);
     await padTo(cdp,page,practice.enemies[0]);const released=await page.evaluate(()=>Deadline.inspect());const releasedCursor={...released.touchDraw.cursor},releasedPoints=released.world.route.points.length;
     assert.equal(released.touchPad.active,false);assert.ok(releasedPoints>1);
@@ -130,6 +142,33 @@ async function within(inner, outer, label) {
       if (viewport.width === 844) await p.screenshot({ path: path.join(artifacts, 'touchpad-landscape-844x390.png'), fullPage: true });
       await mobile.close();
     }
+
+    const landscapeContext = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+    const landscape = await landscapeContext.newPage(); hook(landscape, errors); const landscapeCdp = await landscapeContext.newCDPSession(landscape);
+    await landscape.goto(base + '?debug'); await landscape.waitForLoadState('networkidle'); await landscape.locator('#title-start').tap();
+    for (let i = 0; i < 4; i++) await landscape.locator('#briefing-begin').tap();
+    await landscape.waitForFunction(() => Deadline.inspect().practice.active);
+    let landscapePad = await landscape.locator('#move-pad').boundingBox(), landscapeCenter = { x: landscapePad.width / 2, y: landscapePad.height / 2 };
+    const landscapeCanvas = await landscape.locator('#arena').boundingBox(), landscapeBefore = await landscape.evaluate(() => Deadline.inspect().world.player);
+    await drag(landscapeCdp, landscapeCanvas, [{ x: landscapeCanvas.width * .2, y: landscapeCanvas.height * .75 }, { x: landscapeCanvas.width * .75, y: landscapeCanvas.height * .2 }]);
+    assert.deepEqual(await landscape.evaluate(() => Deadline.inspect().world.player), landscapeBefore, '844x390 Canvas drag must not move the player');
+    for (let i = 0; i < 3 && await landscape.evaluate(() => Deadline.inspect().practice.step === 'move'); i++) await drag(landscapeCdp, landscapePad, [landscapeCenter, { x: landscapeCenter.x + 46, y: landscapeCenter.y - 5 }]);
+    await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'freeze'); await landscape.locator('#time-stop').tap();
+    await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'draw');
+    const landscapePractice = await landscape.evaluate(() => Deadline.inspect().world), landscapeRouteBefore = landscapePractice.route.points.length;
+    await drag(landscapeCdp, landscapeCanvas, [{ x: landscapeCanvas.width * .25, y: landscapeCanvas.height * .65 }, { x: landscapeCanvas.width * .8, y: landscapeCanvas.height * .3 }]);
+    assert.equal(await landscape.evaluate(() => Deadline.inspect().world.route.points.length), landscapeRouteBefore, '844x390 Canvas drag must not draw');
+    await padTo(landscapeCdp, landscape, landscapePractice.enemies[0]); const landscapeFirst = await landscape.evaluate(() => Deadline.inspect());
+    const landscapeHeldPoints = landscapeFirst.world.route.points.length, landscapeHeldCursor = { ...landscapeFirst.touchDraw.cursor };
+    await padTo(landscapeCdp, landscape, landscapePractice.enemies[1]); await padTo(landscapeCdp, landscape, { x: 850, y: 470 });
+    const landscapeContinued = await landscape.evaluate(() => Deadline.inspect());
+    assert.ok(landscapeContinued.world.route.points.length > landscapeHeldPoints);
+    assert.ok(Math.hypot(landscapeContinued.world.route.points[landscapeHeldPoints - 1].x - landscapeHeldCursor.x, landscapeContinued.world.route.points[landscapeHeldPoints - 1].y - landscapeHeldCursor.y) < .01);
+    assert.equal(landscapeContinued.world.route.locks.length, 2); await landscape.locator('#time-stop').tap();
+    await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'complete');
+    await landscape.waitForFunction(() => !Deadline.inspect().practice.active && Deadline.inspect().world.wave === 1, {}, { timeout: 3500 });
+    await landscape.screenshot({ path: path.join(artifacts, 'touchpad-landscape-844x390.png'), fullPage: true });
+    await landscapeContext.close();
 
     const visual = await browser.newPage({ viewport: { width: 1280, height: 720 } }); hook(visual, errors);
     await visual.goto(base + '?debug'); await visual.waitForLoadState('networkidle'); await visual.keyboard.press('Space'); await visual.waitForFunction(() => document.getElementById('title-screen').hidden);
@@ -186,6 +225,6 @@ async function within(inner, outer, label) {
     assert.ok(fps > 45, `rAF ${fps.toFixed(1)}fps`); await desktop.close();
     assert.deepEqual(errors, []);
     console.log(`PASS Chrome ${browser.version()} tutorial visual timeline, practice prompts, relative touch pad and 7 responsive viewports`);
-    console.log(`PASS text-hidden STEP 1-4 sequence, precision/fast movement, bounds, DRAW separation, pointer capture and ${fps.toFixed(1)}fps rAF sample`);
+    console.log(`PASS 390x844 + 844x390 MOVE PAD-only flow, Canvas MOVE/DRAW/contextmenu isolation, release continuation and ${fps.toFixed(1)}fps rAF sample`);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
