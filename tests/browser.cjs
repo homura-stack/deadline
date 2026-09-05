@@ -32,6 +32,24 @@ async function touch(cdp, page, points, end = 'touchEnd') {
  }
  if (end) { await cdp.send('Input.dispatchTouchEvent', { type: end, touchPoints: [] }); await page.waitForTimeout(20); }
 }
+async function padStep(cdp,page,dx,dy) {
+ const box=await page.locator('#move-pad').boundingBox(),start={x:box.x+box.width/2,y:box.y+box.height/2,id:7};
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[start]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+dx,y:start.y+dy,id:7}]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(22);
+}
+async function padTo(cdp,page,target,tolerance=8) {
+ for(let i=0;i<48;i++){
+ const snapshot=await state(page),current=snapshot.world.phase==='stopped'?snapshot.touchDraw.cursor:snapshot.world.player;
+  if(snapshot.world.failed)return current;
+  assert.ok(current,'touch draw cursor missing');const dx=target.x-current.x,dy=target.y-current.y,distance=Math.hypot(dx,dy);if(distance<=tolerance)return current;
+  const arena=await page.locator('#arena').boundingBox(),renderScale=Math.min(arena.width/960,arena.height/600),drawScale=snapshot.world.phase==='stopped'?C.controls.touchDrawSensitivityScale:1;
+  const raw=Math.min(46,Math.max(7,distance*renderScale/(snapshot.touchPad.sensitivity/100*drawScale)));
+  await padStep(cdp,page,dx/distance*raw,dy/distance*raw);
+ }
+ assert.fail(`MOVE PAD did not reach ${JSON.stringify(target)}`);
+}
+async function padPath(cdp,page,points){for(const point of points.slice(1))await padTo(cdp,page,point);}
 async function observe(page) {
  await page.evaluate(() => {
   const step = Deadline.sim.step; window.__runs = []; window.__hits = []; window.__done = null;
@@ -60,12 +78,20 @@ function detour(w, from, goal) {
  const simple=[from];let i=0;while(i<raw.length-1){let j=raw.length-1;while(j>i+1&&!clear(raw[i],raw[j]))j--;simple.push(raw[j]);i=j;}return simple;
 }
 async function charge(page,touchMode=false,cdp=null) {
- if(touchMode) {await page.locator('#restart').tap();await touch(cdp,page,[{x:60,y:550}]);}
+ if(touchMode) {await page.locator('#restart').tap();await padTo(cdp,page,{x:60,y:550});}
  else {await page.locator('#restart').click();await move(page,{x:60,y:550});}
  await page.waitForFunction(()=>Deadline.sim.canStop(Deadline.inspect().world)||Deadline.inspect().world.failed,{},{timeout:6500});
  const w=(await state(page)).world;assert.equal(w.failed,false);assert.ok(Math.abs(w.gauge-100)<1e-6);assert.ok(w.time>=2.5);assert.ok(w.bullets.length>=6);
 }
-async function collideWithEnemy(page,touchMode=false,cdp=null){const target=(await state(page)).world.enemies.find(e=>e.alive);if(touchMode)await touch(cdp,page,[target]);else await move(page,target);await page.waitForFunction(()=>Deadline.inspect().world.failed);}
+async function collideWithEnemy(page,touchMode=false,cdp=null){
+ await page.waitForFunction(()=>!Deadline.inspect().world.failed);
+ if(touchMode){
+  if(!await page.locator('#move-pad').isVisible())await touch(cdp,page,[(await state(page)).world.player]);
+  await page.waitForFunction(()=>Deadline.inspect().world.failed||Deadline.inspect().world.waveGraceRemaining<=0);
+  for(let i=0;i<16&&!(await state(page)).world.failed;i++){const target=(await state(page)).world.enemies.find(e=>e.alive);await padTo(cdp,page,target);await page.waitForTimeout(45);}
+ }else{const target=(await state(page)).world.enemies.find(e=>e.alive);await move(page,target);}
+ await page.waitForFunction(()=>Deadline.inspect().world.failed);
+}
 async function planSafe(page,touchMode=false,cdp=null) {
  const w=(await state(page)).world;let points=null;
  for(const target of w.enemies.filter(e=>e.alive)){const path=detour(w,w.player,target);if(path){
@@ -73,7 +99,7 @@ async function planSafe(page,touchMode=false,cdp=null) {
   for(const dx of [80,-80,0])for(const dy of [80,-80,0]){if(!dx&&!dy)continue;const end={x:Math.max(24,Math.min(936,target.x+dx)),y:Math.max(24,Math.min(576,target.y+dy))};const tail=detour(w,target,end);if(tail){points=[...path,...tail.slice(1)];break;}}
   if(points)break;
  }}assert.ok(points);assert.equal(S.compileRoute(points,w).danger.length,0);
- if(touchMode)await touch(cdp,page,points);else await stroke(page,points);return points;
+ if(touchMode)await padPath(cdp,page,points);else await stroke(page,points);return points;
 }
 async function planPartial(page) {
  const w=(await state(page)).world;let choice=null;
@@ -94,9 +120,9 @@ async function planWave(page){const w=(await state(page)).world,points=[w.player
  // does not consume the player's real five-to-six second planning budget.
  await stroke(page,points,true,1);const planned=(await state(page)).world;assert.ok(planned.route,`Wave ${w.wave} STOP expired while drawing`);assert.equal(planned.route.danger.length,0);assert.equal(planned.route.locks.length,w.enemies.filter(e=>e.alive).length);return points;
 }
-async function surviveUntilReady(page){
+async function surviveUntilReady(page,retries=0){
  const opening=(await state(page)).world;if(opening.time<.1)await move(page,{x:60,y:550},6);
- for(let i=0;i<65;i++){const w=(await state(page)).world;if(w.failed)assert.fail(`Player failed while charging Wave ${w.wave}`);if(S.canStop(w))return;
+ for(let i=0;i<65;i++){const w=(await state(page)).world;if(w.failed){assert.ok(retries<3,`Player repeatedly failed while charging Wave ${w.wave}`);await page.keyboard.press(w.timeLimitMultiplier===2?'Digit2':w.timeLimitMultiplier===1.5?'Digit1':'Space');await page.waitForFunction(wave=>Deadline.inspect().world.phase==='normal'&&Deadline.inspect().world.wave===wave,w.wave);return surviveUntilReady(page,retries+1);}if(S.canStop(w))return;
   let best=w.player,bestScore=-Infinity;
   for(let j=0;j<16;j++){const angle=j*Math.PI/8,candidate={x:Math.max(32,Math.min(928,w.player.x+Math.cos(angle)*28)),y:Math.max(32,Math.min(568,w.player.y+Math.sin(angle)*28))};
    if(w.bullets.some(b=>S.segmentCircleTime(w.player,candidate,b,C.player.radius+C.shooting.bulletRadius+2)!==null)||w.enemies.some(e=>e.alive&&S.segmentCircleTime(w.player,candidate,e,C.player.radius+C.enemy.radius+2)!==null))continue;
@@ -108,7 +134,9 @@ async function surviveUntilReady(page){
 (async()=>{
  const browser=await chromium.launch({channel:'chrome',headless:true});
  try{
-  const page=await browser.newPage({viewport:{width:1280,height:900}});hook(page);await page.goto(base+'?debug');await page.waitForLoadState('networkidle');await observe(page);
+  const page=await browser.newPage({viewport:{width:1280,height:900}});hook(page);
+  await page.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});
+  await page.goto(base+'?debug');await page.waitForLoadState('networkidle');await observe(page);
   assert.equal(await page.title(),'DEAD/LINE — 時間停止ルート');assert.equal(await page.locator('#title-screen').isVisible(),true);assert.equal(await page.locator('.title-logo').getAttribute('alt'),'DEAD/LINE');
   assert.deepEqual(await page.locator('.title-logo').evaluate(image=>({complete:image.complete,naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight})),{complete:true,naturalWidth:2172,naturalHeight:724});
   const titleFrozen=(await state(page)).world.time;await page.waitForTimeout(240);assert.equal((await state(page)).world.time,titleFrozen);await page.waitForTimeout(420);await page.screenshot({path:path.join(artifacts,'title-desktop.png')});
@@ -146,7 +174,7 @@ async function surviveUntilReady(page){
   await stroke(page,[frozen.player,{x:130,y:540}]);await page.keyboard.press('KeyX');assert.equal((await state(page)).world.route.points.length,1);assert.equal((await state(page)).world.phase,'stopped');assert.equal(await page.locator('#status-action').innerText(),'ROUTE INPUT');
   await stroke(page,[frozen.player,{x:90,y:500},{x:130,y:500}],false);const beforeUndo=(await state(page)).world;await page.keyboard.press('KeyZ');const afterUndo=(await state(page)).world;assert.equal(afterUndo.route.points.length,beforeUndo.route.points.length-1);assert.ok(afterUndo.stopRemaining<=beforeUndo.stopRemaining);assert.equal(afterUndo.gauge,0);assert.equal((await state(page)).drawing,false);await page.mouse.up();assert.equal((await state(page)).world.route.points.length,afterUndo.route.points.length);
   record('Z and right-click remove the last point; X clears the route while STOP and its budget continue, including release of an active drawing gesture');
-  await page.keyboard.press('KeyC');await page.waitForTimeout(35);const canceledState=await state(page),canceled=canceledState.world;assert.equal(canceled.phase,'normal');assert.equal(canceled.route,null);assert.ok(canceled.gauge>=60&&canceled.gauge<65);assert.deepEqual(canceled.player,frozen.player);assert.equal(canceled.safetyRemaining,0);assert.ok(canceledState.timeFx.exitRemaining>0&&canceledState.timeFx.blend>0);assert.equal(await page.locator('#time-stop').isDisabled(),true);assert.equal(await page.locator('#status-action').innerText(),'MOVE / EVADE');record('C cancels without moving the cursor/player and preserves the net 40 fee, recharge gate and short visual release');
+  await page.keyboard.press('KeyC');await page.waitForTimeout(35);const canceledState=await state(page),canceled=canceledState.world;assert.equal(canceled.phase,'normal');assert.equal(canceled.route,null);assert.equal(canceledState.touchDraw.cursor,null);assert.ok(canceled.gauge>=60&&canceled.gauge<65);assert.deepEqual(canceled.player,frozen.player);assert.equal(canceled.safetyRemaining,0);assert.ok(canceledState.timeFx.exitRemaining>0&&canceledState.timeFx.blend>0);assert.equal(await page.locator('#time-stop').isDisabled(),true);assert.equal(await page.locator('#status-action').innerText(),'MOVE / EVADE');record('C cancels without moving the cursor/player and preserves the net 40 fee, recharge gate and short visual release');
   await charge(page);await page.keyboard.press('Space');const executionStart=(await state(page)).world;const route=await planSafe(page);
   const expected=(await state(page)).world.route.locks.map(l=>l.enemyId);assert.ok(expected.length>0);await page.evaluate(()=>{window.__done=null;window.__hits=[];window.__runs=[];});
   await page.keyboard.press('Space');assert.equal(await page.locator('#cancel-stop').isDisabled(),true);await page.waitForFunction(()=>window.__done!==null);
@@ -186,15 +214,20 @@ async function surviveUntilReady(page){
   assert.match(await page.locator('#complete').innerText(),/MISSION COMPLETE[\s\S]*CLEAR TIME[\s\S]*KILLS[\s\S]*TITLE/);assert.equal(completed.totalKills,57);await page.screenshot({path:path.join(artifacts,'wave-10-complete-desktop.png'),fullPage:true});await page.locator('#game-clear-title').click();assert.equal(await page.locator('#title-screen').isVisible(),true);assert.equal((await state(page)).titleActive,true);record('Ten live Waves teach four barrages, explain ONE STOP, retry an incomplete Wave 7, climax at the formal MISSION COMPLETE and return to TITLE');
    const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});const phone=await context.newPage();hook(phone);await phone.goto(base+'?debug');await phone.waitForLoadState('networkidle');await observe(phone);await phone.waitForTimeout(700);await phone.screenshot({path:path.join(artifacts,'title-mobile-390x844.png')});await enterGame(phone,true);const cdp=await context.newCDPSession(phone);
   await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const phoneStart=(await state(phone)).world;
-   await touch(cdp,phone,[phoneStart.player,phoneStart.bullets[0]]);assert.equal((await state(phone)).world.failed,false);assert.ok((await state(phone)).world.route.danger.length>0);await phone.locator('#undo-route').tap();await touch(cdp,phone,[phoneStart.player,{x:130,y:540}]);await phone.waitForFunction(()=>!document.getElementById('clear-route').disabled);await phone.locator('#clear-route').tap();await phone.waitForFunction(()=>Deadline.inspect().world.route.points.length===1);
+   assert.equal(await phone.locator('#move-pad').getAttribute('aria-disabled'),'false');assert.match(await phone.locator('#move-pad-label').innerText(),/DRAW ROUTE/);
+   const untouched=(await state(phone)).world.route.points.length;await touch(cdp,phone,[phoneStart.player,phoneStart.bullets[0]]);assert.equal((await state(phone)).world.route.points.length,untouched,'field touch must not draw on mobile');
+   await padTo(cdp,phone,phoneStart.bullets[0]);assert.equal((await state(phone)).world.failed,false);assert.ok((await state(phone)).world.route.danger.length>0);
+   const beforeTouchUndo=(await state(phone)).world.route.points.length;await phone.locator('#undo-route').tap();const undoneTouch=await state(phone);assert.equal(undoneTouch.world.route.points.length,beforeTouchUndo-1);assert.ok(S.distance(undoneTouch.touchDraw.cursor,undoneTouch.world.route.points.at(-1))<.01);
+   if(undoneTouch.world.route.points.length>1)await phone.locator('#clear-route').tap();let clearedTouch=await state(phone);assert.equal(clearedTouch.world.route.points.length,1);assert.ok(S.distance(clearedTouch.touchDraw.cursor,clearedTouch.world.player)<.01);
+   await padTo(cdp,phone,{x:130,y:540});await phone.waitForFunction(()=>!document.getElementById('clear-route').disabled);await phone.locator('#clear-route').tap();await phone.waitForFunction(()=>Deadline.inspect().world.route.points.length===1);
   await phone.waitForTimeout(40);await phone.screenshot({path:path.join(artifacts,'gauge-controls-mobile.png'),fullPage:true});await phone.locator('#cancel-stop').tap();assert.ok((await state(phone)).world.gauge>=60);record('Touch can charge, STOP, draw a risky plan, Undo, Clear and cancel with a fee');
-  await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const mobileRoute=await planSafe(phone,true,cdp);await phone.screenshot({path:path.join(artifacts,'gauge-route-mobile.png'),fullPage:true});await phone.locator('#time-stop').tap();await phone.waitForFunction(()=>window.__done!==null);assert.ok(S.distance((await phone.evaluate(()=>window.__done)).player,mobileRoute.at(-1))<1);assert.equal((await state(phone)).world.failed,false);assert.equal(await phone.evaluate(()=>scrollY),0);record('Touch executes a safe barrage route to its endpoint with no unintended scrolling');
+  await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const mobileRoute=await planSafe(phone,true,cdp);await phone.screenshot({path:path.join(artifacts,'gauge-route-mobile.png'),fullPage:true});await phone.locator('#time-stop').tap();await phone.waitForFunction(()=>window.__done!==null);assert.ok(S.distance((await phone.evaluate(()=>window.__done)).player,mobileRoute.at(-1))<1);assert.equal((await state(phone)).world.failed,false);assert.equal((await state(phone)).touchPad.active,false);assert.equal((await state(phone)).touchDraw.cursor,null);assert.equal(await phone.evaluate(()=>scrollY),0);record('Touch executes a safe barrage route to its endpoint with no unintended scrolling');
    await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const hybridBox=await phone.locator('#time-stop').boundingBox();assert.equal(await phone.locator('#time-stop').isDisabled(),false);
    await phone.mouse.click(hybridBox.x+hybridBox.width/2,hybridBox.y+hybridBox.height/2);assert.equal((await state(phone)).world.phase,'stopped');assert.equal(await phone.locator('#time-stop').isDisabled(),false);assert.match(await phone.locator('#hint').innerText(),/EXECUTE/);
    assert.ok((await state(phone)).world.stopRemaining>3);await phone.touchscreen.tap(hybridBox.x+hybridBox.width/2,hybridBox.y+hybridBox.height/2);assert.equal((await state(phone)).world.phase,'normal');
    record('On a touch-capable viewport a mouse cannot EXECUTE; a subsequent real touch switches the controls back and can EXECUTE');
-   await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const touchRisk=(await state(phone)).world;await touch(cdp,phone,[touchRisk.player,touchRisk.bullets[0]]);await phone.locator('#time-stop').tap();await phone.waitForFunction(()=>Deadline.inspect().world.failed);assert.match(await phone.locator('#retry').innerText(),/RETRY WAVE 1/);await phone.locator('#retry').tap();const touchRetry=(await state(phone)).world;assert.equal(touchRetry.wave,1);assert.equal(touchRetry.phase,'normal');assert.equal(touchRetry.gauge,C.waves.retryGaugeInitial);assert.equal(touchRetry.bullets.length,0);record('Touch retry restores the failed Wave at zero gauge with no bullets or stale route state');
-   await collideWithEnemy(phone,true,cdp);await phone.locator('#retry').tap();await collideWithEnemy(phone,true,cdp);assert.equal((await state(phone)).world.waveFailures[0],3);assert.equal(await phone.locator('#retry-assist-15').isVisible(),true);await phone.locator('#retry-assist-15').tap();assert.equal((await state(phone)).world.timeLimitMultiplier,1.5);assert.equal((await state(phone)).world.gauge,0);record('Touch can choose the optional x1.5 time limit from the stopped retry screen');
+   await charge(phone,true,cdp);await phone.locator('#time-stop').tap();const touchRisk=(await state(phone)).world;await padTo(cdp,phone,touchRisk.bullets[0]);await phone.locator('#time-stop').tap();await phone.waitForFunction(()=>Deadline.inspect().world.failed);assert.match(await phone.locator('#retry').innerText(),/RETRY WAVE 1/);await phone.locator('#retry').tap();const touchRetry=(await state(phone)).world;assert.equal(touchRetry.wave,1);assert.equal(touchRetry.phase,'normal');assert.equal(touchRetry.gauge,C.waves.retryGaugeInitial);assert.equal(touchRetry.bullets.length,0);record('Touch retry restores the failed Wave at zero gauge with no bullets or stale route state');
+   await collideWithEnemy(phone,true,cdp);await phone.keyboard.press('Space');await phone.waitForFunction(()=>!Deadline.inspect().world.failed);await collideWithEnemy(phone,true,cdp);assert.equal((await state(phone)).world.waveFailures[0],3);assert.equal(await phone.locator('#retry-assist-15').isVisible(),true);await phone.locator('#retry-assist-15').click();await phone.waitForFunction(()=>Deadline.inspect().world.timeLimitMultiplier===1.5);assert.equal((await state(phone)).world.gauge,0);record('Mobile retry UI exposes and applies the optional x1.5 time limit');
   for(const viewport of [{width:844,height:390},{width:320,height:800},{width:360,height:800},{width:768,height:800}]){await phone.setViewportSize(viewport);await phone.waitForTimeout(60);assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);const targets=await phone.locator('.controls button').evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().height));assert.ok(targets.every(height=>height>=44));assert.equal(await phone.locator('#status-action').isVisible(),true);assert.equal(await phone.locator('#stop-gauge').isVisible(),true);}record('Landscape and 320 / 360 / 768px layouts retain 44px touch controls and a visible status/gauge without horizontal overflow');await context.close();
   const hudWide=await browser.newPage({viewport:{width:1280,height:720}});hook(hudWide);await hudWide.goto(base+'?debug');await hudWide.waitForLoadState('networkidle');await enterGame(hudWide);assert.equal(await hudWide.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await hudWide.locator('.controls').evaluate(element=>element.getBoundingClientRect().bottom<=innerHeight),true);await hudWide.screenshot({path:path.join(artifacts,'hud-normal-1280x720.png'),fullPage:true});await hudWide.close();record('The 1280 x 720 game HUD and one-row command bar remain inside the viewport without horizontal overflow');
   const titleResponsive=await browser.newPage({viewport:{width:1280,height:720}});hook(titleResponsive);for(const viewport of [{width:1280,height:720,name:'title-desktop-16x9.png'},{width:844,height:390,name:'title-mobile-landscape.png'},{width:320,height:800,name:'title-mobile-320.png'},{width:360,height:800,name:'title-mobile-360.png'},{width:768,height:800,name:'title-tablet-768.png'}]){await titleResponsive.setViewportSize(viewport);await titleResponsive.goto(base);await titleResponsive.waitForLoadState('networkidle');await titleResponsive.waitForTimeout(700);const logoBox=await titleResponsive.locator('.title-logo').boundingBox();assert.ok(logoBox.width<=viewport.width-24&&logoBox.height<=viewport.height*.5);assert.ok(Math.abs(logoBox.width/logoBox.height-2172/724)<.02);assert.equal(await titleResponsive.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight),true);await titleResponsive.screenshot({path:path.join(artifacts,viewport.name)});}await titleResponsive.close();record('Title logo keeps its aspect ratio and margins at 16:9, landscape, 320, 360 and 768px');

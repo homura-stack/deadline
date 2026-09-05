@@ -2,7 +2,7 @@
   'use strict';
   const { config: C, sim: S, Renderer, Sound } = root.Deadline;
   const $ = id => document.getElementById(id);
-  const ui = Object.fromEntries(['arena', 'phase', 'status-action', 'wave', 'wave-current', 'wave-total', 'score', 'stop-time', 'stop-gauge-label', 'lock-label', 'lock-count', 'life', 'time-stop', 'time-stop-label', 'clear-route', 'undo-route', 'cancel-stop', 'stop-gauge', 'gauge-value', 'hint', 'sound', 'restart', 'result', 'retry', 'retry-wave-number', 'result-kills', 'game-over-wave', 'game-over-score', 'game-over-title', 'retry-assist', 'retry-assist-15', 'retry-assist-20', 'complete', 'play-again', 'game-clear-title', 'final-score', 'final-time', 'final-kills', 'final-chain', 'final-perfect', 'final-hits', 'wave-banner', 'tutorial-prompt', 'lock-ready', 'one-stop-preview', 'one-stop-preview-next', 'preview-perfect', 'one-stop-intro', 'one-stop-start', 'rule-target-example', 'rule-target-count', 'one-stop-result', 'incomplete-title', 'incomplete-count', 'incomplete-reason', 'retry-wave', 'retry-one-stop-number', 'one-stop-assist', 'one-stop-assist-15', 'one-stop-assist-20', 'callout', 'move-pad', 'move-pad-state', 'debug', 'debug-shapes', 'debug-values'].map(id => [id, $(id)]));
+  const ui = Object.fromEntries(['arena', 'phase', 'status-action', 'wave', 'wave-current', 'wave-total', 'score', 'stop-time', 'stop-gauge-label', 'lock-label', 'lock-count', 'life', 'time-stop', 'time-stop-label', 'clear-route', 'undo-route', 'cancel-stop', 'stop-gauge', 'gauge-value', 'hint', 'sound', 'restart', 'result', 'retry', 'retry-wave-number', 'result-kills', 'game-over-wave', 'game-over-score', 'game-over-title', 'retry-assist', 'retry-assist-15', 'retry-assist-20', 'complete', 'play-again', 'game-clear-title', 'final-score', 'final-time', 'final-kills', 'final-chain', 'final-perfect', 'final-hits', 'wave-banner', 'tutorial-prompt', 'lock-ready', 'one-stop-preview', 'one-stop-preview-next', 'preview-perfect', 'one-stop-intro', 'one-stop-start', 'rule-target-example', 'rule-target-count', 'one-stop-result', 'incomplete-title', 'incomplete-count', 'incomplete-reason', 'retry-wave', 'retry-one-stop-number', 'one-stop-assist', 'one-stop-assist-15', 'one-stop-assist-20', 'callout', 'move-pad', 'move-pad-label', 'move-pad-state', 'debug', 'debug-shapes', 'debug-values'].map(id => [id, $(id)]));
   const titleUi = { screen: $('title-screen'), shell: $('game-shell'), start: $('title-start'), infoButtons: [...document.querySelectorAll('[data-title-info]')], panels: [...document.querySelectorAll('[data-title-panel]')],
     master: $('master-volume'), masterValue: $('master-value'), sfx: $('sfx-volume'), sfxValue: $('sfx-value'), mute: $('setting-mute'),
     touchSensitivity: $('touch-sensitivity'), touchSensitivityValue: $('touch-sensitivity-value') };
@@ -14,6 +14,7 @@
     briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
     timeFx: { blend: 0, enterRemaining: 0, exitRemaining: 0, origin: { x: 0, y: 0 } },
     routeFx: { drawing: false, lockFlashes: [] },
+    touchDraw: { cursor: null },
     combatFx: { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 },
     titleActive: true, titleLeaving: false, briefingActive: false,
     debugEnabled: C.debug.enabled || (C.debug.allowQueryFlag && new URLSearchParams(location.search).has('debug')),
@@ -22,7 +23,7 @@
   const coarsePointer = matchMedia('(pointer: coarse)').matches;
   let touchControls = coarsePointer;
   let touchCapable = coarsePointer || navigator.maxTouchPoints > 0;
-  const touchPad = { id: null, lastX: 0, lastY: 0, startX: 0, startY: 0, x: 0, y: 0, dx: 0, dy: 0, visualDirty: true };
+  const touchPad = { id: null, lastX: 0, lastY: 0, startX: 0, startY: 0, x: 0, y: 0, dx: 0, dy: 0, contactDistance: 0, drawing: false, visualDirty: true };
   let touchSensitivity = C.controls.touchSensitivityDefault;
   const heldKeys = new Set(), commandKeys = new Set(['Space', 'KeyZ', 'KeyX', 'KeyC', 'Escape', 'KeyR', 'Enter', 'Digit1', 'Digit2', 'Numpad1', 'Numpad2']);
   function setTouchControls(touch) {
@@ -92,7 +93,7 @@
     else if (app.practice.step === 'freeze') {
       if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
       ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'TIME STOPをタップ / FREEZE' : 'FREEZE TIME'));
-    } else if (app.practice.step === 'draw') ui['tutorial-prompt'].textContent = app.practice.drawStarted ? 'DRAW THROUGH BOTH TARGETS' : 'PRESS · HOLD · DRAW';
+    } else if (app.practice.step === 'draw') ui['tutorial-prompt'].textContent = touchControls ? (app.practice.drawStarted ? 'MOVE PAD · DRAW THROUGH TARGETS' : 'MOVE PAD · DRAW ROUTE') : (app.practice.drawStarted ? 'DRAW THROUGH BOTH TARGETS' : 'PRESS · HOLD · DRAW');
     else if (app.practice.step === 'execute') {
       if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
       ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'EXECUTEをタップ' : 'EXECUTE THE ROUTE'));
@@ -137,6 +138,7 @@
     ui.phase.textContent = stopped ? `${oneStop ? 'ONE STOP' : 'TIME STOP'}${limitSuffix}` : executing ? 'EXECUTING' : resting ? 'WAVE CLEAR' : preview ? 'NEXT WAVE' : intro ? 'NEW RULE' : incomplete ? 'INCOMPLETE' : complete ? 'COMPLETE' : w.failed ? 'MISS' : 'NORMAL';
     ui['status-action'].textContent = drawing ? 'DRAW ROUTE' : routeReady ? 'READY TO EXECUTE' : stopped ? 'ROUTE INPUT' : executing ? 'AUTO RUN' : resting ? 'WAVE TRANSITION' : preview || intro ? 'RULE UPDATE' : incomplete || w.failed ? 'RETRY AVAILABLE' : complete ? 'MISSION COMPLETE' : ready ? 'TIME STOP READY' : 'MOVE / EVADE';
     document.body.classList.toggle('touch-controls', touchControls);
+    document.body.classList.toggle('touch-draw-pad', touchControls && stopped);
     app.touchControls = touchControls;
     for (const step of ['move', 'freeze', 'draw', 'execute']) document.body.classList.toggle(`practice-${step}`, app.practice.active && app.practice.step === step);
     ui['time-stop-label'].textContent = stopped ? touchControls ? 'EXECUTE / 実行' : 'EXECUTE' : executing ? 'EXECUTING…' : resting ? 'NEXT WAVE…' : preview ? 'NEXT WAVE' : intro ? 'NEW RULE' : incomplete || w.failed ? `RETRY WAVE ${w.wave}` : complete ? 'RETRY' : ready ? 'TIME STOP' : 'TIME STOP · CHARGING';
@@ -168,15 +170,17 @@
     if (resting || !showingWave) ui['wave-banner'].classList.remove('wave-enter');
     ui['wave-banner'].textContent = resting ? `WAVE ${String(w.wave).padStart(2, '0')} CLEAR` : w.wave === C.waves.definitions.length ? `FINAL WAVE · ${String(w.wave).padStart(2, '0')} / ${String(C.waves.definitions.length).padStart(2, '0')}` : `WAVE ${String(w.wave).padStart(2, '0')} / ${String(C.waves.definitions.length).padStart(2, '0')}`;
     ui['wave-banner'].classList.toggle('final-wave', w.wave === C.waves.definitions.length);
-    ui.hint.textContent = stopped ? allLocked ? 'ALL TARGETS LOCKED — SPACEで実行' : oneStop ? `${locks} / ${targets} LOCKED — 未ロック敵の明るい輪を確認` : touchControls ? 'ルートを描いてEXECUTE / 赤は警告・0秒で自動実行' : 'SPACEキーで実行 / 赤は警告・0秒で自動実行' : executing ? '描いたルートを実行中' : resting ? '敵弾を消去して次のWaveへ' : preview ? '次Waveの条件を確認してSPACE' : intro ? 'NEW RULEを確認してSPACEで開始' : incomplete || w.failed ? `SPACEで通常リトライ${first ? ' / 1・2でTIME LIMIT選択' : ''}` : complete ? 'SPACEで最初から再挑戦' : w.timeLimitMultiplier > 1 ? `TIME LIMIT ×${w.timeLimitMultiplier.toFixed(1)} / 弾を避けて充電` : ready ? touchControls ? 'TIME STOP → ドラッグでルート' : 'SPACEで時間停止 → ドラッグでルート' : w.waveGraceRemaining > 0 ? 'READY — 開始直後はダメージ無効' : '弾を避けて充電 → 満タンでTIME STOP';
-    const padEnabled = touchControls && w.phase === 'normal' && !w.failed && !complete;
+    ui.hint.textContent = stopped ? allLocked ? touchControls ? 'ALL TARGETS LOCKED — EXECUTEをタップ' : 'ALL TARGETS LOCKED — SPACEで実行' : oneStop ? `${locks} / ${targets} LOCKED — 未ロック敵の明るい輪を確認` : touchControls ? 'MOVE PADでルートを描いてEXECUTE / 赤は警告' : 'SPACEキーで実行 / 赤は警告・0秒で自動実行' : executing ? '描いたルートを実行中' : resting ? '敵弾を消去して次のWaveへ' : preview ? '次Waveの条件を確認してSPACE' : intro ? 'NEW RULEを確認してSPACEで開始' : incomplete || w.failed ? `SPACEで通常リトライ${first ? ' / 1・2でTIME LIMIT選択' : ''}` : complete ? 'SPACEで最初から再挑戦' : w.timeLimitMultiplier > 1 ? `TIME LIMIT ×${w.timeLimitMultiplier.toFixed(1)} / 弾を避けて充電` : ready ? touchControls ? 'TIME STOP → MOVE PADでルート' : 'SPACEで時間停止 → ドラッグでルート' : w.waveGraceRemaining > 0 ? 'READY — 開始直後はダメージ無効' : '弾を避けて充電 → 満タンでTIME STOP';
+    const padEnabled = touchControls && ['normal', 'stopped'].includes(w.phase) && !w.failed && !complete && !preview && !intro && !incomplete;
     ui['move-pad'].setAttribute('aria-disabled', String(!padEnabled));
-    ui['move-pad-state'].textContent = padEnabled ? 'ACTIVE' : 'LOCKED';
+    ui['move-pad-label'].textContent = stopped ? 'MOVE PAD · DRAW ROUTE' : 'MOVE PAD · MOVE';
+    ui['move-pad-state'].textContent = padEnabled ? stopped ? 'DRAW' : 'ACTIVE' : 'LOCKED';
+    ui['move-pad'].setAttribute('aria-label', stopped ? '描画カーソルを相対移動する仮想タッチパッド' : '自機を相対移動する仮想タッチパッド');
     if (app.practice.active) {
       ui['wave-current'].textContent = 'P'; ui['wave-total'].textContent = '—'; ui.wave.setAttribute('aria-label', 'Practice');
       ui.phase.textContent = app.practice.step === 'complete' ? 'COMPLETE' : stopped ? 'TIME STOP' : executing ? 'EXECUTING' : 'PRACTICE';
       ui['status-action'].textContent = app.practice.step === 'move' ? 'MOVE / EVADE' : app.practice.step === 'freeze' ? 'TIME STOP READY' : app.practice.step === 'draw' ? 'ROUTE INPUT' : app.practice.step === 'execute' ? 'READY TO EXECUTE' : 'TRAINING COMPLETE';
-      ui.hint.textContent = app.practice.step === 'move' ? (touchControls ? 'MOVE PADで自機を少し動かす' : 'マウスで自機を少し動かす') : app.practice.step === 'freeze' ? (touchControls ? 'TIME STOPボタンで世界を止める' : 'SPACEで世界を止める') : app.practice.step === 'draw' ? '停止中の2体を線で通過してTARGETにする' : app.practice.step === 'execute' ? (touchControls ? 'EXECUTEボタンでルートを実行' : 'SPACEでルートを実行') : 'WAVE 1を開始します';
+      ui.hint.textContent = app.practice.step === 'move' ? (touchControls ? 'MOVE PADで自機を少し動かす' : 'マウスで自機を少し動かす') : app.practice.step === 'freeze' ? (touchControls ? 'TIME STOPボタンで世界を止める' : 'SPACEで世界を止める') : app.practice.step === 'draw' ? (touchControls ? 'MOVE PADで2体を通るルートを描く' : '停止中の2体を線で通過してTARGETにする') : app.practice.step === 'execute' ? (touchControls ? 'EXECUTEボタンでルートを実行' : 'SPACEでルートを実行') : 'WAVE 1を開始します';
       ui['lock-label'].textContent = 'TARGET'; ui['lock-count'].textContent = stopped ? `${locks} / ${targets}` : '—';
       ui['wave-banner'].hidden = true; ui.result.hidden = true; ui.complete.hidden = true;
     }
@@ -194,8 +198,14 @@
   }
   function releaseTouchPad() {
     if (touchPad.id !== null && ui['move-pad'].hasPointerCapture(touchPad.id)) ui['move-pad'].releasePointerCapture(touchPad.id);
-    touchPad.id = null; touchPad.dx = 0; touchPad.dy = 0; touchPad.visualDirty = true;
+    if (touchPad.drawing) app.routeFx.drawing = false;
+    touchPad.id = null; touchPad.dx = 0; touchPad.dy = 0; touchPad.contactDistance = 0; touchPad.drawing = false; touchPad.visualDirty = true;
     ui['move-pad'].classList.remove('is-active');
+  }
+  function resetTouchDrawCursor() { app.touchDraw.cursor = { x: app.world.player.x, y: app.world.player.y }; }
+  function syncTouchDrawCursor() {
+    const points = app.world.route?.points;
+    app.touchDraw.cursor = points?.length ? { ...points[points.length - 1] } : { ...app.world.player };
   }
   function updateTouchPadVisual() {
     if (!touchPad.visualDirty) return;
@@ -214,15 +224,39 @@
     if (S.distance(app.practice.origin, app.world.player) < C.practice.moveDistance) return;
     app.practice.step = 'freeze'; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; sound.playUiConfirm(); updateUi();
   }
+  function touchInputFactor(length, scale = 1) {
+    const capped = Math.min(length, C.controls.touchMaxFrameDelta), normalized = capped / length;
+    const curve = S.clamp((capped - C.controls.touchPrecisionDistance) / Math.max(1, C.controls.touchFullSpeedDistance - C.controls.touchPrecisionDistance), 0, 1);
+    const precision = C.controls.touchPrecisionScale + (1 - C.controls.touchPrecisionScale) * curve;
+    return normalized * precision * (touchSensitivity / 100) * scale / Math.max(renderer.scale, 0.01);
+  }
   function applyTouchPadInput() {
-    if (touchPad.id === null || app.world.phase !== 'normal' || !touchControls) { updateTouchPadVisual(); return; }
+    const phase = app.world.phase;
+    if (touchPad.id === null || !['normal', 'stopped'].includes(phase) || !touchControls) { updateTouchPadVisual(); return; }
+    if (phase === 'stopped' && !touchPad.drawing && touchPad.contactDistance < C.controls.touchDrawStartDistance) { updateTouchPadVisual(); return; }
     let dx = touchPad.dx, dy = touchPad.dy; touchPad.dx = 0; touchPad.dy = 0;
     const length = Math.hypot(dx, dy); if (length > 0 && Number.isFinite(length)) {
-      const capped = Math.min(length, C.controls.touchMaxFrameDelta), normalized = capped / length;
-      const curve = S.clamp((capped - C.controls.touchPrecisionDistance) / Math.max(1, C.controls.touchFullSpeedDistance - C.controls.touchPrecisionDistance), 0, 1);
-      const precision = C.controls.touchPrecisionScale + (1 - C.controls.touchPrecisionScale) * curve;
-      const factor = normalized * precision * (touchSensitivity / 100) / Math.max(renderer.scale, 0.01);
-      S.movePlayer(app.world, { x: app.world.player.x + dx * factor, y: app.world.player.y + dy * factor }); handleEvents(); notePracticeMovement();
+      const drawMode = phase === 'stopped', factor = touchInputFactor(length, drawMode ? C.controls.touchDrawSensitivityScale : 1);
+      if (drawMode) {
+        if (!app.touchDraw.cursor) resetTouchDrawCursor();
+        if (!touchPad.drawing) {
+          touchPad.drawing = true; app.routeFx.drawing = true;
+          if (app.practice.active) app.practice.drawStarted = true;
+          lastDrawSound = performance.now(); sound.play('drawStart');
+        }
+        const margin = C.world.margin, cursor = {
+          x: S.clamp(app.touchDraw.cursor.x + dx * factor, margin, C.world.width - margin),
+          y: S.clamp(app.touchDraw.cursor.y + dy * factor, margin, C.world.height - margin)
+        };
+        if (S.distance(cursor, app.touchDraw.cursor) > 0.01) {
+          app.touchDraw.cursor = cursor; S.addRoutePoint(app.world, cursor);
+          const now = performance.now();
+          if (now - lastDrawSound > C.feedback.drawSoundInterval * 1000) { sound.play('draw'); lastDrawSound = now; }
+          handleEvents();
+        }
+      } else {
+        S.movePlayer(app.world, { x: app.world.player.x + dx * factor, y: app.world.player.y + dy * factor }); handleEvents(); notePracticeMovement();
+      }
     }
     updateTouchPadVisual();
   }
@@ -237,6 +271,7 @@
   }
   function startPractice() {
     releasePointer(); releaseTouchPad(); app.world = configurePracticeWorld(); app.practice.active = true; app.practice.step = 'move';
+    app.touchDraw.cursor = null;
     app.practice.origin = { ...app.world.player }; app.practice.completeRemaining = 0; app.practice.drawStarted = false; app.tutorial.active = true; app.tutorial.step = 'move';
     app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null; app.damageFx.remaining = 0;
     app.briefingActive = false; briefingUi.screen.hidden = true; document.body.classList.remove('briefing-open');
@@ -247,6 +282,7 @@
   }
   function reset(showTutorial = false) {
     releasePointer(); releaseTouchPad(); app.world = S.createWorld(); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
+    app.touchDraw.cursor = null;
     app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.completeRemaining = 0; app.practice.drawStarted = false;
     app.tutorial.active = showTutorial; app.tutorial.step = 'move'; app.damageFx.remaining = 0;
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
@@ -305,6 +341,7 @@
       if (event.type === 'stop') {
         if (app.practice.active) { app.practice.step = 'draw'; app.practice.drawStarted = false; app.tutorial.step = 'draw'; }
         releasePointer(); releaseTouchPad(); sound.play('stop'); app.shake = 0; ui.callout.textContent = ''; app.calloutLife = 0;
+        resetTouchDrawCursor();
         app.routeFx.lockFlashes = []; sound.startTimeClock();
         Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.origin = { x: app.world.player.x, y: app.world.player.y };
@@ -312,7 +349,7 @@
         ui.phase.classList.remove('stop-phase-pulse'); void ui.phase.offsetWidth; ui.phase.classList.add('stop-phase-pulse');
       } else if (event.type === 'cancel') {
         if (app.practice.active) { app.practice.step = 'freeze'; app.practice.drawStarted = false; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; }
-        releasePointer(); sound.stopTimeClock(); sound.playTimeResume();
+        releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); sound.playTimeResume();
         Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = C.feedback.timeStopVisual.exitSeconds;
       }
@@ -326,7 +363,7 @@
       }
       else if (event.type === 'execute') {
         if (app.practice.active) { app.practice.step = 'running'; app.tutorial.step = 'running'; }
-        releasePointer(); sound.beginExecute();
+        releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.beginExecute();
         Object.assign(app.combatFx, { releaseRemaining: C.feedback.executeVisual.chargeSeconds, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: { ...app.world.player }, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
       }
@@ -351,7 +388,7 @@
         ui['wave-banner'].classList.remove('wave-enter'); void ui['wave-banner'].offsetWidth; ui['wave-banner'].classList.add('wave-enter');
       }
       else if (event.type === 'rulePreview') { releasePointer(); sound.stopTimeClock(); ui.callout.textContent = ''; app.calloutLife = 0; }
-      else if (event.type === 'oneStopFail') { app.tutorial.active = false; releasePointer(); sound.stopTimeClock(); app.combatFx.pendingCompletion = 'incomplete'; }
+      else if (event.type === 'oneStopFail') { app.tutorial.active = false; releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); app.combatFx.pendingCompletion = 'incomplete'; }
       else if (event.type === 'fail') {
         if (app.practice.active) { app.world.failed = false; app.world.life = 1; app.world.phase = 'normal'; app.world.safetyRemaining = 999; app.world.waveGraceRemaining = 999; app.world.gauge = app.practice.step === 'move' ? 0 : C.gauge.max; }
         else app.tutorial.active = false;
@@ -359,7 +396,7 @@
         app.damageFx.remaining = app.damageFx.max; ui.life.classList.remove('life-hit'); void ui.life.offsetWidth; ui.life.classList.add('life-hit');
         Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = C.feedback.timeStopVisual.exitSeconds;
-        releasePointer(); ui.callout.textContent = ''; app.calloutLife = 0;
+        releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; ui.callout.textContent = ''; app.calloutLife = 0;
       }
     }
     app.world.events.length = 0; updateUi();
@@ -395,7 +432,7 @@
   }
   ui.arena.addEventListener('pointerdown', event => {
     if (event.button !== 0 || gesture || !['normal', 'stopped'].includes(app.world.phase)) return;
-    if (app.world.phase === 'normal' && event.pointerType === 'touch' && touchControls) return;
+    if (event.pointerType === 'touch' && touchControls) return;
     const p = renderer.position(event); if (!renderer.contains(p)) return;
     if (app.world.phase === 'normal' && !insideField(p)) return;
     sound.unlock(); ui.arena.focus({ preventScroll: true });
@@ -420,17 +457,17 @@
   ui.arena.addEventListener('pointercancel', () => { releasePointer(); updateUi(); });
   ui.arena.addEventListener('lostpointercapture', () => { gesture = null; app.routeFx.drawing = false; updateUi(); });
   ui['move-pad'].addEventListener('pointerdown', event => {
-    if (event.button !== 0 || touchPad.id !== null || !touchControls || app.world.phase !== 'normal') return;
+    if (event.button !== 0 || touchPad.id !== null || !touchControls || !['normal', 'stopped'].includes(app.world.phase)) return;
     sound.unlock(); touchPad.id = event.pointerId; touchPad.lastX = touchPad.startX = touchPad.x = event.clientX; touchPad.lastY = touchPad.startY = touchPad.y = event.clientY;
-    touchPad.dx = 0; touchPad.dy = 0; touchPad.visualDirty = true; ui['move-pad'].classList.add('is-active'); ui['move-pad'].setPointerCapture(event.pointerId); event.preventDefault();
+    touchPad.dx = 0; touchPad.dy = 0; touchPad.contactDistance = 0; touchPad.drawing = false; touchPad.visualDirty = true; ui['move-pad'].classList.add('is-active'); ui['move-pad'].setPointerCapture(event.pointerId); event.preventDefault();
   });
   ui['move-pad'].addEventListener('pointermove', event => {
     if (event.pointerId !== touchPad.id) return;
     const dx = event.clientX - touchPad.lastX, dy = event.clientY - touchPad.lastY;
-    if (Number.isFinite(dx) && Number.isFinite(dy)) { touchPad.dx += dx; touchPad.dy += dy; touchPad.lastX = touchPad.x = event.clientX; touchPad.lastY = touchPad.y = event.clientY; touchPad.visualDirty = true; }
+    if (Number.isFinite(dx) && Number.isFinite(dy)) { touchPad.dx += dx; touchPad.dy += dy; touchPad.contactDistance += Math.hypot(dx, dy); touchPad.lastX = touchPad.x = event.clientX; touchPad.lastY = touchPad.y = event.clientY; touchPad.visualDirty = true; }
     event.preventDefault();
   });
-  const endTouchPad = event => { if (event.pointerId === touchPad.id) { releaseTouchPad(); updateTouchPadVisual(); } };
+  const endTouchPad = event => { if (event.pointerId === touchPad.id) { applyTouchPadInput(); releaseTouchPad(); updateTouchPadVisual(); updateUi(); } };
   ui['move-pad'].addEventListener('pointerup', endTouchPad);
   ui['move-pad'].addEventListener('pointercancel', endTouchPad);
   ui['move-pad'].addEventListener('lostpointercapture', event => { if (event.pointerId === touchPad.id) releaseTouchPad(); });
@@ -439,13 +476,13 @@
     const locked = app.world.route?.locks.length || 0, alive = app.world.enemies.filter(enemy => enemy.alive).length;
     app.practice.step = locked > 0 && locked === alive ? 'execute' : 'draw'; app.tutorial.step = app.practice.step;
   }
-  function undo() { releasePointer(); app.routeFx.lockFlashes = []; S.undoRoute(app.world); syncPracticeRouteStep(); updateUi(); }
-  function clear() { releasePointer(); app.routeFx.lockFlashes = []; S.clearRoute(app.world); syncPracticeRouteStep(); updateUi(); }
-  function cancel() { S.cancelStop(app.world); handleEvents(); }
+  function undo() { releasePointer(); releaseTouchPad(); app.routeFx.lockFlashes = []; S.undoRoute(app.world); syncTouchDrawCursor(); syncPracticeRouteStep(); updateUi(); }
+  function clear() { releasePointer(); releaseTouchPad(); app.routeFx.lockFlashes = []; S.clearRoute(app.world); resetTouchDrawCursor(); syncPracticeRouteStep(); updateUi(); }
+  function cancel() { releaseTouchPad(); S.cancelStop(app.world); handleEvents(); }
   function showRuleIntro() { S.acknowledgeRulePreview(app.world); handleEvents(); }
   function startOneStop() { S.startPendingWave(app.world); handleEvents(); }
   function retryWave(multiplier = C.waves.timeLimitAssist.standard) {
-    releasePointer(); S.retryWave(app.world, multiplier); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
+    releasePointer(); releaseTouchPad(); S.retryWave(app.world, multiplier); app.touchDraw.cursor = null; app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.tutorial.active = false; app.damageFx.remaining = 0;
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
     app.routeFx.lockFlashes = []; sound.stopTimeClock(); sound.stopAll();
@@ -617,5 +654,6 @@
   touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
     particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, tutorial: app.tutorial, practice: app.practice,
-    touchPad: { active: touchPad.id !== null, sensitivity: touchSensitivity }, damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));
+    touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
+    damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));
 })(globalThis);

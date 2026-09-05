@@ -85,6 +85,17 @@
       }
       g.restore();
     }
+    touchDrawCursor(app) {
+      if (!app.touchControls || app.world.phase !== 'stopped' || !app.touchDraw?.cursor) return;
+      const g = this.ctx, point = app.touchDraw.cursor, active = !!app.routeFx?.drawing;
+      const pulse = app.reducedMotion ? 0 : (Math.sin(performance.now() * 0.008) + 1) * 0.5;
+      g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen';
+      g.shadowColor = '#79e4f2'; g.shadowBlur = active ? 12 : 7;
+      g.strokeStyle = active ? '#e6fdff' : '#a9f5fb'; g.lineWidth = active ? 1.8 : 1.35;
+      g.beginPath(); g.moveTo(-12, 0); g.lineTo(-4, 0); g.moveTo(4, 0); g.lineTo(12, 0); g.moveTo(0, -12); g.lineTo(0, -4); g.moveTo(0, 4); g.lineTo(0, 12); g.stroke();
+      this.circle(0, 0, 7 + pulse * 1.5, `rgba(190,249,255,${active ? 0.72 : 0.45})`, 'rgba(121,228,242,.08)', 1.2);
+      this.circle(0, 0, 1.7, null, '#efffff'); g.restore();
+    }
     practiceGuide(app) {
       if (!app.practice?.active || app.practice.step === 'running' || app.practice.step === 'complete') return;
       const g = this.ctx, w = app.world, touch = !!app.touchControls, time = performance.now() * 0.001;
@@ -110,7 +121,12 @@
         const a = points[i - 1], b = points[i], angle = Math.atan2(b.y - a.y, b.x - a.x), x = a.x + (b.x - a.x) * .72, y = a.y + (b.y - a.y) * .72;
         g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = 'rgba(216,251,255,.72)'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.restore();
       }
-      g.restore(); this.inputCue(point.x + 13, point.y + 17, touch, true);
+      g.restore();
+      if (touch) {
+        g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen'; g.shadowColor = '#79e4f2'; g.shadowBlur = 8;
+        g.strokeStyle = '#c8fbff'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-10, 0); g.lineTo(10, 0); g.moveTo(0, -10); g.lineTo(0, 10); g.stroke();
+        this.circle(0, 0, 6, 'rgba(200,251,255,.7)', 'rgba(121,228,242,.08)', 1.1); g.restore();
+      } else this.inputCue(point.x + 13, point.y + 17, false, true);
     }
     timeShock(app) {
       const g = this.ctx, fx = app.timeFx, settings = C.feedback.timeStopVisual;
@@ -192,6 +208,7 @@
       if (stopBlend > 0) { g.shadowColor = '#79e4f2'; g.shadowBlur = 6 + stopBlend * 12; }
       g.fillStyle = w.failed ? '#af4a60' : mix('#50b9ff', stopVisual.playerFill, stopBlend); g.strokeStyle = mix('#d8faff', stopVisual.playerStroke, stopBlend); g.lineWidth = 1.8 + stopBlend * 0.7;
       const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2); g.restore();
+      this.touchDrawCursor(app);
       this.practiceGuide(app);
       this.timeShock(app);
       if (damage > 0) { g.fillStyle = `rgba(255,53,70,${0.16 * damage})`; g.fillRect(0, 0, C.world.width, C.world.height); }

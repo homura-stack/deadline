@@ -134,14 +134,16 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 .briefing-demo .demo-enemy text { fill: #eaffff; font-weight: 700; }
 .briefing-demo .demo-input { fill: #0a1724; stroke: #b8f7ff; stroke-width: 1.5; filter: drop-shadow(0 0 4px #79e4f24d); }
 .briefing-demo .demo-input path { fill: none; stroke: #b8f7ff; stroke-linecap: round; stroke-linejoin: round; }
-.briefing-demo .demo-mouse-button { fill: #79e4f252; stroke: none; }
+.briefing-demo .demo-input .demo-mouse-button { fill: #173142; stroke: none; }
 .briefing-demo .demo-finger { fill: #0a1724; stroke-width: 1.7; }
 .briefing-demo .demo-touch-ring { fill: none; stroke: #79e4f2; opacity: .2; }
 .briefing-demo .demo-keycap, .briefing-demo .demo-touch-button { fill: #101f30; stroke: #79e4f2; stroke-width: 1.5; }
 .briefing-demo .demo-input text { fill: #d9fbff; stroke: none; text-anchor: middle; font: 700 10px Consolas, monospace; letter-spacing: .04em; }
 .briefing-demo .demo-input-touch { display: none; }
+.briefing-demo .demo-touch-only { display: none; }
 .touch-controls .briefing-demo .demo-input-pc { display: none; }
 .touch-controls .briefing-demo .demo-input-touch { display: block; }
+.touch-controls .briefing-demo .demo-touch-only { display: block; }
 .demo-player-evade, .demo-input-evade { animation: demo-evade-player 3s cubic-bezier(.3,.75,.3,1) infinite; }
 .demo-input-evade { animation-name: demo-evade-input; }
 .demo-bullet-evade { animation: demo-evade-bullet 3s linear infinite; }
@@ -152,21 +154,37 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 .demo-freeze .demo-grid { animation: demo-freeze-grid 3.2s steps(1,end) infinite; }
 .demo-stop-wash { fill: #020911; opacity: 0; animation: demo-freeze-wash 3.2s steps(1,end) infinite; }
 .demo-freeze-key, .demo-freeze-button { --demo-input-x:126px;--demo-input-y:204px;transform:translate(var(--demo-input-x),var(--demo-input-y));animation:demo-key-press 3.2s ease-in-out infinite; }
-.demo-execute-key, .demo-execute-button { --demo-input-x:92px;--demo-input-y:207px;transform:translate(var(--demo-input-x),var(--demo-input-y));animation:demo-key-press 2.8s ease-in-out infinite; }
+.demo-execute-key, .demo-execute-button { --demo-input-x:92px;--demo-input-y:207px;transform:translate(var(--demo-input-x),var(--demo-input-y));animation:demo-execute-key-press 3.2s ease-in-out infinite; }
 .demo-freeze-frame, .demo-stop-label { opacity: 0; fill: none; stroke: var(--cyan); stroke-width: 1; animation: demo-freeze-state 3.2s steps(1,end) infinite; }
 .demo-stop-label { fill: #d9fbff; stroke: none; }
 .demo-normal-label { animation: demo-normal-state 3.2s steps(1,end) infinite; }
 .demo-draw .demo-route-drawing { stroke-dasharray: 1; stroke-dashoffset: 1; animation: demo-route-draw 3.2s ease-in-out infinite; }
 .demo-input-draw { offset-path: path("M70 175C120 155 170 112 235 92S330 128 395 155L445 130"); animation: demo-input-draw 3.2s ease-in-out infinite; }
+.demo-draw .demo-mouse-button { animation:demo-mouse-draw-button 3.2s steps(1,end) infinite; }
+.demo-click-origin { fill:none;stroke:#79e4f2;stroke-width:1.8;opacity:0;transform-box:fill-box;transform-origin:center;animation:demo-click-origin 3.2s ease-out infinite; }
+.demo-touch-draw-cursor { offset-path:path("M70 175C120 155 170 112 235 92S330 128 395 155L445 130");fill:#d9fbff;stroke:#79e4f2;stroke-width:1.4;filter:drop-shadow(0 0 6px #79e4f2);animation:demo-touch-draw-cursor 3.2s ease-in-out infinite; }
+.demo-touch-draw-cursor path { fill:none; }
+.demo-mini-pad { fill:#0b1a29;stroke:#4b7385;stroke-width:1; }
+.demo-pad-cross { fill:none;stroke:#35596c;stroke-width:1; }
+.demo-pad-finger { animation:demo-pad-draw-finger 3.2s ease-in-out infinite; }
 .demo-draw .demo-target-one { animation: demo-target-one 3.2s steps(1,end) infinite; }
 .demo-draw .demo-target-two { animation: demo-target-two 3.2s steps(1,end) infinite; }
 .demo-route-complete { opacity: .45; }
-.demo-player-execute { offset-path: path("M70 175C120 155 170 112 235 92S330 128 395 155L445 130"); animation: demo-execute-player 2.8s cubic-bezier(.12,.7,.22,1) infinite; }
-.demo-kill-one { animation: demo-kill-one 2.8s steps(1,end) infinite; }
-.demo-kill-two { animation: demo-kill-two 2.8s steps(1,end) infinite; }
+.demo-execute-wash { fill:#020911;opacity:.56;animation:demo-execute-wash 3.2s linear infinite; }
+.demo-execute-frame { fill:none;stroke:#79e4f2;stroke-width:1;opacity:.82;animation:demo-execute-frame 3.2s linear infinite; }
+.demo-resume-ring { fill:none;stroke:#d9fbff;stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center;animation:demo-resume-ring 3.2s ease-out infinite; }
+.demo-execute .demo-grid { animation:demo-execute-grid 3.2s linear infinite; }
+.demo-execute .demo-enemy-body { animation:demo-execute-enemy 3.2s linear infinite; }
+.demo-execute .demo-enemy-core { animation:demo-execute-core 3.2s linear infinite; }
+.demo-execute .demo-bullet { fill:#c7c0b8;stroke:#8d8884;filter:drop-shadow(0 0 3px #b8aea4); }
+.demo-execute-bullet-one { animation:demo-execute-bullet-one 3.2s linear infinite; }
+.demo-execute-bullet-two { animation:demo-execute-bullet-two 3.2s linear infinite; }
+.demo-player-execute { offset-path: path("M70 175C120 155 170 112 235 92S330 128 395 155L445 130"); animation: demo-execute-player 3.2s cubic-bezier(.12,.7,.22,1) infinite; }
+.demo-kill-one { animation: demo-kill-one 3.2s steps(1,end) infinite; }
+.demo-kill-two { animation: demo-kill-two 3.2s steps(1,end) infinite; }
 .demo-impact { opacity: 0; fill: none; stroke: #e9feff; stroke-width: 2.5; filter: drop-shadow(0 0 7px #79e4f2); }
-.demo-impact-one { animation: demo-impact-one 2.8s ease-out infinite; }
-.demo-impact-two { animation: demo-impact-two 2.8s ease-out infinite; }
+.demo-impact-one { animation: demo-impact-one 3.2s ease-out infinite; }
+.demo-impact-two { animation: demo-impact-two 3.2s ease-out infinite; }
 .briefing-progress { display: flex; justify-content: center; gap: 7px; margin-bottom: 10px; }
 .briefing-progress i { width: 28px; height: 2px; background: #29475a; }
 .briefing-progress i.is-active { background: var(--cyan); box-shadow: 0 0 7px #79e4f266; }
@@ -258,9 +276,12 @@ button:disabled { opacity: .4; cursor: default; transform: none; }
 .move-pad-vector { position:absolute; left:var(--pad-start-x,50%); top:var(--pad-start-y,58%); width:var(--pad-length,0px); height:1px; background:var(--cyan); opacity:0; transform:rotate(var(--pad-angle,0rad)); transform-origin:left center; box-shadow:0 0 5px #79e4f2; }
 .move-pad.is-active .move-pad-origin,.move-pad.is-active .move-pad-cursor,.move-pad.is-active .move-pad-vector { opacity:.9; }
 .move-pad[aria-disabled="true"] { filter:saturate(.45); opacity:.68; }
+.touch-draw-pad .move-pad { border-color:#57909f;background:#081827;box-shadow:inset 0 0 18px #0d82952e; }
+.touch-draw-pad .move-pad header span,.touch-draw-pad .move-pad header strong { color:#b7f8ff; }
+.touch-draw-pad .move-pad-surface::before,.touch-draw-pad .move-pad-surface::after { background:#57909f; }
 .practice-pad-finger,.practice-button-finger { display:none; pointer-events:none; fill:#081522; stroke:#c8fbff; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 4px #79e4f27a); }
 .practice-pad-finger circle,.practice-button-finger circle { fill:none; stroke:#79e4f2; opacity:.3; }
-.practice-move.touch-controls .practice-pad-finger { display:block; position:absolute; z-index:3; left:42%; top:46%; width:30px; height:38px; animation:practice-pad-swipe 1.25s ease-in-out infinite; }
+.practice-move.touch-controls .practice-pad-finger,.practice-draw.touch-controls .practice-pad-finger { display:block; position:absolute; z-index:3; left:42%; top:46%; width:30px; height:38px; animation:practice-pad-swipe 1.25s ease-in-out infinite; }
 .controls button {
   display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 7px 14px;
   border: 1px solid #31485c; background: #111f2f; color: #7995a8; font: 600 11px Consolas, monospace; letter-spacing: .04em;
@@ -359,30 +380,48 @@ canvas { display: block; width: 100%; height: clamp(280px, calc(100svh - 272px),
   100% { stroke-dashoffset:-1 }
 }
 @keyframes demo-input-draw {
-  0%,9% { offset-distance:0%; opacity:.45 }
-  13% { offset-distance:0%; opacity:1 }
-  72%,88% { offset-distance:100%; opacity:1 }
-  100% { offset-distance:100%; opacity:0 }
+  0%,9% { offset-distance:0%; opacity:.62;transform:translateY(0) }
+  12% { offset-distance:0%; opacity:1;transform:translateY(2px) }
+  18%,72% { opacity:1;transform:translateY(2px) }
+  72% { offset-distance:100% }
+  80% { offset-distance:100%;opacity:1;transform:translateY(0) }
+  100% { offset-distance:100%;opacity:0;transform:translateY(0) }
 }
+@keyframes demo-mouse-draw-button { 0%,9%,80%,100% { fill:#173142 } 10%,79% { fill:#79e4f2 } }
+@keyframes demo-click-origin { 0%,9%,100% { opacity:0;transform:scale(.65) } 11% { opacity:.9;transform:scale(.65) } 20% { opacity:0;transform:scale(1.65) } }
+@keyframes demo-touch-draw-cursor { 0%,10% { offset-distance:0%;opacity:.6 } 16% { offset-distance:0%;opacity:1 } 72%,86% { offset-distance:100%;opacity:1 } 100% { offset-distance:100%;opacity:.25 } }
+@keyframes demo-pad-draw-finger { 0%,9%,88%,100% { transform:translate(-18px,7px);opacity:.55 } 13% { transform:translate(-18px,9px);opacity:1 } 39% { transform:translate(17px,-8px);opacity:1 } 65% { transform:translate(-5px,-5px);opacity:1 } 78% { transform:translate(20px,5px);opacity:1 } 84% { transform:translate(20px,5px);opacity:.5 } }
 @keyframes demo-target-one { 0%,36% { opacity:.42 } 37%,88% { opacity:1;filter:drop-shadow(0 0 8px #79e4f2) } 89%,100% { opacity:.42 } }
 @keyframes demo-target-two { 0%,63% { opacity:.42 } 64%,88% { opacity:1;filter:drop-shadow(0 0 8px #79e4f2) } 89%,100% { opacity:.42 } }
-@keyframes demo-execute-player {
-  0%,20% { offset-distance:0%; opacity:1 }
-  48% { offset-distance:44%; opacity:1 }
-  76% { offset-distance:84%; opacity:1 }
-  88%,100% { offset-distance:100%; opacity:1 }
+@keyframes demo-execute-key-press {
+  0%,12%,20%,100% { opacity:1;transform:translate(var(--demo-input-x),var(--demo-input-y)) scale(1);filter:drop-shadow(0 0 4px #79e4f24d) }
+  14%,18% { opacity:.85;transform:translate(var(--demo-input-x),calc(var(--demo-input-y) + 3px)) scale(.92);filter:drop-shadow(0 0 10px #79e4f2) }
 }
-@keyframes demo-kill-one { 0%,47% { opacity:1 } 48%,100% { opacity:0 } }
-@keyframes demo-kill-two { 0%,75% { opacity:1 } 76%,100% { opacity:0 } }
+@keyframes demo-execute-wash { 0%,19% { opacity:.56 } 25%,100% { opacity:0 } }
+@keyframes demo-execute-frame { 0%,19% { opacity:.82 } 25%,100% { opacity:0 } }
+@keyframes demo-execute-grid { 0%,19% { opacity:.12 } 25%,100% { opacity:.34 } }
+@keyframes demo-resume-ring { 0%,19%,100% { opacity:0;transform:scale(.65) } 20% { opacity:.95;transform:scale(.65) } 29% { opacity:0;transform:scale(4.2) } }
+@keyframes demo-execute-enemy { 0%,19% { fill:var(--demo-enemy-stop);stroke:var(--demo-enemy-stop-stroke) } 25%,100% { fill:var(--demo-enemy);stroke:var(--demo-enemy-stroke) } }
+@keyframes demo-execute-core { 0%,19% { fill:#777075 } 25%,100% { fill:#ff9c9c } }
+@keyframes demo-execute-bullet-one { 0%,19% { transform:translate(308px,66px);fill:#c7c0b8;stroke:#8d8884 } 25% { transform:translate(308px,66px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke) } 100% { transform:translate(102px,190px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke) } }
+@keyframes demo-execute-bullet-two { 0%,19% { transform:translate(355px,190px);fill:#c7c0b8;stroke:#8d8884 } 25% { transform:translate(355px,190px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke) } 100% { transform:translate(465px,72px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke) } }
+@keyframes demo-execute-player {
+  0%,25% { offset-distance:0%; opacity:1 }
+  53% { offset-distance:44%; opacity:1 }
+  74% { offset-distance:84%; opacity:1 }
+  86%,100% { offset-distance:100%; opacity:1 }
+}
+@keyframes demo-kill-one { 0%,52% { opacity:1 } 53%,100% { opacity:0 } }
+@keyframes demo-kill-two { 0%,73% { opacity:1 } 74%,100% { opacity:0 } }
 @keyframes demo-impact-one {
-  0%,47%,58%,100% { opacity:0;stroke-width:1 }
-  48% { opacity:1;stroke-width:4 }
-  57% { opacity:0;stroke-width:1 }
+  0%,52%,63%,100% { opacity:0;stroke-width:1 }
+  53% { opacity:1;stroke-width:4 }
+  62% { opacity:0;stroke-width:1 }
 }
 @keyframes demo-impact-two {
-  0%,75%,86%,100% { opacity:0;stroke-width:1 }
-  76% { opacity:1;stroke-width:4 }
-  85% { opacity:0;stroke-width:1 }
+  0%,73%,84%,100% { opacity:0;stroke-width:1 }
+  74% { opacity:1;stroke-width:4 }
+  83% { opacity:0;stroke-width:1 }
 }
 @keyframes title-cut-out {
   0% { opacity: 0; transform: translateX(-70vw) rotate(18deg); }
@@ -538,12 +577,20 @@ details label { display: block; margin-top: 12px; } details output { display: bl
   .demo-freeze .demo-player-body { fill:var(--demo-player-stop);stroke:#fff; }
   .demo-bullet-freeze { transform:translate(252px,130px);fill:#c7c0b8;stroke:#8d8884; }
   .demo-draw .demo-route-drawing { stroke-dashoffset:0; }
-  .demo-input-draw { offset-distance:100%; }
+  .demo-input-draw,.demo-touch-draw-cursor { offset-distance:100%;transform:none; }
+  .demo-draw .demo-mouse-button { fill:#173142; }
+  .demo-click-origin { opacity:0; }
   .demo-draw .demo-target-one,.demo-draw .demo-target-two { opacity:1;filter:drop-shadow(0 0 8px #79e4f2); }
   .demo-freeze-frame,.demo-stop-label { opacity:.8; }
   .demo-normal-label { opacity:0; }
   .demo-player-execute { offset-distance:100%; }
   .demo-execute .demo-enemy { opacity:.22; }
   .demo-execute .demo-impact { opacity:.72;stroke-width:2.5; }
+  .demo-execute-wash,.demo-execute-frame,.demo-resume-ring { opacity:0; }
+  .demo-execute .demo-grid { opacity:.34; }
+  .demo-execute .demo-enemy-body { fill:var(--demo-enemy);stroke:var(--demo-enemy-stroke); }
+  .demo-execute .demo-enemy-core { fill:#ff9c9c; }
+  .demo-execute-bullet-one { transform:translate(102px,190px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke); }
+  .demo-execute-bullet-two { transform:translate(465px,72px);fill:var(--demo-bullet);stroke:var(--demo-bullet-stroke); }
   .practice-pad-finger,.practice-button-finger,.practice-freeze:not(.touch-controls) .tutorial-prompt kbd,.practice-execute:not(.touch-controls) .tutorial-prompt kbd { animation:none; }
 }

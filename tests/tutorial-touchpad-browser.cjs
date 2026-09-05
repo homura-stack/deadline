@@ -2,6 +2,7 @@
 'use strict';
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
+const C = require('../config.js');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
 const artifacts = path.join(__dirname, 'artifacts'); fs.mkdirSync(artifacts, { recursive: true });
 
@@ -25,6 +26,16 @@ async function setDemoTime(page, milliseconds) {
     for (const animation of demo.getAnimations({ subtree: true })) { animation.pause(); animation.currentTime = time; }
   }, milliseconds);
 }
+async function padTo(cdp,page,target,tolerance=8) {
+  for (let i=0;i<48;i++) {
+    const snapshot=await page.evaluate(()=>Deadline.inspect()),current=snapshot.world.phase==='stopped'?snapshot.touchDraw.cursor:snapshot.world.player;
+    assert.ok(current,'touch draw cursor missing');const dx=target.x-current.x,dy=target.y-current.y,distance=Math.hypot(dx,dy);if(distance<=tolerance)return;
+    const arena=await page.locator('#arena').boundingBox(),pad=await page.locator('#move-pad').boundingBox(),renderScale=Math.min(arena.width/960,arena.height/600);
+    const drawScale=snapshot.world.phase==='stopped'?C.controls.touchDrawSensitivityScale:1,raw=Math.min(46,Math.max(7,distance*renderScale/(snapshot.touchPad.sensitivity/100*drawScale)));
+    const center={x:pad.width/2,y:pad.height/2};await drag(cdp,pad,[center,{x:center.x+dx/distance*raw,y:center.y+dy/distance*raw}],7);
+  }
+  assert.fail(`MOVE PAD did not reach ${JSON.stringify(target)}`);
+}
 async function within(inner, outer, label) {
   assert.ok(inner.x >= outer.x - 1 && inner.y >= outer.y - 1 && inner.x + inner.width <= outer.x + outer.width + 1 && inner.y + inner.height <= outer.y + outer.height + 1, `${label} clipped`);
 }
@@ -46,6 +57,7 @@ async function within(inner, outer, label) {
       assert.equal(await page.locator('.briefing-page:visible .demo-player-body').count(), 1);
       assert.equal(await page.locator('.briefing-page:visible .demo-player > path').count(), 0, 'tutorial player must use the same diamond geometry as the game');
       assert.equal(await page.locator('.briefing-page:visible .demo-input-touch').isVisible(), true);
+      if (index === 2) { await page.waitForTimeout(650); await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-draw-pad.png'), fullPage: true }); }
       if (index < headings.length - 1) {
         await page.locator('#briefing-begin').tap();
         if (index === 0) { await page.locator('#briefing-back').tap(); assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(), headings[0]); await page.locator('#briefing-begin').tap(); }
@@ -75,14 +87,23 @@ async function within(inner, outer, label) {
     await page.locator('#time-stop').tap();
     await page.waitForFunction(() => Deadline.inspect().practice.step === 'draw', {}, { timeout: 3000 });
     assert.equal(await page.evaluate(() => Deadline.inspect().practice.drawStarted), false);
-    assert.equal(await page.locator('#move-pad').getAttribute('aria-disabled'), 'true');
+    assert.equal(await page.locator('#move-pad').getAttribute('aria-disabled'), 'false');
+    assert.match(await page.locator('#move-pad-label').innerText(), /DRAW ROUTE/);
+    assert.equal(await page.locator('.practice-pad-finger').isVisible(), true);
+    await page.screenshot({ path: path.join(artifacts, 'practice-mobile-draw-guide.png'), fullPage: true });
     const routeBefore = await page.evaluate(() => Deadline.inspect().world.route.points.length);
-    await drag(cdp, pad, [center, { x: center.x - 50, y: center.y }]);
+    const practice = await page.evaluate(() => Deadline.inspect().world), canvas = await page.locator('#arena').boundingBox();
+    const directStart=await worldPoint(page,practice.player),directEnd=await worldPoint(page,practice.enemies[0]);
+    await drag(cdp,canvas,[{x:directStart.x-canvas.x,y:directStart.y-canvas.y},{x:directEnd.x-canvas.x,y:directEnd.y-canvas.y}]);
     assert.equal(await page.evaluate(() => Deadline.inspect().world.route.points.length), routeBefore);
-    const practice = await page.evaluate(() => Deadline.inspect().world), routePoints = [practice.player, ...practice.enemies.map(enemy => ({ x: enemy.x, y: enemy.y })), { x: 850, y: 470 }];
-    const canvas = await page.locator('#arena').boundingBox(), screenPoints = [];
-    for (const point of routePoints) { const screen = await worldPoint(page, point); screenPoints.push({ x: screen.x - canvas.x, y: screen.y - canvas.y }); }
-    await drag(cdp, canvas, screenPoints); await page.waitForFunction(() => Deadline.inspect().practice.step === 'execute');
+    await drag(cdp,pad,[center,{x:center.x+3,y:center.y+1}]);assert.equal(await page.evaluate(()=>Deadline.inspect().world.route.points.length),routeBefore,'touch placement under threshold must not draw');
+    await padTo(cdp,page,practice.enemies[0]);let held=await page.evaluate(()=>Deadline.inspect());assert.ok(held.world.route.points.length>1);assert.ok(Math.hypot(held.touchDraw.cursor.x-practice.enemies[0].x,held.touchDraw.cursor.y-practice.enemies[0].y)<10);
+    await page.locator('#clear-route').tap();let cleared=await page.evaluate(()=>Deadline.inspect());assert.equal(cleared.world.route.points.length,1);assert.deepEqual(cleared.touchDraw.cursor,cleared.world.player);
+    await padTo(cdp,page,practice.enemies[0]);const released=await page.evaluate(()=>Deadline.inspect());const releasedCursor={...released.touchDraw.cursor},releasedPoints=released.world.route.points.length;
+    assert.equal(released.touchPad.active,false);assert.ok(releasedPoints>1);
+    await page.screenshot({ path: path.join(artifacts, 'practice-mobile-draw-pad.png'), fullPage: true });
+    await padTo(cdp,page,practice.enemies[1]);await padTo(cdp,page,{x:850,y:470});await page.waitForFunction(() => Deadline.inspect().practice.step === 'execute');
+    const continued=await page.evaluate(()=>Deadline.inspect());assert.ok(continued.world.route.points.length>releasedPoints);assert.ok(Math.hypot(continued.world.route.points[releasedPoints-1].x-releasedCursor.x,continued.world.route.points[releasedPoints-1].y-releasedCursor.y)<.01);
     assert.equal(await page.evaluate(() => Deadline.inspect().practice.drawStarted), true);
     assert.equal(await page.evaluate(() => Deadline.inspect().world.route.locks.length), 2);
     assert.equal(await page.locator('#time-stop .practice-button-finger').isVisible(), true);
@@ -116,21 +137,33 @@ async function within(inner, outer, label) {
     await setDemoTime(visual, 1500);
     const evadePlayer = await visual.locator('.briefing-page:visible .demo-player').boundingBox(), evadeBullet = await visual.locator('.briefing-page:visible .demo-bullet').boundingBox();
     assert.ok(Math.abs((evadePlayer.y + evadePlayer.height / 2) - (evadeBullet.y + evadeBullet.height / 2)) > 45, 'STEP 1 player must visibly clear the bullet lane');
+    assert.equal(await visual.locator('.briefing-page:visible .demo-mouse-button').evaluate(el=>getComputedStyle(el).fill),'rgb(23, 49, 66)','STEP 1 mouse button must look released');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-01-evade.png'), fullPage: true });
     await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1850);
     const freezeColors = await visual.evaluate(() => { const page = document.querySelector('[data-briefing-page="1"]'); return { body: getComputedStyle(page.querySelector('.demo-enemy-body')).fill, barrel: getComputedStyle(page.querySelector('.demo-enemy-part')).fill, bullet: getComputedStyle(page.querySelector('.demo-bullet')).fill, bulletTransform: getComputedStyle(page.querySelector('.demo-bullet')).transform }; });
     assert.equal(freezeColors.body, 'rgb(41, 40, 46)'); assert.equal(freezeColors.barrel, freezeColors.body); assert.equal(freezeColors.bullet, 'rgb(199, 192, 184)');
     await setDemoTime(visual, 2850); assert.equal(await visual.locator('.briefing-page:visible .demo-bullet').evaluate(el => getComputedStyle(el).transform), freezeColors.bulletTransform, 'STEP 2 bullet must remain frozen');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-02-freeze.png'), fullPage: true });
-    await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1750);
+    await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 420);
+    assert.equal(await visual.locator('.briefing-page:visible .demo-mouse-button').evaluate(el=>getComputedStyle(el).fill),'rgb(121, 228, 242)','STEP 3 mouse button must visibly press');
+    assert.ok(Number(await visual.locator('.briefing-page:visible .demo-click-origin').evaluate(el=>getComputedStyle(el).opacity))>0,'STEP 3 click ring must appear');
+    await setDemoTime(visual, 1750);
     assert.equal(await visual.locator('.briefing-page:visible .demo-target-one').evaluate(el => getComputedStyle(el).opacity), '1');
     assert.notEqual(await visual.locator('.briefing-page:visible .demo-target-two').evaluate(el => getComputedStyle(el).opacity), '1');
     await setDemoTime(visual, 2450); assert.equal(await visual.locator('.briefing-page:visible .demo-target-two').evaluate(el => getComputedStyle(el).opacity), '1');
+    await setDemoTime(visual,2700);assert.equal(await visual.locator('.briefing-page:visible .demo-mouse-button').evaluate(el=>getComputedStyle(el).fill),'rgb(23, 49, 66)','STEP 3 mouse button must visibly release');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-03-draw.png'), fullPage: true });
-    await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1450);
+    await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 500);
+    let executeState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,key:getComputedStyle(page.querySelector('.demo-execute-key')).transform,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:getComputedStyle(page.querySelector('.demo-enemy-body')).fill};});
+    assert.equal(executeState.player,'0%');assert.equal(executeState.enemy,'rgb(41, 40, 46)');
+    await setDemoTime(visual,700);let releaseState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,ring:getComputedStyle(page.querySelector('.demo-resume-ring')).opacity,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform};});
+    assert.equal(releaseState.player,'0%');assert.ok(Number(releaseState.ring)>0);assert.equal(releaseState.bullet,executeState.bullet,'bullet must remain stopped through SPACE release');
+    await setDemoTime(visual,950);const resumedState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:parseFloat(getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance),bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:getComputedStyle(page.querySelector('.demo-enemy-body')).fill};});
+    assert.ok(resumedState.player>0);assert.notEqual(resumedState.bullet,executeState.bullet);assert.equal(resumedState.enemy,'rgb(75, 43, 58)');
+    await setDemoTime(visual, 1700);
     assert.equal(await visual.locator('.briefing-page:visible .demo-kill-one').evaluate(el => getComputedStyle(el).opacity), '0');
     assert.equal(await visual.locator('.briefing-page:visible .demo-kill-two').evaluate(el => getComputedStyle(el).opacity), '1');
-    await setDemoTime(visual, 2250); assert.equal(await visual.locator('.briefing-page:visible .demo-kill-two').evaluate(el => getComputedStyle(el).opacity), '0');
+    await setDemoTime(visual, 2450); assert.equal(await visual.locator('.briefing-page:visible .demo-kill-two').evaluate(el => getComputedStyle(el).opacity), '0');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-04-execute.png'), fullPage: true }); await visual.close();
 
     const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });

@@ -1,4 +1,26 @@
-# 検証記録 — チュートリアル視覚デモ同期・言語非依存確認
+# 検証記録 — 入力表現明確化・MOVE PAD描画統一
+
+実施日: 2026-09-05。
+
+## 結果
+
+- STEP 1のマウス左ボタンを通常色の非押下状態にし、STEP 3は押下時のシアン化、2px沈み、開始リング、押下維持、終端でのreleaseを3.2秒の同期デモにした。
+- STEP 4は停止状態、SPACE押下、release、復帰リングと停止トーン解除、約0.2秒後の自機移動、通過撃破の順へ変更した。停止していた2発の弾も復帰後に通常色へ戻って移動する。
+- スマートフォンは通常時とTIME STOP中の両方でMOVE PADを使用する。STOP時に自機位置へDRAWカーソルを置き、PAD差分へ既存TOUCH SENSITIVITYと描画倍率0.8を適用して、既存`addRoutePoint()`へ入力する。
+- 描画開始閾値は5px。指を離してもカーソルとルートを保持し、再接触で継続する。UNDOは残った末尾点へカーソルを同期し、CLEARはルートとカーソルを自機位置へ戻し、CANCELはカーソルを破棄する。
+- モバイルのCanvas直接タッチは通常時・停止中とも入力に使わず、MOVE PADと同時反応しない。STEP 3とPRACTICEのタッチ誘導も、PAD上の指とフィールド上のシアンカーソルへ変更した。
+- Nodeロジック57件とChrome 7スイートを通過した。Chromeでは文字非表示のSTEP 1〜4、クリック／hold／release、SPACE中の静止、復帰後の敵色・弾移動、PRACTICEのPAD描画、TARGET、再接触、CLEAR、10 Wave、PCマウス回帰、7画面幅を確認した。70フレームのrAF標本は60.2fps、180弾＋4倍CPU slowdownも通過し、pageerror／console errorは0件。
+
+## 確認の境界
+
+- Android / iOS物理端末は未確認。スマートフォン結果はWindows Chromeのタッチエミュレーションであり、実機の指操作・OSジェスチャー・端末性能は別途確認が必要。
+- STEP 4の再開表現はBRIEFINGの因果説明だけを変更した。本編の敵AI、弾、当たり判定、EXECUTE中の既存停止ロジックは変更していない。
+
+変更: `config.js`, `game.js`, `index.html`, `renderer.js`, `styles.css`, `tests/browser.cjs`, `tests/tutorial-touchpad-browser.cjs`, `README.md`, `VERIFICATION.md`。ファイル削除なし。
+
+---
+
+# 前回の検証記録 — チュートリアル視覚デモ同期・言語非依存確認
 
 実施日: 2026-09-05。
 

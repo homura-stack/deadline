@@ -16,16 +16,16 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 | --- | --- | --- |
 | 自機移動 | ゲームフィールド内でマウス移動 | 画面下のMOVE PADをドラッグ |
 | TIME STOP | ゲージ満タン時にSPACE | TIME STOPボタン |
-| ルート描画 | ドラッグ | ドラッグ |
+| ルート描画 | ゲームフィールド内でドラッグ | TIME STOP中にMOVE PADをドラッグ |
 | UNDO | Z | UNDOボタン |
 | CLEAR | X | CLEARボタン |
 | CANCEL | C | CANCELボタン |
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。本編と同じ自機・敵・弾・ルートに、マウス／指／キーの入力図を重ね、入力と結果を短い同期デモで示します。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
+タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。本編と同じ自機・敵・弾・ルートに、マウス／MOVE PAD／キーの入力図を重ね、入力と結果を短い同期デモで示します。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
 
-スマートフォンのMOVE PADは指の移動量で自機を相対移動します。小さなドラッグは精密に、大きなドラッグは素早く反応し、TIME STOP中はLOCKEDになります。ゲームフィールド上のタッチは停止中のDRAW専用です。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）で感度を保存できます。
+スマートフォンのMOVE PADは、通常時には自機、TIME STOP中には自機位置から始まるシアンのDRAWカーソルを相対移動します。指を離してもルートとカーソル位置は維持され、再接触すると続きから描画できます。小さなドラッグは精密に、大きなドラッグは素早く反応し、DRAW時は通常移動の0.8倍の感度です。ゲームフィールドへの直接タッチでは移動・描画しません。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）は両方へ適用・保存されます。
 
 ## ゲームルール
 
