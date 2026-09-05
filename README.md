@@ -61,18 +61,21 @@ python -m http.server 4186 --bind 127.0.0.1
 
 ゲーム本体は外部JavaScriptライブラリ、ゲームフレームワーク、CDN、外部API、外部フォントを使用していません。GitHub Pagesへそのまま配置できる相対パスの静的構成です。
 
-## ファイル構成
+## Architecture
 
-- `index.html` — 画面構造とHUD
-- `styles.css` — レイアウト、レスポンシブ表示、画面演出
-- `config.js` — Wave、弾幕、操作感、音響などの調整値
-- `simulation.js` — ゲーム状態、敵攻撃、衝突、Wave進行
-- `renderer.js` — Canvas描画
-- `game.js` — 入力、UI、ゲームループ
-- `audio.js` — Web Audio APIによる合成効果音
-- `assets/logo-deadline.png` — 正式DEAD/LINEロゴ
-- `tests/` — Node / Chrome検証スクリプト
-- `VERIFICATION.md` — 詳細な検証記録と既知の制約
+| パス | 責務 |
+| --- | --- |
+| `index.html` | タイトル、チュートリアル、ゲームHUDの静的な画面構造 |
+| `styles.css` | レスポンシブ配置、状態別UI、短い画面演出 |
+| `config.js` | Wave、弾幕、入力、描画、音響の調整値とWave定義 |
+| `simulation.js` | DOMに依存しないゲーム状態、TIME STOP、ルート・TARGET判定、EXECUTE、敵弾、衝突、Wave進行 |
+| `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
+| `renderer.js` | シミュレーション状態を変更しないCanvas描画と視覚効果 |
+| `audio.js` | Web Audio APIによる合成SE、音量設定、AudioNodeの寿命管理 |
+| `assets/` | 正式ロゴなど、リポジトリ内で配信する静的素材 |
+| `tests/` | Nodeロジックテストと実Chromeによる操作・描画・負荷検証 |
+
+入力は`game.js`でゲーム座標へ変換され、`simulation.js`だけがゲーム状態を更新します。シミュレーションが発行した意味単位のイベントを`game.js`がUI・音・短命な演出へ渡し、`renderer.js`はその状態を読み取って描画します。この境界により、ゲームルールをブラウザAPIなしでテストできます。
 
 ## 素材・クレジット
 
@@ -83,8 +86,23 @@ python -m http.server 4186 --bind 127.0.0.1
 
 本リポジトリにはライセンスファイルを含めていません。
 
-## 検証
+## Testing
 
-Nodeロジックテスト、PC Chrome、スマートフォン相当のタッチ操作、1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390のレスポンシブ表示、180弾負荷を確認しています。詳細な結果と実行コマンドは[VERIFICATION.md](VERIFICATION.md)を参照してください。
+ロジックテストはブラウザAPIから独立した`simulation.js`を対象にしています。
+
+- `simulation.test.cjs` — TIME STOP、ルート、TARGET、EXECUTE、衝突の基本契約
+- `loop.test.cjs` — ゲージ、キャンセル、UNDO / CLEAR、リトライ、特殊射撃の状態遷移
+- `barrage.test.cjs` — 射撃パターン、弾数上限、寿命、画面外破棄
+- `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
+
+`*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
+
+```sh
+node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs
+node tests/browser.cjs
+node tests/tutorial-touchpad-browser.cjs
+```
+
+確認済みviewportは1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。全検証の対象、コマンド、結果、物理端末で残る確認事項は[VERIFICATION.md](VERIFICATION.md)に記録しています。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

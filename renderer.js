@@ -1,6 +1,18 @@
 (function (root) {
   'use strict';
   const { config: C, sim: S } = root.Deadline;
+  /** @typedef {{x: number, y: number}} Point */
+  /**
+   * Minimal renderer-facing shape. The renderer reads this state but never advances gameplay.
+   * @typedef {Object} RenderAppState
+   * @property {Object} world
+   * @property {Object} timeFx
+   * @property {Object} routeFx
+   * @property {Object} touchDraw
+   * @property {Object} combatFx
+   * @property {boolean} touchControls
+   * @property {boolean} reducedMotion
+   */
   const cyan = '#79e4f2', red = '#ff6971';
   const rgb = hex => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
   const rgba = (hex, alpha) => { const color = rgb(hex); return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`; };
@@ -9,6 +21,7 @@
     return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
   };
   class Renderer {
+    /** @param {HTMLCanvasElement} canvas */
     constructor(canvas) { this.canvas = canvas; this.ctx = canvas.getContext('2d', { alpha: false }); this.resize(); }
     resize() {
       const r = this.canvas.getBoundingClientRect();
@@ -17,6 +30,10 @@
       this.scale = Math.min(r.width / C.world.width, r.height / C.world.height);
       this.offsetX = (r.width - C.world.width * this.scale) / 2; this.offsetY = (r.height - C.world.height * this.scale) / 2;
     }
+    /**
+     * @param {{clientX: number, clientY: number}} event
+     * @returns {Point}
+     */
     position(event) {
       const r = this.canvas.getBoundingClientRect();
       return { x: (event.clientX - r.left - this.offsetX) / this.scale, y: (event.clientY - r.top - this.offsetY) / this.scale };
@@ -85,6 +102,10 @@
       }
       g.restore();
     }
+    /**
+     * Draws the PAD-controlled cursor separately from the player, which must remain frozen during planning.
+     * @param {RenderAppState} app
+     */
     touchDrawCursor(app) {
       if (!app.touchControls || app.world.phase !== 'stopped' || !app.touchDraw?.cursor) return;
       const g = this.ctx, point = app.touchDraw.cursor, active = !!app.routeFx?.drawing;
@@ -128,6 +149,10 @@
         this.circle(0, 0, 6, 'rgba(200,251,255,.7)', 'rgba(121,228,242,.08)', 1.1); g.restore();
       } else this.inputCue(point.x + 13, point.y + 17, false, true);
     }
+    /**
+     * Draws presentation-only entry/exit feedback without altering STOP timing.
+     * @param {RenderAppState} app
+     */
     timeShock(app) {
       const g = this.ctx, fx = app.timeFx, settings = C.feedback.timeStopVisual;
       if (!fx) return;
@@ -147,6 +172,10 @@
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius + 5), 0, Math.PI * 2); g.stroke();
       g.restore();
     }
+    /**
+     * Renders one frame from a read-only state snapshot. STOP color interpolation lives here so physics stays exact.
+     * @param {RenderAppState} app
+     */
     draw(app) {
       const g = this.ctx, w = app.world, stopBlend = app.timeFx?.blend || 0, stopVisual = C.feedback.timeStopVisual;
       const enemyColors = { fill: mix('#4b2b3a', stopVisual.enemyFill, stopBlend), stroke: mix('#ff6971', stopVisual.enemyStroke, stopBlend),
@@ -220,11 +249,21 @@
       }
       g.restore();
     }
+    /**
+     * @param {Object} route
+     * @param {number} start
+     * @param {number} end
+     */
     routeSection(route, start, end) {
       const g = this.ctx; g.beginPath(); const from = S.pointAt(route, start); g.moveTo(from.x, from.y);
       for (const leg of route.legs) if (leg.end > start && leg.end < end) g.lineTo(leg.b.x, leg.b.y);
       const to = S.pointAt(route, end); g.lineTo(to.x, to.y);
     }
+    /**
+     * Draws planning danger, TARGET order and EXECUTE progress from one compiled route.
+     * @param {RenderAppState} app
+     * @param {number} [stopBlend=0]
+     */
     route(app, stopBlend = 0) {
       const g = this.ctx, w = app.world, route = w.route, executing = w.phase === 'executing';
       const stopVisual = C.feedback.timeStopVisual, visual = C.feedback.routeVisual;

@@ -2,6 +2,14 @@
 (function (root) {
   'use strict';
   const C = root.Deadline.config;
+  /** @typedef {{masterVolume: number, sfxVolume: number, muted: boolean}} AudioPreferences */
+  /**
+   * @typedef {Object} ActiveVoice
+   * @property {AudioScheduledSourceNode} source
+   * @property {AudioNode[]} nodes
+   * @property {string} group
+   * @property {boolean} ended
+   */
   class Sound {
     constructor() {
       const saved = this.loadPreferences();
@@ -10,6 +18,10 @@
       this.clockActive = false; this.nextClockAt = Infinity; this.clockStep = 0; this.activeVoices = new Set();
       this.metrics = { plays: Object.create(null), events: [], maxVoices: 0 };
     }
+    /**
+     * Lazily creates the Web Audio graph after a user gesture to satisfy Chrome autoplay policy.
+     * @returns {void}
+     */
     unlock() {
       if (!this.enabled || this.muted) return;
       try {
@@ -19,6 +31,7 @@
           this.sfxGain.connect(this.masterGain); this.masterGain.connect(this.context.destination); this.applyMix();
           const length = Math.ceil(this.context.sampleRate * 0.25);
           this.noiseBuffer = this.context.createBuffer(1, length, this.context.sampleRate);
+          // Seeded noise keeps the synthesized placeholder timbre repeatable across sessions and tests.
           const data = this.noiseBuffer.getChannelData(0); let seed = 0x51a7;
           for (let i = 0; i < length; i++) { seed = (seed * 16807) % 2147483647; data[i] = seed / 1073741824 - 1; }
         }
@@ -28,6 +41,7 @@
     setEnabled(enabled) {
       this.setMuted(!enabled);
     }
+    /** @returns {AudioPreferences} Validated stored values or safe defaults. */
     loadPreferences() {
       const defaults = { masterVolume: C.audio.masterDefault, sfxVolume: C.audio.sfxDefault, muted: false };
       try {
@@ -63,6 +77,12 @@
       this.metrics.events.push({ name, at, ...detail });
       if (this.metrics.events.length > 80) this.metrics.events.splice(0, this.metrics.events.length - 80);
     }
+    /**
+     * Tracks every short voice so CANCEL, timeout and mute can stop it and disconnect its AudioNodes.
+     * @param {AudioScheduledSourceNode} source
+     * @param {AudioNode[]} nodes
+     * @param {string} [group='effect']
+     */
     register(source, nodes, group = 'effect') {
       const voice = { source, nodes, group, ended: false };
       const cleanup = () => {
@@ -84,6 +104,17 @@
         if (!voice.ended) { voice.ended = true; this.activeVoices.delete(voice); for (const node of voice.nodes) { try { node.disconnect(); } catch (_) {} } }
       }
     }
+    /**
+     * Creates one bounded oscillator voice; `register` owns cleanup after the scheduled stop.
+     * @param {number} frequency
+     * @param {number} duration
+     * @param {OscillatorType} type
+     * @param {number} gain
+     * @param {number} endFrequency
+     * @param {string} [group='effect']
+     * @param {?number} [attack]
+     * @param {?number} [release]
+     */
     tone(frequency, duration, type, gain, endFrequency, group = 'effect', attack = null, release = null) {
       if (!this.enabled || !this.context || this.context.state !== 'running') return;
       const c = this.context, now = c.currentTime, osc = c.createOscillator(), amp = c.createGain();
@@ -95,6 +126,19 @@
       amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.connect(amp); amp.connect(this.sfxGain); this.register(osc, [osc, amp], group); osc.start(now); osc.stop(now + duration + 0.008);
     }
+    /**
+     * Creates one filtered noise voice from the shared buffer instead of allocating sample data per sound.
+     * @param {number} duration
+     * @param {number} gain
+     * @param {BiquadFilterType} filterType
+     * @param {number} frequency
+     * @param {number} endFrequency
+     * @param {number} [playbackRate=1]
+     * @param {string} [group='effect']
+     * @param {?number} [q]
+     * @param {?number} [attack]
+     * @param {?number} [release]
+     */
     noise(duration, gain, filterType, frequency, endFrequency, playbackRate = 1, group = 'effect', q = null, attack = null, release = null) {
       if (!this.enabled || !this.context || this.context.state !== 'running' || !this.noiseBuffer) return;
       const c = this.context, now = c.currentTime, source = c.createBufferSource(), filter = c.createBiquadFilter(), amp = c.createGain();
@@ -115,6 +159,11 @@
       if (remaining <= visual.warningSeconds) return audio.warningTickInterval;
       return audio.tickInterval;
     }
+    /**
+     * Schedules at most one tick per visual frame, avoiding a burst of queued clock sounds after a pause.
+     * @param {boolean} active
+     * @param {number} remaining
+     */
     updateTimeClock(active, remaining) {
       if (!active) { if (this.clockActive) this.stopTimeClock(); return; }
       if (!this.enabled || !this.context || this.context.state !== 'running') return;
@@ -133,6 +182,7 @@
       this.tone(tock ? 1450 : 2700, tock ? 0.018 : 0.015, tock ? 'triangle' : 'square', gain * (tock ? 0.3 : 0.28), tock ? 1050 : 2250, 'clock', audio.clockAttack, release * 0.72);
       this.tone(tock ? 2900 : 4800, 0.007, 'triangle', gain * (tock ? 0.06 : 0.08), tock ? 2200 : 3600, 'clock', 0.0008, 0.0035);
     }
+    /** Stops and disconnects all clock voices so no tick survives CANCEL, timeout or EXECUTE. */
     stopTimeClock() { this.clockActive = false; this.nextClockAt = Infinity; this.stopGroup('clock'); }
     playTargetLock(order = 1) {
       if (!this.context || this.context.state !== 'running' || this.context.currentTime - this.lastLockAt < C.feedback.routeVisual.lockSoundMinGap) return;

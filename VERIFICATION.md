@@ -450,3 +450,21 @@ Wave開始には0.8秒の接触無効時間を設定し、既存の初弾待ち1
 - STEP 1のモバイル入力図をフィールド上の指からMOVE PAD上の指へ変更。STEP 3とPRACTICEもPAD→仮想カーソル→ルート→TARGETの表示を維持。
 - Nodeロジック57 / 57、Chrome既存ブラウザテスト群、180弾負荷、コンソールerror／pageerror 0件。
 - Windows Chrome 152.0.7977.82のタッチエミュレーションで確認。物理スマートフォンでの指触りとOSジェスチャーは未確認。
+
+---
+
+# コード品質・可読性パス（2026-09-05）
+
+`config.js`、`simulation.js`、`game.js`、`renderer.js`、`audio.js`の設計境界と主要データ構造へ、対象を絞ってJSDocを追加しました。TIME STOP、ルート再構築、TARGET判定、EXECUTE、MOVE PAD、Waveリトライ、描画の読み取り専用関係、AudioNodeの寿命については、処理の言い換えではなく制約や理由をコメントにしています。READMEにはArchitecture、データフロー、Testing、検証ファイルごとの責務と再実行コマンドを追加しました。
+
+挙動差分の確認:
+
+- `git diff -U0 -- '*.js'`の追加・削除行を検査し、JavaScriptの変更はコメント・JSDoc・空行だけで、実行文と設定値の変更が0件であることを確認。
+- `node --check`を5ファイルで実行し、すべてPASS。
+- Nodeロジックテスト57 / 57 PASS。
+- Chrome 152.0.7977.82で`browser.cjs`、`title-browser.cjs`、`tutorial-touchpad-browser.cjs`、`route-visual-browser.cjs`、`execute-feedback-browser.cjs`、`final-polish-mobile-browser.cjs`、`barrage-browser.cjs`を実行し、すべてPASS。
+- PC、タッチ相当、7 viewport、MOVE PAD専用入力、ルート描画、TIME STOP、EXECUTE音響、180弾負荷を再確認。
+- Chromeのconsole error、pageerror、未処理例外は0件。
+- `git diff --check` PASS。
+
+物理スマートフォンによる操作・性能・聴感の確認が残ります。今回の変更は文書とソース内コメントのみのため、新しい実機依存は追加していません。

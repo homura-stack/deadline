@@ -1,9 +1,19 @@
-/* Placeholder tuning for the time-stop route experiment. No runtime dependencies. */
+/* Central tuning for gameplay and presentation. No runtime dependencies. */
 (function (root) {
   'use strict';
+  /**
+   * Wave enemy placement used by the data-driven Wave table.
+   * @typedef {{type: 'aim'|'fan'|'burst'|'rotate'|'delay', x: number, y: number, angle: number}} WaveEnemyPlacement
+   */
+  /**
+   * Values stay mutable so Node and browser tests can create isolated fixtures without a build step.
+   * Simulation coordinates are independent of responsive Canvas size.
+   */
   const config = {
+    // Fixed-step world dimensions are the shared coordinate contract for input, simulation and rendering.
     world: { width: 960, height: 600, margin: 24, fixedStep: 1 / 120 },
     player: { radius: 9, start: { x: 160, y: 430 } },
+    // MOVE and DRAW share relative PAD input; DRAW uses a lower scale for accurate TARGET passes.
     controls: { touchStorageKey: 'deadline.controls.v1', touchSensitivityDefault: 100,
       touchSensitivityMin: 50, touchSensitivityMax: 150, touchPrecisionScale: 0.68,
       touchPrecisionDistance: 10, touchFullSpeedDistance: 28, touchMaxFrameDelta: 64,
@@ -11,6 +21,7 @@
     practice: { moveDistance: 64, completeSeconds: 1.05,
       enemies: [{ x: 430, y: 210 }, { x: 690, y: 360 }],
       bullets: [{ x: 300, y: 105, vx: -24, vy: 0 }, { x: 790, y: 510, vx: 20, vy: 0 }] },
+    // Sampling limits stabilize geometry cost across mouse and high-frequency touch hardware.
     drawing: { pointSpacing: 3, maxPoints: 4096 },
     timeStop: { seconds: 5, lockRadius: 48 },
     gauge: { max: 100, initial: 20, recoveryPerSecond: 20, nearMissGain: 8, nearMissRadius: 32, cost: 100, cancelCost: 40 },
@@ -18,6 +29,7 @@
     execution: { speed: 2600, minDuration: 0.2, maxDuration: 0.72 },
     enemy: { radius: 15, spawnClearance: 110 },
     audio: { storageKey: 'deadline.audio.v1', masterDefault: 80, sfxDefault: 90 },
+    // Each Wave owns composition and tuning; simulation.js contains no Wave-specific branches.
     waves: { bannerSeconds: 0.7, intermissionSeconds: 1.1, finalIntermissionSeconds: 1.45, startGraceSeconds: 0.8, retryGaugeInitial: 0,
       timeLimitAssist: { firstUnlockFailures: 3, secondUnlockFailures: 5, standard: 1, first: 1.5, second: 2 },
       definitions: [
@@ -83,6 +95,7 @@
             { type: 'aim', x: 735, y: 465, angle: 4.8 }, { type: 'fan', x: 840, y: 400, angle: 6.0 }
           ] }
       ] },
+    // maxBullets is a hard performance bound shared by all firing patterns.
     shooting: { firstShotDelay: 1.2, initialStagger: 0.16,
       bulletRadius: 5, muzzleGap: 2, lifetime: 7, maxBullets: 180,
       patterns: {
@@ -93,6 +106,7 @@
         delay: { interval: 2.8, count: 1, warningSeconds: 0.65, spreadDegrees: 12, speed: 230 }
       } },
     scoring: { baseKill: 100, chainBonus: 50, allClearBonus: 500 },
+    // Presentation tuning is centralized so visual/audio polish can be adjusted without scattering constants.
     feedback: { hitStop: 0.02, finalHitStop: 0.04, hitStopBudget: 0.22,
       shake: 2.5, finalShake: 5, maxShake: 7, damageShake: 3.2, damageFlashSeconds: 0.18, mobileShakeScale: 0.45,
       calloutSeconds: 0.8, perfectCalloutSeconds: 1.15, perfectShake: 6.5, finalSilence: 0.14, maxParticles: 140, particlesPerEnemy: 12, particleLifetime: 0.32,

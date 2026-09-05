@@ -2,12 +2,102 @@
 (function (root) {
   'use strict';
   const C = root.Deadline.config, EPS = 1e-8;
+
+  /**
+   * World-space coordinate in the fixed 960 x 600 simulation.
+   * @typedef {{x: number, y: number}} Point
+   */
+  /**
+   * @typedef {Object} Enemy
+   * @property {number} id
+   * @property {number} x
+   * @property {number} y
+   * @property {number} vx
+   * @property {number} vy
+   * @property {boolean} alive
+   * @property {number} hp
+   * @property {'aim'|'fan'|'burst'|'rotate'|'delay'} pattern
+   * @property {number} shotRemaining
+   * @property {number} shotCount
+   */
+  /**
+   * @typedef {Object} Bullet
+   * @property {number} id
+   * @property {number} enemyId
+   * @property {number} x
+   * @property {number} y
+   * @property {number} vx
+   * @property {number} vy
+   * @property {number} life
+   * @property {boolean} grazed
+   * @property {string} pattern
+   */
+  /** @typedef {{a: Point, b: Point, start: number, end: number, length: number}} RouteLeg */
+  /** @typedef {{enemyId: number, along: number, point: Point, order: number}} TargetLock */
+  /** @typedef {{start: number, end: number}} DangerSpan */
+  /**
+   * Values restored when retrying the same Wave; attempt-local gauge and bullets are intentionally absent.
+   * @typedef {Object} WaveSnapshot
+   * @property {Point} player
+   * @property {number} score
+   * @property {number} maxChain
+   * @property {number} perfectExecutions
+   * @property {number} hitsTaken
+   * @property {number} totalKills
+   * @property {number} nextEnemyId
+   * @property {number} nextBulletId
+   */
+  /**
+   * Distance cursor for the current high-speed traversal.
+   * @typedef {Object} ExecutionState
+   * @property {number} along
+   * @property {number} lockIndex
+   * @property {number} duration
+   * @property {number} speed
+   * @property {number} kills
+   * @property {number} pause
+   * @property {number} elapsed
+   */
+  /**
+   * Derived route data. `points` is the editable source; every other field is rebuilt from it.
+   * @typedef {Object} RoutePlan
+   * @property {Point[]} points
+   * @property {RouteLeg[]} legs
+   * @property {number} length
+   * @property {TargetLock[]} locks
+   * @property {DangerSpan[]} danger
+   */
+  /**
+   * Simulation-owned state. DOM, Canvas and Audio objects are deliberately excluded so tests can run in Node.
+   * @typedef {Object} GameWorld
+   * @property {Point} player
+   * @property {Enemy[]} enemies
+   * @property {Bullet[]} bullets
+   * @property {'normal'|'stopped'|'executing'|'wave-clear'|'failed'|'one-stop-failed'|'rule-preview'|'rule-intro'|'complete'|'practice-complete'} phase
+   * @property {number} gauge
+   * @property {number} stopRemaining
+   * @property {?RoutePlan} route
+   * @property {?ExecutionState} execution
+   * @property {number} wave
+   * @property {number} waveIndex
+   * @property {?WaveSnapshot} waveStartSnapshot
+   * @property {Object[]} events
+   */
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const copyPoint = p => ({ x: p.x, y: p.y });
   const currentWave = w => C.waves.definitions[w.waveIndex];
   const aimAngle = (w, enemy) => Math.atan2(w.player.y - enemy.y, w.player.x - enemy.x);
   const bounded = p => ({ x: clamp(p.x, C.world.margin, C.world.width - C.world.margin), y: clamp(p.y, C.world.margin, C.world.height - C.world.margin) });
+  /**
+   * Returns the normalized interval where a segment overlaps a circle.
+   * The interval form lets route warnings mark the whole dangerous span while collision checks use its first point.
+   * @param {Point} a
+   * @param {Point} b
+   * @param {Point} center
+   * @param {number} radius
+   * @returns {?DangerSpan}
+   */
   function circleInterval(a, b, center, radius) {
     // Cheap rejection matters when a long drawn route is checked against dense bullets.
     if (center.x < Math.min(a.x, b.x) - radius || center.x > Math.max(a.x, b.x) + radius ||
@@ -21,6 +111,13 @@
     return hi < -EPS || lo > 1 + EPS ? null : { start: clamp(lo, 0, 1), end: clamp(hi, 0, 1) };
   }
   function segmentCircleTime(a, b, center, radius) { return circleInterval(a, b, center, radius)?.start ?? null; }
+  /**
+   * Rebuilds all route-derived data from editable points.
+   * Keeping locks and danger spans derived prevents Undo, Clear and point thinning from leaving stale results.
+   * @param {Point[]} points
+   * @param {GameWorld} w
+   * @returns {RoutePlan}
+   */
   function compileRoute(points, w) {
     const route = { points: points.map(copyPoint), legs: [], length: 0, locks: [], danger: [] }, locked = new Set();
     for (let i = 1; i < points.length; i++) {
@@ -79,6 +176,13 @@
       perfectExecutions: w.perfectExecutions, hitsTaken: w.hitsTaken, totalKills: w.totalKills,
       nextEnemyId: w.nextEnemyId, nextBulletId: w.nextBulletId };
   }
+  /**
+   * Starts a Wave from data and records its rollback boundary before any score can be earned.
+   * @param {GameWorld} w
+   * @param {number} waveIndex
+   * @param {?WaveSnapshot} retrySnapshot
+   * @returns {void}
+   */
   function beginWave(w, waveIndex, retrySnapshot = null) {
     w.waveStartSnapshot = retrySnapshot || makeWaveSnapshot(w);
     w.waveIndex = waveIndex; w.wave = C.waves.definitions[waveIndex].number;
@@ -90,6 +194,7 @@
     w.timeLimitMultiplier = C.waves.timeLimitAssist.standard;
     w.events.push({ type: 'waveStart', wave: w.wave });
   }
+  /** @returns {GameWorld} A fresh deterministic run beginning at Wave 1. */
   function createWorld() {
     const player = copyPoint(C.player.start);
     const w = { player, enemies: [], nextEnemyId: 1,
@@ -129,6 +234,11 @@
     }
   }
   function canStop(w) { return w.phase === 'normal' && w.gauge >= C.gauge.max - EPS; }
+  /**
+   * Freezes simulation-owned actors and creates the only editable route for this STOP.
+   * @param {GameWorld} w
+   * @returns {void}
+   */
   function stopTime(w) {
     if (!canStop(w)) return;
     w.stopGaugeBefore = w.gauge; w.gauge = Math.max(0, w.gauge - C.gauge.cost);
@@ -148,6 +258,13 @@
     if (currentWave(w).oneStopRequired) failOneStop(w, 'cancel', 0, w.stopTargetCount);
     else w.phase = 'normal';
   }
+  /**
+   * Adds pointer or MOVE PAD input to the shared route pipeline.
+   * Nearly collinear points are collapsed to keep high-frequency input from inflating target and danger checks.
+   * @param {GameWorld} w
+   * @param {Point} position
+   * @returns {void}
+   */
   function addRoutePoint(w, position) {
     if (w.phase !== 'stopped') return;
     const end = bounded(position), points = w.route.points.map(copyPoint), last = points[points.length - 1];
@@ -163,6 +280,13 @@
     w.route = compileRoute(points.length >= C.drawing.maxPoints ? points.filter((_, i) => i === 0 || i % 2 === 1 || i === points.length - 1) : points, w);
     for (const lock of w.route.locks) if (!previousLocks.has(lock.enemyId)) w.events.push({ type: 'lock', enemyId: lock.enemyId, order: lock.order });
   }
+  /**
+   * Converts the immutable planned route into a distance-based execution cursor.
+   * World actors remain frozen until that cursor reaches the route endpoint.
+   * @param {GameWorld} w
+   * @param {boolean} [timedOut=false]
+   * @returns {void}
+   */
   function executeRoute(w, timedOut = false) {
     if (w.phase !== 'stopped') return;
     const duration = clamp(w.route.length / C.execution.speed, C.execution.minDuration, C.execution.maxDuration);
@@ -172,6 +296,12 @@
     w.phase = 'executing'; w.stopRemaining = 0; w.safetyRemaining = 0; w.events.push({ type: 'execute' });
     if (w.route.length < EPS) finishExecution(w);
   }
+  /**
+   * Commits one execution result, then resumes normal time or enters the Wave transition.
+   * ONE STOP failures roll back attempt score before the retry UI can be shown.
+   * @param {GameWorld} w
+   * @returns {void}
+   */
   function finishExecution(w) {
     w.lastKills = w.execution.kills; w.phase = 'normal'; w.maxChain = Math.max(w.maxChain, w.lastKills);
     if (w.route.length > EPS) w.safetyRemaining = C.safety.afterExecution;
@@ -205,6 +335,13 @@
     if (w.phase !== 'rule-intro' || w.pendingWaveIndex == null) return;
     beginWave(w, w.pendingWaveIndex);
   }
+  /**
+   * Restores the Wave-entry snapshot so failed attempts cannot duplicate score or statistics.
+   * The retry gauge is intentionally reset separately from the snapshot.
+   * @param {GameWorld} w
+   * @param {number} [timeLimitMultiplier]
+   * @returns {void}
+   */
   function retryWave(w, timeLimitMultiplier = C.waves.timeLimitAssist.standard) {
     if (!['one-stop-failed', 'failed'].includes(w.phase) || !w.waveStartSnapshot) return;
     const allowed = availableTimeLimitMultipliers(w), selected = allowed.includes(Number(timeLimitMultiplier)) ? Number(timeLimitMultiplier) : C.waves.timeLimitAssist.standard;
@@ -226,6 +363,11 @@
     }
     return true;
   }
+  /**
+   * @param {GameWorld} w
+   * @param {number} dt
+   * @returns {void}
+   */
   function stepExecution(w, dt) {
     const run = w.execution; run.elapsed += dt;
     if (run.pause > EPS) { run.pause = Math.max(0, run.pause - dt); return; }
@@ -315,6 +457,12 @@
       volley(w, enemy, pattern, aimAngle(w, enemy), kind === 'burst');
     }
   }
+  /**
+   * Advances and compacts the bounded bullet array in place to avoid per-frame allocation on mobile.
+   * @param {GameWorld} w
+   * @param {number} dt
+   * @returns {void}
+   */
   function advanceBullets(w, dt) {
     const next = { x: 0, y: 0 }, r = C.shooting.bulletRadius;
     let kept = 0;
@@ -352,6 +500,12 @@
     advanceBullets(w, dt);
     w.safetyRemaining = Math.max(0, w.safetyRemaining - dt); w.waveGraceRemaining = Math.max(0, w.waveGraceRemaining - dt);
   }
+  /**
+   * Holds the short clear beat and inserts the one-time rule acknowledgement at the Wave 6/7 boundary.
+   * @param {GameWorld} w
+   * @param {number} dt
+   * @returns {void}
+   */
   function stepWaveClear(w, dt) {
     w.transitionRemaining = Math.max(0, w.transitionRemaining - dt);
     if (w.transitionRemaining > EPS) return;
@@ -363,6 +517,12 @@
       } else beginWave(w, next);
     } else { w.phase = 'complete'; w.events.push({ type: 'complete', score: w.score, maxChain: w.maxChain, perfectExecutions: w.perfectExecutions, hitsTaken: w.hitsTaken, totalKills: w.totalKills, clearTime: w.time }); }
   }
+  /**
+   * Advances exactly one simulation phase. STOP deliberately updates only its planning clock.
+   * @param {GameWorld} w
+   * @param {number} [dt=C.world.fixedStep]
+   * @returns {void}
+   */
   function step(w, dt = C.world.fixedStep) {
     if (w.phase === 'normal') stepNormal(w, dt);
     else if (w.phase === 'stopped') {

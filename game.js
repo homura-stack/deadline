@@ -2,6 +2,25 @@
   'use strict';
   const { config: C, sim: S, Renderer, Sound } = root.Deadline;
   const $ = id => document.getElementById(id);
+  /**
+   * Browser-only presentation state layered over the DOM-free simulation world.
+   * @typedef {Object} RuntimeApp
+   * @property {Object} world
+   * @property {Object} timeFx
+   * @property {Object} routeFx
+   * @property {{cursor: ?{x: number, y: number}}} touchDraw
+   * @property {Object} combatFx
+   * @property {boolean} reducedMotion
+   */
+  /**
+   * Accumulated relative input for the mobile MOVE PAD.
+   * @typedef {Object} TouchPadState
+   * @property {?number} id Active PointerEvent identifier.
+   * @property {number} dx Unconsumed horizontal screen-space movement.
+   * @property {number} dy Unconsumed vertical screen-space movement.
+   * @property {number} contactDistance Distance since the current touch began.
+   * @property {boolean} drawing Whether this contact has crossed the DRAW threshold.
+   */
   const ui = Object.fromEntries(['arena', 'phase', 'status-action', 'wave', 'wave-current', 'wave-total', 'score', 'stop-time', 'stop-gauge-label', 'lock-label', 'lock-count', 'life', 'time-stop', 'time-stop-label', 'clear-route', 'undo-route', 'cancel-stop', 'stop-gauge', 'gauge-value', 'hint', 'sound', 'restart', 'result', 'retry', 'retry-wave-number', 'result-kills', 'game-over-wave', 'game-over-score', 'game-over-title', 'retry-assist', 'retry-assist-15', 'retry-assist-20', 'complete', 'play-again', 'game-clear-title', 'final-score', 'final-time', 'final-kills', 'final-chain', 'final-perfect', 'final-hits', 'wave-banner', 'tutorial-prompt', 'lock-ready', 'one-stop-preview', 'one-stop-preview-next', 'preview-perfect', 'one-stop-intro', 'one-stop-start', 'rule-target-example', 'rule-target-count', 'one-stop-result', 'incomplete-title', 'incomplete-count', 'incomplete-reason', 'retry-wave', 'retry-one-stop-number', 'one-stop-assist', 'one-stop-assist-15', 'one-stop-assist-20', 'callout', 'move-pad', 'move-pad-label', 'move-pad-state', 'debug', 'debug-shapes', 'debug-values'].map(id => [id, $(id)]));
   const titleUi = { screen: $('title-screen'), shell: $('game-shell'), start: $('title-start'), infoButtons: [...document.querySelectorAll('[data-title-info]')], panels: [...document.querySelectorAll('[data-title-panel]')],
     master: $('master-volume'), masterValue: $('master-value'), sfx: $('sfx-volume'), sfxValue: $('sfx-value'), mute: $('setting-mute'),
@@ -9,6 +28,7 @@
   const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
     counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
   const renderer = new Renderer(ui.arena), sound = new Sound();
+  /** @type {RuntimeApp} */
   const app = { world: S.createWorld(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
     tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
     briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
@@ -23,6 +43,7 @@
   const coarsePointer = matchMedia('(pointer: coarse)').matches;
   let touchControls = coarsePointer;
   let touchCapable = coarsePointer || navigator.maxTouchPoints > 0;
+  /** @type {TouchPadState} */
   const touchPad = { id: null, lastX: 0, lastY: 0, startX: 0, startY: 0, x: 0, y: 0, dx: 0, dy: 0, contactDistance: 0, drawing: false, visualDirty: true };
   let touchSensitivity = C.controls.touchSensitivityDefault;
   const heldKeys = new Set(), commandKeys = new Set(['Space', 'KeyZ', 'KeyX', 'KeyC', 'Escape', 'KeyR', 'Enter', 'Digit1', 'Digit2', 'Numpad1', 'Numpad2']);
@@ -224,12 +245,23 @@
     if (S.distance(app.practice.origin, app.world.player) < C.practice.moveDistance) return;
     app.practice.step = 'freeze'; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; sound.playUiConfirm(); updateUi();
   }
+  /**
+   * Converts screen-space PAD motion into world-space motion with precision near the origin.
+   * @param {number} length
+   * @param {number} [scale=1]
+   * @returns {number}
+   */
   function touchInputFactor(length, scale = 1) {
     const capped = Math.min(length, C.controls.touchMaxFrameDelta), normalized = capped / length;
     const curve = S.clamp((capped - C.controls.touchPrecisionDistance) / Math.max(1, C.controls.touchFullSpeedDistance - C.controls.touchPrecisionDistance), 0, 1);
     const precision = C.controls.touchPrecisionScale + (1 - C.controls.touchPrecisionScale) * curve;
     return normalized * precision * (touchSensitivity / 100) * scale / Math.max(renderer.scale, 0.01);
   }
+  /**
+   * Consumes PAD deltas once per animation frame, independent of the browser's pointer event frequency.
+   * Both mouse DRAW and PAD DRAW call `addRoutePoint`, keeping TARGET and danger rules identical.
+   * @returns {void}
+   */
   function applyTouchPadInput() {
     const phase = app.world.phase;
     if (touchPad.id === null || !['normal', 'stopped'].includes(phase) || !touchControls) { updateTouchPadVisual(); return; }
@@ -336,6 +368,11 @@
         life, maxLife: life, color, size: count === 1 ? 2 : 2 + Math.random() * 4 });
     }
   }
+  /**
+   * Drains semantic simulation events into UI, audio and short-lived visual effects.
+   * This boundary keeps simulation.js deterministic and usable by the Node test suite.
+   * @returns {void}
+   */
   function handleEvents() {
     for (const event of app.world.events) {
       if (event.type === 'stop') {
@@ -401,6 +438,7 @@
     }
     app.world.events.length = 0; updateUi();
   }
+  /** Routes the shared TIME STOP / EXECUTE command without duplicating phase rules in input handlers. */
   function toggleTime() {
     sound.unlock();
     if (app.world.phase === 'normal') S.stopTime(app.world);
@@ -415,6 +453,11 @@
     if (event.timeStamp - lastDrawSound > C.feedback.drawSoundInterval * 1000) { sound.play('draw'); lastDrawSound = event.timeStamp; }
     handleEvents();
   }
+  /**
+   * Handles fine-pointer MOVE/DRAW only; touch coordinates are accepted exclusively from MOVE PAD.
+   * @param {PointerEvent} event
+   * @returns {void}
+   */
   function pointerMove(event) {
     const w = app.world, p = renderer.position(event);
     if (w.phase === 'normal') {
@@ -495,6 +538,12 @@
     if (event.pointerType === 'touch' || (coarsePointer && event.pointerType !== 'mouse')) return;
     undo();
   });
+  /**
+   * Binds one logical command to touch pointerup and click without accepting the synthesized click twice.
+   * @param {HTMLButtonElement} button
+   * @param {(event: Event) => void} action
+   * @returns {void}
+   */
   function bindTouchSafeCommand(button, action) {
     let touchUpAt = -Infinity;
     button.addEventListener('pointerup', event => {
@@ -582,6 +631,12 @@
   new ResizeObserver(() => { releasePointer(); releaseTouchPad(); renderer.resize(); }).observe(ui.arena);
   document.addEventListener('visibilitychange', () => { releasePointer(); releaseTouchPad(); if (document.hidden) sound.stopTimeClock(); lastTime = 0; accumulator = 0; });
   window.addEventListener('blur', () => { releasePointer(); releaseTouchPad(); heldKeys.clear(); sound.stopTimeClock(); });
+  /**
+   * Runs responsive input/effects at display rate and gameplay at a fixed step.
+   * The accumulator is cleared during presentation holds so hit stop never causes simulation catch-up.
+   * @param {DOMHighResTimeStamp} now
+   * @returns {void}
+   */
   function frame(now) {
     const dt = lastTime ? Math.min(0.05, (now - lastTime) / 1000) : 0; lastTime = now;
     if (document.hidden) { requestAnimationFrame(frame); return; }
