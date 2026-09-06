@@ -2,6 +2,20 @@
 .pico-how { background: #101729f5; border: 1px solid #647981; padding: 18px; border-radius: 5px; }
 .title-info .pico-how p { padding: 0; border: 0; background: none; box-shadow: none; line-height: 1.8; }
 .pico-how button { margin-top: 14px; min-height: 44px; padding: 9px 14px; border: 1px solid #e9c783; color: #fff0ce; background: #413520; }
+/* A saved FIRST FLIGHT choice skips the welcome, never this persistent entrance. */
+.title-flight-actions { display: grid; gap: 10px; width: min(100%, 340px); }
+.title-flight-actions .title-start { width: 100%; }
+.title-training-launch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 12px 17px; border: 1px solid #b49d70; background: #2b2b28; color: #f5dbab; text-align: left; }
+.title-training-launch strong { font: bold 12px var(--utility); letter-spacing: .08em; }
+.title-training-launch span { font: 11px 'Yu Gothic UI', sans-serif; }
+.title-training-launch:hover { background: #3a3429; border-color: #f2d398; }
+@media(max-width: 650px) { .title-flight-actions { width: min(100%, 300px); } }
+@media(max-height: 520px) and (min-width: 651px) {
+  .title-flight-actions { width: 100%; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .title-flight-actions .title-start { min-height: 48px; padding: 7px 12px; }
+  .title-flight-actions .start-arrow { display: none; }
+  .title-training-launch { flex-direction: column; justify-content: center; align-items: flex-start; gap: 3px; padding: 7px 12px; }
+}
 body.first-flight-open { overflow: hidden; }
 body.first-flight-open #game-shell { display: none; }
 .first-flight { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at center, #43372526, transparent 60%), #080e1a; }

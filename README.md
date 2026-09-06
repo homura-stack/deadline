@@ -10,10 +10,12 @@ TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光
 
 TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えました。旧素材は保持し、ゲームロジック・当たり判定・チュートリアル構造は変更していません。[素材・参照箇所・検証記録](TASK_F.md)を参照してください。
 
+TASK F.1で、保存済みの初回選択に関係なく見つけられるよう、タイトルのSTART直下にTRAININGボタンを追加しました。E.1のチュートリアル本体とFの正式Picoは維持しています。[原因調査・修正・検証記録](TASK_F1.md)を参照してください。
+
 ## プレイ
 
-- 開発中のTASK F確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK Fは未push・未反映）
+- 開発中のTASK F.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1は未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -32,7 +34,7 @@ TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えまし�
 
 タイトル画面の初回STARTまたはSPACEでFIRST FLIGHTを表示します。主ボタンTRAINING STARTで操作説明・練習へ、SKIPでWORLD MAPへ進みます。開始・スキップ・完了の選択を保存し、次のSTARTではWORLD MAPへ直接進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
-タイトルのHOW TO PLAY →「Picoと操作を練習する」、またはWORLD MAPのTRAININGボタンからいつでも再受講できます。旧版と同じEVADE → FREEZE → DRAW → EXECUTEの4ページで、マウス／MOVE PADの動きを見てから実習します。練習はPicoを64px動かす → TIME STOP → 2 TARGETを一筆書きで通る → SPACEで実行、という短い構成です。TIME STOPは旧版と同じ5秒。練習だけ安全猶予があり、実行時に弾を除去する旧版の扱いを維持しています。完了表示の約1秒後にWORLD MAPへ戻り、ENTER GARDENで本編を開始します。進行中のWORLD MAPから再受講した場合は、練習を終える／中断しても元の地区解禁・スコア・LIFEへ戻ります。練習中のR／「最初から」は練習だけを再開します。
+タイトルのSTART直下のTRAININGから、初回・受講済みのどちらでも直接練習へ入れます。HOW TO PLAY →「Picoと操作を練習する」、WORLD MAPのTRAININGボタンも利用できます。旧版と同じEVADE → FREEZE → DRAW → EXECUTEの4ページで、マウス／MOVE PADの動きを見てから実習します。練習はPicoを64px動かす → TIME STOP → 2 TARGETを一筆書きで通る → SPACEで実行、という短い構成です。TIME STOPは旧版と同じ5秒。練習だけ安全猶予があり、実行時に弾を除去する旧版の扱いを維持しています。完了表示の約1秒後にWORLD MAPへ戻り、ENTER GARDENで本編を開始します。進行中のWORLD MAPから再受講した場合は、練習を終える／中断しても元の地区解禁・スコア・LIFEへ戻ります。練習中のR／「最初から」は練習だけを再開します。
 
 GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、短い静けさの後、Picoの位置からホタルの光が世界へ広がります。LIGHT RESTOREDの後、マップに復旧状態が残ります。CORE後は5地区の光が応答・同期し、エンディングを表示。RESTARTまたはTITLEを選べます。本編進行は今回のプレイ中だけ保持されます。本編でのR／「最初から」、タイトルへの帰還、リロードで新しい旅になります。
 

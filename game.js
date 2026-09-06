@@ -715,6 +715,7 @@
   mapUi['map-enter'].addEventListener('click',()=>enterArea(app.journey.selected));
   mapUi['map-training'].addEventListener('click',openTraining);
   $('title-training').addEventListener('click',openTraining);
+  $('title-training-launch').addEventListener('click',openTraining);
   firstUi.train.addEventListener('click',openTraining);
   firstUi.skip.addEventListener('click',skipFirstFlight);
   bindTouchSafeCommand($('practice-exit'),returnFromTraining);
