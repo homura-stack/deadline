@@ -9,24 +9,19 @@ async function stroke(page,points){
   const w=(await state(page)).world;await move(page,w.route.points.at(-1));await page.mouse.down();
   for(const point of points)await move(page,point);await page.mouse.up();
 }
-const safeRoute=[{x:310,y:430},{x:450,y:235},{x:600,y:235},{x:700,y:270},{x:760,y:470}];
-async function firstLessons(page){
-  await move(page,{x:220,y:350});assert.equal((await state(page)).practice.step,'freeze');
-  await page.keyboard.press('Space');assert.equal((await state(page)).practice.step,'draw');
-  await stroke(page,[{x:275,y:350}]);assert.equal((await state(page)).practice.step,'target');
-  await stroke(page,[(await state(page)).world.enemies[0]]);assert.equal((await state(page)).practice.step,'dangerIntro');
-}
-async function evade(page){
-  await page.locator('#training-action').click();assert.equal((await state(page)).practice.step,'evade');
-  for(const p of [{x:210,y:350},{x:440,y:350},{x:440,y:430}])await move(page,p);
-  assert.equal((await state(page)).practice.evaded,true);assert.equal((await state(page)).practice.step,'route');
-  await page.keyboard.press('Space');assert.equal((await state(page)).world.phase,'stopped');
+async function begin(page){
+  for(const heading of ['01 / EVADE','02 / FREEZE','03 / DRAW','04 / EXECUTE']){
+    assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(),heading);
+    await page.locator('#briefing-begin').click();
+  }
+  await page.waitForFunction(()=>Deadline.inspect().practice.active);
 }
 async function plan(page){
-  await firstLessons(page);await evade(page);
+  await move(page,{x:240,y:470});assert.equal((await state(page)).practice.step,'freeze');
+  await page.keyboard.press('Space');assert.equal((await state(page)).practice.step,'draw');
   const before=(await state(page)).world;
-  await stroke(page,safeRoute);const snapshot=await state(page);
-  assert.equal(snapshot.practice.step,'execute');assert.equal(snapshot.world.route.locks.length,3);assert.equal(snapshot.world.route.danger.length,0);
-  return {before,plan:snapshot.world,endpoint:safeRoute.at(-1)};
+  const endpoint={x:805,y:400};await stroke(page,[...before.enemies,endpoint]);const snapshot=await state(page);
+  assert.equal(snapshot.practice.step,'execute');assert.equal(snapshot.world.route.locks.length,2);assert.equal(snapshot.world.route.danger.length,0);
+  return {before,plan:snapshot.world,endpoint};
 }
-module.exports={state,move,stroke,firstLessons,evade,plan,safeRoute};
+module.exports={state,move,stroke,begin,plan};

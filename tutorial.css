@@ -1,88 +1,52 @@
-/* FIRST FLIGHT lives beside the existing combat HUD, never over its targets. */
+/* E.1: restore the historical tutorial choreography; update only presentation and entry. */
 .pico-how { background: #101729f5; border: 1px solid #647981; padding: 18px; border-radius: 5px; }
 .title-info .pico-how p { padding: 0; border: 0; background: none; box-shadow: none; line-height: 1.8; }
 .pico-how button { margin-top: 14px; min-height: 44px; padding: 9px 14px; border: 1px solid #e9c783; color: #fff0ce; background: #413520; }
-.pico-welcome { background: radial-gradient(ellipse at 29% 49%, #64502c23, transparent 55%), #080e1a; }
-.pico-welcome::before { display: none; }
-.pico-welcome-panel { width: min(980px, 100%); }
-.pico-welcome-panel > header { display: flex; justify-content: space-between; align-items: center; color: #d9c89f; font: 11px var(--utility); letter-spacing: .12em; border-bottom: 1px solid #3d424a; padding-bottom: 16px; }
-.pico-welcome button { min-height: 44px; }
-.pico-welcome #briefing-back { background: none; border: 0; color: #aab4c0; padding: 8px 12px; }
-.pico-welcome .briefing-page { grid-template-columns: .9fr 1.1fr; min-height: 0; padding: 35px 0; gap: 35px; align-items: center; overflow: visible; }
-.pico-welcome-art { position: relative; display: grid; place-items: center; min-height: 280px; background: radial-gradient(ellipse, #ffc76019, transparent 65%); }
-.pico-welcome-art::after { content: ''; position: absolute; width: 80%; height: 80%; border: 1px solid #e9c78322; border-radius: 50%; transform: rotate(-22deg); }
-.pico-welcome-art img { width: min(250px, 76%); height: auto; filter: drop-shadow(0 0 22px #ffc76024); }
-.pico-welcome-art > span { color: #e9c783; font: 12px var(--utility); letter-spacing: .18em; margin-top: 22px; }
-.pico-eyebrow { color: #e9c783; font: 10px var(--utility); letter-spacing: .14em; }
-.pico-welcome-copy h2 { font: 400 clamp(26px, 3.4vw, 42px)/1.65 'Yu Gothic UI', sans-serif; letter-spacing: .1em; color: #fff2d7; margin: 13px 0 17px; }
-.pico-welcome-copy > p:not(.pico-eyebrow) { font: 13px/1.9 'Yu Gothic UI', sans-serif; color: #bec8d1; }
-.pico-welcome-copy .pico-welcome-note { color: #919eac; margin-top: 20px; }
-.pico-welcome .briefing-actions { display: flex; justify-content: flex-end; border-top: 1px solid #3d424a; padding-top: 20px; }
-.pico-welcome .briefing-begin { background: #f4d598; color: #272219; border-color: #f4d598; }
-.pico-welcome .briefing-skip { margin-left: 0; }
-.pico-lesson { border-bottom: 1px solid #776342; background: linear-gradient(110deg, #322b2099, #101727 64%); padding: 12px 20px 16px; }
-.pico-lesson[hidden], .pico-lesson button[hidden] { display: none; }
-.pico-lesson-top { display: flex; gap: 20px; align-items: center; }
-#training-step { color: #f2cd83; font: 10px var(--utility); letter-spacing: .08em; white-space: nowrap; }
-#training-progress { display: flex; flex: 1; gap: 4px; list-style: none; margin: 0; padding: 0; }
-#training-progress li { flex: 1; color: #7a889a; border-top: 2px solid #394354; padding-top: 5px; font: 8px var(--utility); }
-#training-progress .is-done { color: #c4b384; border-color: #aa8e53; }
-#training-progress .is-current { color: #fff0cc; border-color: #f3cd7b; }
-#training-exit { min-height: 44px; border: 0; padding: 8px 0 8px 12px; color: #bcc6cf; background: transparent; font: 10px var(--utility); white-space: nowrap; }
-.pico-lesson-body { display: flex; gap: 20px; justify-content: space-between; align-items: center; }
-.pico-lesson h2 { font: 600 16px/1.5 'Yu Gothic UI', sans-serif; color: #fff0ce; margin: 0 0 4px; }
-.pico-lesson p { font: 12px/1.7 'Yu Gothic UI', sans-serif; color: #c5cdd5; margin: 0; max-width: 66em; }
-#training-action { flex-shrink: 0; min-height: 44px; padding: 10px 16px; color: #211e17; background: #f2d394; border: 1px solid #ffe9b3; font: 600 12px 'Yu Gothic UI', sans-serif; }
-.practice-active .shell { max-width: min(1472px, max(740px, calc((100svh - 385px) * 1.6 + 82px))); }
-.practice-active .hud { min-height: 56px; padding-block: 7px; }
-.practice-active .charge { min-height: 32px; padding-block: 5px; }
-.practice-active #arena { height: clamp(260px, calc(100svh - 385px), 690px); }
-.practice-active .tutorial-prompt { color: #ffebbd; border-color: #eac57c; font: 11px 'Yu Gothic UI', sans-serif; max-width: 94%; white-space: normal; text-align: center; top: 4%; animation: none; opacity: 1; }
-.practice-active #time-stop:disabled { opacity: .4; }
-@media(min-width: 801px) {
-  .practice-active .hud { grid-template-columns: minmax(190px, 1fr) 70px minmax(200px, 1fr); gap: 24px; padding-inline: 20px; }
-  .practice-active .wave-stat { min-width: 70px; }
-  .practice-active .status-stat { column-gap: 8px; }
-  .practice-active #status-action { font-size: 9px; }
-  .practice-active .hud-secondary { min-width: 0; gap: 20px; }
-}
-@media(max-width: 800px) {
-  .pico-welcome .briefing-page { gap: 12px; padding: 20px 0; }
-  .pico-welcome-art { min-height: 180px; }
-  .pico-welcome-copy h2 { font-size: 27px; }
-  .practice-active .shell { max-width: 100%; }
-  .practice-active #arena { height: auto; aspect-ratio: 8 / 5; }
-  .pico-lesson { padding: 5px 12px 12px; }
-  .pico-lesson-top { gap: 12px; }
-  #training-progress li { font-size: 0; padding-top: 0; }
-  .pico-lesson h2 { font-size: 14px; }
-  .pico-lesson p { font-size: 11px; line-height: 1.65; }
-  .pico-lesson-body { flex-wrap: wrap; gap: 10px; }
-  #training-action { width: 100%; }
-  .practice-active .tutorial-prompt { font-size: 9px; padding: 5px 8px; }
-}
+body.first-flight-open { overflow: hidden; }
+body.first-flight-open #game-shell { display: none; }
+.first-flight { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at center, #43372526, transparent 60%), #080e1a; }
+.first-flight[hidden] { display: none; }
+.first-flight-panel { width: min(420px, 100%); text-align: center; }
+.flight-kicker { color: #e9c783; font: 12px var(--utility); letter-spacing: .23em; }
+.first-flight-panel > img { display: block; width: 150px; height: auto; margin: 26px auto 20px; filter: drop-shadow(0 0 22px #f4c56528); }
+.first-flight h2 { color: #fff0cc; font: 500 clamp(20px, 3vw, 25px)/1.7 'Yu Gothic UI', sans-serif; margin: 0; }
+.first-flight h2 + p { color: #aab8c6; font-size: 12px; line-height: 1.8; margin: 9px 0 28px; }
+.first-flight button { display: block; width: 100%; min-height: 50px; font: 12px var(--utility); letter-spacing: .07em; }
+#first-training { background: #f3d49a; border: 1px solid #ffe7b8; color: #252119; font-weight: bold; padding: 16px 20px; }
+#first-training span { float: right; }
+#first-skip { background: transparent; border: 1px solid #39485b; color: #aab8c6; margin-top: 12px; }
+#first-training:hover { background: #ffe7b8; }
+#first-skip:hover { color: #fff0cc; border-color: #8c7d61; }
+#map-training.map-training { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; margin-top: 10px; padding: 13px 14px; border: 1px solid #b49d70; border-radius: 3px; background: #2b2b28; color: #f5dbab; text-align: left; }
+#map-training strong { font: bold 12px var(--utility); letter-spacing: .08em; }
+#map-training span { font: 11px 'Yu Gothic UI', sans-serif; }
+#map-training:hover { background: #3a3429; border-color: #f2d398; }
+#practice-exit { color: #f1d194; border: 1px solid #766541; padding: 8px 12px; }
+#practice-exit[hidden] { display: none; }
+/* The parent groups retain the original movement and lock/strike timing. */
+.briefing-demo .demo-pico-sprite { filter: drop-shadow(0 0 4px #f4c56580); }
+.briefing-demo .demo-enemy-sprite { filter: hue-rotate(125deg); }
+.briefing-demo .demo-player-execute { offset-rotate: 0deg; }
+.briefing-demo .demo-route { stroke: #fff0be; }
+.briefing-demo .demo-target-ring { stroke: #8debf1; }
+.briefing-demo .demo-touch-draw-cursor { fill: #fff4d5; stroke: #f4c565; filter: drop-shadow(0 0 6px #f4c56570); }
+.briefing-demo .demo-motion-lane { stroke: #f4c56570; }
+.briefing-demo .demo-bullet { fill: #ffc3cf !important; stroke: #ed5478 !important; }
+.briefing-demo .demo-execute-bullet-one,.briefing-demo .demo-execute-bullet-two { fill: #ffc3cf !important; stroke: #ed5478 !important; }
+.briefing-begin { background: #f2d399; border-color: #ffe7b8; color: #282219; }
+.briefing-begin:hover { background: #ffe7b8; }
+.briefing-progress i.is-active { background: #f2d399; }
+.tutorial-prompt { color: #ffebbd; border-color: #eac57c; }
 @media(max-width: 540px) {
-  .pico-welcome .briefing-page { display: flex; flex-direction: column; padding: 10px 0 16px; gap: 8px; }
-  .pico-welcome-art { min-height: 0; }
-  .pico-welcome-art img { width: 125px; }
-  .pico-welcome-art > span { margin-top: 7px; font-size: 9px; }
-  .pico-welcome-copy { text-align: center; }
-  .pico-welcome-copy h2 { font-size: 25px; line-height: 1.5; margin: 5px 0 12px; }
-  .pico-welcome-copy > p:not(.pico-eyebrow) { font-size: 11px; }
-  .pico-welcome-copy .pico-welcome-note { margin-top: 12px; }
-  .pico-welcome .briefing-actions { flex-direction: column-reverse; gap: 8px; padding-top: 14px; }
-  .pico-welcome .briefing-actions button { width: 100%; }
+  .first-flight { padding: 20px; }
+  .first-flight-panel > img { width: 130px; margin: 20px auto 16px; }
+  #map-training.map-training { min-height: 52px; }
+  #practice-exit { font-size: 9px; padding: 6px 8px; }
 }
 @media(max-height: 500px) and (min-width: 541px) {
-  .pico-welcome { padding: 16px 28px; }
-  .pico-welcome-panel > header { padding-bottom: 2px; }
-  .pico-welcome .briefing-page { padding: 6px 0; gap: 20px; }
-  .pico-welcome-art { min-height: 0; }
-  .pico-welcome-art img { width: 145px; }
-  .pico-welcome-art > span { margin-top: 4px; }
-  .pico-welcome-copy h2 { font-size: 23px; line-height: 1.4; margin: 5px 0; }
-  .pico-welcome-copy > p:not(.pico-eyebrow) { font-size: 11px; margin-top: 6px; }
-  .pico-welcome .briefing-actions { padding-top: 8px; }
+  .first-flight-panel { display: grid; width: min(620px,100%); grid-template-columns: 160px 1fr; gap: 8px 24px; text-align: left; }
+  .flight-kicker { grid-column: 2; margin: 0; }
+  .first-flight-panel > img { grid-column: 1; grid-row: 1 / 6; width: 150px; align-self: center; margin: 0; }
+  .first-flight h2,.first-flight h2 + p { grid-column: 2; margin: 0; }
+  .first-flight button { grid-column: 2; margin: 0; }
 }
-
-.pico-welcome .briefing-actions button { white-space: nowrap; padding-inline: 20px; }

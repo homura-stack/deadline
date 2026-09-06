@@ -1,12 +1,12 @@
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,move,planWave,surviveUntilReady}=require('./browser.cjs');
-const {battleReady}=require('./journey-helpers.cjs');
+const {battleReady,initialMap}=require('./journey-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 const output=path.join(__dirname,'artifacts','journey');fs.mkdirSync(output,{recursive:true});
 const report={browser:'',layouts:[],flow:[],render:null,errors:[],externalRequests:[]};
 function hook(p){p.on('pageerror',e=>report.errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});p.on('request',r=>{if(!r.url().startsWith(new URL(base).origin)&&!r.url().startsWith('data:'))report.externalRequests.push(r.url());});}
-async function mapStart(p){await p.locator('#title-start').click();await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map');}
+async function mapStart(p){await p.locator('#title-start').click();await initialMap(p);}
 async function frozen(p){const before=(await state(p)).world;await p.waitForTimeout(220);assert.deepEqual((await state(p)).world,before);return before;}
 (async()=>{
  const browser=await chromium.launch({channel:'chrome',headless:true});report.browser=browser.version();
@@ -51,6 +51,15 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   assert.equal(await p.locator('[data-city][data-status="online"]').count(),1);assert.equal(await p.locator('[data-connection][data-powered="true"]').count(),0);
   assert.match(await p.locator('#map-notice').innerText(),/FORGE UNLOCKED/);
   await p.screenshot({path:path.join(output,'map-garden-online.png')});
+  // Replay after a real restored area must preserve the complete paused campaign, not just its displayed score.
+  // Let the existing four-second map unlock animation settle before taking an exact state snapshot.
+  await p.waitForFunction(()=>Deadline.inspect().journey.elapsed>=4);
+  const campaign=await state(p);await p.locator('#map-training').click();
+  await require('./tutorial-helpers.cjs').begin(p);await require('./tutorial-helpers.cjs').plan(p);await p.keyboard.press('Space');
+  await p.waitForFunction(()=>!Deadline.inspect().practice.active&&Deadline.inspect().journey.mode==='map');
+  const replayed=await state(p);assert.deepEqual(replayed.world,campaign.world);assert.deepEqual(replayed.journey,campaign.journey);
+  await p.locator('#map-training').click();await p.locator('#briefing-skip').click();assert.deepEqual((await state(p)).world,campaign.world);assert.deepEqual((await state(p)).journey,campaign.journey);
+  report.flow.push({trainingReplay:'complete and abort preserve real Garden-restored campaign exactly'});
   const audit=await p.evaluate(()=>window.__restoreAudit);assert.ok(audit.frames>20);assert.equal(audit.mutations,0);assert.ok(audit.image);fs.writeFileSync(path.join(output,'restoration-canvas.png'),Buffer.from(audit.image.split(',')[1],'base64'));delete audit.image;report.render=audit;
   await p.locator('[data-area="2"]').click();assert.equal(await p.locator('#map-enter').isDisabled(),true);await p.locator('[data-area="1"]').click();await p.locator('#map-enter').click();await battleReady(p);
   const forge=(await state(p)).world;assert.equal(forge.wave,3);assert.equal(forge.score,cleared.score);assert.equal(forge.life,1);assert.equal(forge.totalKills,cleared.totalKills);

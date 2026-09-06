@@ -1,14 +1,14 @@
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,planWave,surviveUntilReady}=require('./browser.cjs');
-const {battleReady,nextArea}=require('./journey-helpers.cjs');
+const {battleReady,nextArea,initialMap}=require('./journey-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 const out=path.join(__dirname,'artifacts','restoration');fs.mkdirSync(out,{recursive:true});
 const report={browser:'',pixels:[],flow:[],errors:[],failedRequests:[],loading:null,layouts:[]};
 const loadingOnly=process.argv.includes('--loading-only');
 const save=(name,data)=>fs.writeFileSync(path.join(out,name),Buffer.from(data.split(',')[1],'base64'));
 function hook(p){p.on('pageerror',e=>report.errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});p.on('requestfailed',r=>report.failedRequests.push(r.url()));}
-async function start(p){await p.locator('#title-start').click();await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map');await p.locator('#map-enter').click();await battleReady(p);}
+async function start(p){await p.locator('#title-start').click();await initialMap(p);await p.locator('#map-enter').click();await battleReady(p);}
 (async()=>{
  const browser=await chromium.launch({channel:'chrome',headless:true});report.browser=browser.version();
  try{
@@ -94,15 +94,15 @@ async function start(p){await p.locator('#title-start').click();await p.waitForF
   // Delayed / failed file loads are explicit fixtures, separate from the no-error normal run above.
   const delayed=await browser.newPage();const delayedErrors=[];delayed.on('pageerror',e=>delayedErrors.push(String(e)));
   await delayed.route('**/garden_after.jpeg',async route=>{await new Promise(resolve=>setTimeout(resolve,1800));await route.continue();});
-  await delayed.goto(base+'?debug',{waitUntil:'domcontentloaded'});await delayed.locator('#title-start').click();await delayed.locator('#map-enter').click();
+  await delayed.goto(base+'?debug',{waitUntil:'domcontentloaded'});await delayed.locator('#title-start').click();await initialMap(delayed);await delayed.locator('#map-enter').click();
   await delayed.waitForTimeout(300);assert.equal((await state(delayed)).journey.mode,'entering');assert.equal((await state(delayed)).world.time,0);assert.match(await delayed.locator('#area-transition-note').innerText(),/読み込んでいます/);await battleReady(delayed);await delayed.close();
   const failed=await browser.newPage();const failureErrors=[];failed.on('pageerror',e=>failureErrors.push(String(e)));
-  await failed.route('**/garden_after.jpeg',route=>route.abort());await failed.goto(base+'?debug');await failed.locator('#title-start').click();await failed.locator('#map-enter').click();
+  await failed.route('**/garden_after.jpeg',route=>route.abort());await failed.goto(base+'?debug');await failed.locator('#title-start').click();await initialMap(failed);await failed.locator('#map-enter').click();
   await failed.waitForFunction(()=>Deadline.stageArt.status(0)==='error');assert.equal((await state(failed)).world.time,0);assert.equal(await failed.locator('#stage-retry').isVisible(),true);
   await failed.unroute('**/garden_after.jpeg');await failed.locator('#stage-retry').focus();await failed.keyboard.press('Enter');await battleReady(failed);assert.equal((await state(failed)).world.wave,1);await failed.close();
   const cancel=await browser.newPage();cancel.on('pageerror',e=>failureErrors.push(String(e)));
   await cancel.route('**/garden_after.jpeg',async route=>{await new Promise(resolve=>setTimeout(resolve,1400));await route.continue();});
-  await cancel.goto(base+'?debug',{waitUntil:'domcontentloaded'});await cancel.locator('#title-start').click();await cancel.locator('#map-enter').click();await cancel.locator('#stage-title').focus();await cancel.keyboard.press('Space');
+  await cancel.goto(base+'?debug',{waitUntil:'domcontentloaded'});await cancel.locator('#title-start').click();await initialMap(cancel);await cancel.locator('#map-enter').click();await cancel.locator('#stage-title').focus();await cancel.keyboard.press('Space');
   assert.equal((await state(cancel)).titleActive,true);await cancel.waitForLoadState('networkidle');assert.equal((await state(cancel)).titleActive,true);assert.equal((await state(cancel)).world.time,0);await cancel.close();
   assert.deepEqual(delayedErrors,[]);assert.deepEqual(failureErrors,[]);report.loading={delayed:'waits without combat time or white frame',failure:'retry returns to Garden; no uncaught exception'};
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.failedRequests,[]);

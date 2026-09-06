@@ -1,6 +1,6 @@
 /* Development-only Chrome verification for EXECUTE visuals and synthesized audio. */
 'use strict';
-const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
+const {training,battleReady,nextArea,initialMap}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
 const C = require('../config.js'), S = require('../simulation.js');
@@ -16,7 +16,10 @@ async function open(page, options = {}) {
     if (settings.stopSeconds != null) Deadline.config.waves.definitions[0].timeStopSeconds = settings.stopSeconds;
   }, options);
   await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page);
-  await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(page);
+  await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);
+  // Training now preserves the existing campaign. Start a fresh run through TITLE to apply this test's tuning fixture.
+  if (Object.keys(options).length) { await page.locator('#map-title').click(); await page.locator('#title-start').click(); await initialMap(page); }
+  await battleReady(page);
 }
 async function coords(page, point) {
   const box = await page.locator('#arena').boundingBox(), scale = Math.min(box.width / 960, box.height / 600);

@@ -1,0 +1,42 @@
+{
+  "sourceCommit": "ce742ca5af0a7e2277fefb527e52d7ce5781185a",
+  "sourceFile": "game.js",
+  "introducedIn": "af7d087",
+  "preservedFunctionSHA256": {
+    "configurePracticeWorld": "6b7babbbca8ca1cb7e134ed6c0ff008635c5cc7ad54ffb1cb25a1f3bac88125c",
+    "notePracticeMovement": "e4dcb2180cd6f17f84cabaeae3518b82bf2a48d706da58ff3fb240c133b4910a",
+    "syncPracticeRouteStep": "38e0391b5d6ed7c44f9267bd20496f30187269cb21f1420a07c0cb3b5d46bfa8",
+    "updateBriefingPage": "88a0ffb18bf7d8c659f6159dcfdf8572885a7e107c59624ab86b9152bd2d2f1a",
+    "beginFromBriefing": "2aa1ca24688ae5a747a21ae3ef366311ffad435de3ce0b7670bbe7b7b2448583",
+    "toggleTime": "9fa5a2c6c6f22c4aaaf62cc9b4560ce76f95d6e1d7c2337206c76abe4c51c2be",
+    "handleEvents": "2fbbbee7412ef484acf27cdce913275474e74416ff15551401d10fffda20a100"
+  },
+  "practice": {
+    "moveDistance": 64,
+    "completeSeconds": 1.05,
+    "enemies": [
+      {
+        "x": 430,
+        "y": 210
+      },
+      {
+        "x": 690,
+        "y": 360
+      }
+    ],
+    "bullets": [
+      {
+        "x": 300,
+        "y": 105,
+        "vx": -24,
+        "vy": 0
+      },
+      {
+        "x": 790,
+        "y": 510,
+        "vx": 20,
+        "vy": 0
+      }
+    ]
+  }
+}

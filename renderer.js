@@ -154,30 +154,36 @@
       this.circle(0, 0, 1.7, null, light.core); g.restore();
     }
     practiceGuide(app) {
-      if (!app.practice?.active || ['running','complete'].includes(app.practice.step)) return;
-      const g = this.ctx, w = app.world, step = app.practice.step;
-      g.save(); g.font = 'bold 11px Consolas, monospace'; g.textAlign = 'center';
-      if (['move','freeze','evade'].includes(step)) {
-        g.fillStyle = light.core; g.fillText('YOU / PICO', w.player.x, w.player.y - 38);
+      if (!app.practice?.active || app.practice.step === 'running' || app.practice.step === 'complete') return;
+      const g = this.ctx, w = app.world, touch = !!app.touchControls, time = performance.now() * 0.001;
+      if (app.practice.step === 'move') {
+        if (touch) return;
+        const phase = app.reducedMotion ? 0.72 : (Math.sin(time * 3.4) + 1) * 0.5;
+        const x = w.player.x + 34 + phase * 70, y = w.player.y - 28 - phase * 18;
+        g.save(); g.setLineDash([5, 6]); g.strokeStyle = rgba(gold,.55); g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(w.player.x + 17, w.player.y - 10); g.lineTo(x - 13, y + 5); g.stroke(); g.setLineDash([]);
+        this.circle(w.player.x + 72, w.player.y - 43, 7, rgba(gold,.62), rgba(gold,.08), 1.2);
+        g.restore(); this.inputCue(x, y, false, false); return;
       }
-      if (step === 'evade') {
-        const p = root.Deadline.training.beacon;
-        const pulse = app.reducedMotion ? 0 : Math.sin(performance.now() * .002) * 3;
-        this.circle(p.x, p.y, 23 + pulse, light.middle, rgba(gold,.07), 1.4);
-        this.circle(p.x, p.y, 5, null, light.core);
-        g.fillStyle = light.middle; g.fillText('MOVE HERE', p.x, p.y + 43);
-        g.fillStyle = '#ff9db7'; g.fillText('DANGER', w.enemies[0].x, w.enemies[0].y + 43);
-      }
-      if (['draw','target'].includes(step)) {
-        const target = w.enemies[0];
-        g.fillStyle = cyan; g.fillText('TARGET', target.x, target.y - 57);
-        if (!app.practice.drawStarted) {
-          g.setLineDash([5,7]); g.strokeStyle = rgba(gold,.55); g.lineWidth = 1.3;
-          g.beginPath(); g.moveTo(w.player.x, w.player.y); g.lineTo(target.x, target.y); g.stroke(); g.setLineDash([]);
-          if (!app.touchControls) this.inputCue(w.player.x + 27, w.player.y - 25, false, true);
-        }
+      if (app.practice.step !== 'draw' || app.practice.drawStarted || w.phase !== 'stopped') return;
+      const enemies = w.enemies.filter(enemy => enemy.alive), points = [{ ...w.player }, ...enemies.map(enemy => ({ x: enemy.x, y: enemy.y }))];
+      if (points.length < 2) return;
+      const last = points[points.length - 1]; points.push({ x: Math.min(C.world.width - 45, last.x + 105), y: Math.min(C.world.height - 45, last.y + 70) });
+      const legs = []; let total = 0;
+      for (let i = 1; i < points.length; i++) { const length = S.distance(points[i - 1], points[i]); legs.push({ a: points[i - 1], b: points[i], start: total, length }); total += length; }
+      const progress = app.reducedMotion ? 0.62 : (time % 2.35) / 2.35, along = total * progress;
+      let point = points[0]; for (const leg of legs) if (along >= leg.start && along <= leg.start + leg.length) { const t = (along - leg.start) / leg.length; point = { x: leg.a.x + (leg.b.x - leg.a.x) * t, y: leg.a.y + (leg.b.y - leg.a.y) * t }; break; }
+      g.save(); this.path(points); g.setLineDash([8, 9]); g.lineDashOffset = app.reducedMotion ? 0 : -time * 18; g.strokeStyle = rgba(gold,.42); g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1], b = points[i], angle = Math.atan2(b.y - a.y, b.x - a.x), x = a.x + (b.x - a.x) * .72, y = a.y + (b.y - a.y) * .72;
+        g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = rgba(light.middle,.72); g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.restore();
       }
       g.restore();
+      if (touch) {
+        g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen'; g.shadowColor = gold; g.shadowBlur = 8;
+        g.strokeStyle = light.core; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-10, 0); g.lineTo(10, 0); g.moveTo(0, -10); g.lineTo(0, 10); g.stroke();
+        this.circle(0, 0, 6, rgba(light.middle,.7), rgba(gold,.08), 1.1); g.restore();
+      } else this.inputCue(point.x + 13, point.y + 17, false, true);
     }
     /**
      * Draws presentation-only entry/exit feedback without altering STOP timing.

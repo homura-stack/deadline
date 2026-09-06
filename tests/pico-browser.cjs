@@ -16,7 +16,7 @@ async function enter(page) {
   await page.locator('#title-start').click();
   await training(page);await page.waitForFunction(() => Deadline.inspect().briefingActive);
   await page.locator('#briefing-skip').click();
-  await page.waitForFunction(() => Deadline.inspect().world.time > 0);
+  await battleReady(page);await page.waitForFunction(() => Deadline.inspect().world.time > 0);
 }
 async function fixture(page, mode) {
   return page.evaluate(mode => {

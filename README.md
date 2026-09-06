@@ -6,12 +6,12 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
 
-現在のTASK E版では、Picoと実操作で学ぶ7段階のチュートリアルを導入しています。[TASK Eの実装・検証・復元手順](TASK_E.md)を参照してください。
+現在のTASK E.1版では、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しています。初回STARTではTRAININGとSKIPを明確に選べます。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。[TASK E](TASK_E.md)は変更前の記録です。
 
 ## プレイ
 
-- 開発中のTASK E確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK Eは未push・未反映）
+- 開発中のTASK E.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK E.1は未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -28,11 +28,11 @@ TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面のSTARTまたはSPACEでWORLD MAPへ進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
+タイトル画面の初回STARTまたはSPACEでFIRST FLIGHTを表示します。主ボタンTRAINING STARTで操作説明・練習へ、SKIPでWORLD MAPへ進みます。開始・スキップ・完了の選択を保存し、次のSTARTではWORLD MAPへ直接進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
-タイトルのHOW TO PLAY →「Picoと操作を練習する」、またはGARDEN開始前の「操作を練習する」からFIRST FLIGHTへ入れます。Picoの移動、TIME STOP、黄金LINE、シアンTARGET、敵・敵弾の回避、EXECUTE、WAVE CLEARの順に実操作で学びます。回避練習では実際の当たり判定を使い、触れるとその練習から再試行。練習のSTOPだけ時間無制限で、本番は従来どおり制限時間があります。完了画面の「GARDEN / WAVE 1へ」で新しい通常ゲームへ進み、練習のスコアや被弾を持ち越しません。TITLEから再受講できます。「練習せずGARDENへ」は実習を完了扱いにせず本番へ進みます。
+タイトルのHOW TO PLAY →「Picoと操作を練習する」、またはWORLD MAPのTRAININGボタンからいつでも再受講できます。旧版と同じEVADE → FREEZE → DRAW → EXECUTEの4ページで、マウス／MOVE PADの動きを見てから実習します。練習はPicoを64px動かす → TIME STOP → 2 TARGETを一筆書きで通る → SPACEで実行、という短い構成です。TIME STOPは旧版と同じ5秒。練習だけ安全猶予があり、実行時に弾を除去する旧版の扱いを維持しています。完了表示の約1秒後にWORLD MAPへ戻り、ENTER GARDENで本編を開始します。進行中のWORLD MAPから再受講した場合は、練習を終える／中断しても元の地区解禁・スコア・LIFEへ戻ります。練習中のR／「最初から」は練習だけを再開します。
 
-GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、短い静けさの後、Picoの位置からホタルの光が世界へ広がります。LIGHT RESTOREDの後、マップに復旧状態が残ります。CORE後は5地区の光が応答・同期し、エンディングを表示。RESTARTまたはTITLEを選べます。進行は今回のプレイ中だけ保持されます。R／「最初から」、タイトルへの帰還、リロードで新しい旅になります。
+GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、短い静けさの後、Picoの位置からホタルの光が世界へ広がります。LIGHT RESTOREDの後、マップに復旧状態が残ります。CORE後は5地区の光が応答・同期し、エンディングを表示。RESTARTまたはTITLEを選べます。本編進行は今回のプレイ中だけ保持されます。本編でのR／「最初から」、タイトルへの帰還、リロードで新しい旅になります。
 
 スマートフォンのMOVE PADは、通常時には自機、TIME STOP中には自機位置から始まる黄金色のDRAWカーソルを相対移動します。指を離してもルートとカーソル位置は維持され、再接触すると続きから描画できます。小さなドラッグは精密に、大きなドラッグは素早く反応し、DRAW時は通常移動の0.8倍の感度です。スマートフォンの戦闘入力はMOVE PAD＋画面ボタンだけで完結し、ゲームフィールドへの直接タップ・ドラッグ・長押しでは操作しません。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）はMOVEとDRAWの両方へ適用・保存されます。
 
@@ -66,7 +66,7 @@ python -m http.server 4186 --bind 127.0.0.1
 - Web Audio API
 - Pointer Events
 - `requestAnimationFrame`
-- `localStorage`（音量・タッチ感度設定）
+- `localStorage`（音量・タッチ感度・初回チュートリアルの選択）
 
 ゲーム本体は外部JavaScriptライブラリ、ゲームフレームワーク、CDN、外部API、外部フォントを使用していません。GitHub Pagesへそのまま配置できる相対パスの静的構成です。
 
@@ -86,7 +86,7 @@ python -m http.server 4186 --bind 127.0.0.1
 | `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
 | `renderer.js` | シミュレーション状態を変更しないCanvas描画と視覚効果 |
 | `audio.js` | Web Audio APIによる合成SE、音量設定、AudioNodeの寿命管理 |
-| `tutorial.js` / `tutorial.css` | Picoの7段階実習、練習専用World・進行条件・表示 |
+| `tutorial.js` / `tutorial.css` | 初回選択の軽量な保存と入口・旧説明図のPico表示。旧実習のWorld・進行は`game.js` |
 | `assets/` | 正式ロゴなど、リポジトリ内で配信する静的素材 |
 | `tests/` | Nodeロジックテストと実Chromeによる操作・描画・負荷検証 |
 
@@ -112,7 +112,7 @@ python -m http.server 4186 --bind 127.0.0.1
 - `barrage.test.cjs` — 射撃パターン、弾数上限、寿命、画面外破棄
 - `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
 - `journey.test.cjs` — エリア解禁、画像準備待ち、復旧・同期発光の表示状態
-- `tutorial.test.cjs` — 必須操作、回避・安全ルート条件、通常ゲームとの分離
+- `tutorial.test.cjs` — Git由来の旧実装との一致、2 TARGET実習、初回選択の保存と保存拒否時の動作
 
 `*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
 
@@ -126,6 +126,6 @@ node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
 ```
 
-確認済みviewportは1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。全検証の対象、コマンド、結果、物理端末で残る確認事項は[VERIFICATION.md](VERIFICATION.md)に記録しています。
+確認済みviewportは1920×1080 / 1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_E1.md](TASK_E1.md)に記録しています。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

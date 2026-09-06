@@ -54,14 +54,80 @@
     </div>
     <div class="title-bottomline"><span>止まった弾幕に、一本の導線を。<br><b>最後の一瞬で、すべてを貫く。</b></span><span class="title-input-note">MOUSE + SPACE<span class="device-touch"> / MOVE PAD</span><small>音あり推奨 · チュートリアル付き</small></span></div>
   </section>
-  <section id="briefing-screen" class="briefing-screen pico-welcome" aria-labelledby="training-welcome-title" aria-modal="true" role="dialog" hidden>
-    <div class="pico-welcome-panel">
-      <header><span>FIRST FLIGHT / 操作の練習</span><button id="briefing-back" type="button">TITLE ↗</button></header>
-      <article class="briefing-page" data-briefing-page="0">
-        <div class="pico-welcome-art"><img src="assets/characters/pico.png" alt="白い機械の外装と黄金の腹部を持つPico"><span>YOU / PICO</span></div>
-        <div class="pico-welcome-copy"><p class="pico-eyebrow">SMALL LIGHT. BIG CONNECTIONS.</p><h2 id="training-welcome-title">最初のひかりを、<br>いっしょに。</h2><p>小さな機械生命体Picoと、飛ぶ練習をしよう。<br>動かす、止める、つなぐ。最後は、光になる。</p><p class="pico-welcome-note">練習は時間無制限・いつでもやり直せます。<br>本番のスコアや進行には影響しません。</p></div>
-      </article>
-      <div class="briefing-actions"><button id="briefing-skip" class="briefing-skip" type="button">練習せずGARDENへ</button><button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>Picoと練習する</span></button></div>
+  <section id="first-flight" class="first-flight" aria-labelledby="first-flight-title" role="dialog" aria-modal="true" hidden>
+    <div class="first-flight-panel"><p class="flight-kicker">FIRST FLIGHT</p><img src="assets/characters/pico.png" width="160" height="156" alt="黄金色に光るPico"><h2 id="first-flight-title">Picoの飛び方を覚えよう。</h2><p>時間を止めて、光を描いて、一気に飛ぶ。</p><button id="first-training" type="button">TRAINING START <span aria-hidden="true">↗</span></button><button id="first-skip" type="button">SKIP → WORLD MAP</button></div>
+  </section>
+  <section id="briefing-screen" class="briefing-screen" aria-label="初回操作説明" aria-modal="true" role="dialog" hidden>
+    <div class="briefing-panel">
+      <header class="briefing-header"><span id="briefing-counter">BRIEFING / 01 OF 04</span><strong>PICO / FIRST FLIGHT</strong></header>
+      <div class="briefing-pages">
+        <article class="briefing-page" data-briefing-page="0">
+          <div class="briefing-copy"><span class="briefing-number">01 / EVADE</span><h2>MOVE AND AVOID<br>ENEMY FIRE.</h2><p>黄金色に光るPicoを動かして<br>敵の攻撃を避けよう。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
+          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="マウスまたはMOVE PADでPicoを動かし、敵弾を大きく避ける図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-enemy" transform="translate(400 150)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-bullet demo-bullet-evade"><circle r="6"/><path d="M8 0H24"/></g>
+            <path class="demo-motion-lane" d="M118 150V67"/>
+            <g class="demo-player demo-player-evade"><image class="demo-pico-sprite" href="assets/characters/pico.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-input demo-input-pc demo-input-evade"><rect class="demo-mouse-shell" x="-9" y="-14" width="18" height="28" rx="8"/><path d="M0-13V-3"/><path class="demo-mouse-button" d="M-7-12H0V-3H-8Z"/></g>
+            <g class="demo-input demo-input-touch demo-pad-move" transform="translate(70 210)"><rect class="demo-mini-pad" x="-43" y="-18" width="86" height="36" rx="3"/><path class="demo-pad-cross" d="M-12 0H12M0-10V10"/><g class="demo-pad-move-finger"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/><circle class="demo-touch-ring" cy="-8" r="9"/></g></g>
+            <text class="demo-input-pc" x="18" y="25">MOUSE MOVE</text><text class="demo-touch-only" x="18" y="25">MOVE PAD</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="1" hidden>
+          <div class="briefing-copy"><span class="briefing-number">02 / FREEZE</span><h2>STOP THE<br>ENTIRE WORLD.</h2><p>TIME STOPすると敵と弾丸が停止。<br>止まった弾幕の中で攻撃ルートを考えられる。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">TIME STOP BUTTON</span></div></div>
+          <svg class="briefing-demo demo-freeze" viewBox="0 0 480 240" role="img" aria-label="SPACEまたはボタン入力で敵と敵弾が同時に静止する図">
+            <rect class="demo-stop-wash" width="480" height="240"/>
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-freeze-world">
+              <g class="demo-enemy" transform="translate(400 130)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
+              <g class="demo-bullet demo-bullet-freeze"><circle r="6"/><path d="M8 0H24"/></g>
+            </g>
+            <g class="demo-player" transform="translate(92 140)"><image class="demo-pico-sprite" href="assets/characters/pico.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-input demo-input-pc demo-freeze-key" transform="translate(126 204)"><rect class="demo-keycap" x="-34" y="-14" width="68" height="28" rx="3"/><text x="0" y="4">SPACE</text></g>
+            <g class="demo-input demo-input-touch demo-freeze-button" transform="translate(126 204)"><rect class="demo-touch-button" x="-47" y="-15" width="94" height="30" rx="3"/><text x="0" y="4">TIME STOP</text><g class="demo-tap-finger" transform="translate(40 -9)"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/></g></g>
+            <rect class="demo-freeze-frame" x="7" y="7" width="466" height="226"/>
+            <text class="demo-normal-label" x="18" y="25">RUNNING</text><text class="demo-stop-label" x="18" y="25">FROZEN</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="2" hidden>
+          <div class="briefing-copy"><span class="briefing-number">03 / DRAW</span><h2>DRAW THROUGH<br>THE ENEMIES.</h2><p>Picoの黄金の光跡を一筆書き。<br>シアンの輪を通るとTARGETをロック。</p><div class="briefing-input"><span class="device-pc">MOUSE DRAG</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
+          <svg class="briefing-demo demo-draw" viewBox="0 0 480 240" role="img" aria-label="Picoを押したまま2体の敵を順に通る一筆書き操作の図">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-player" transform="translate(70 175)"><image class="demo-pico-sprite" href="assets/characters/pico.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-enemy demo-target-one" transform="translate(235 92)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/><circle class="demo-target-ring" r="29"/><text x="0" y="-25">1</text></g>
+            <g class="demo-enemy demo-target-two" transform="translate(395 155)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/><circle class="demo-target-ring" r="29"/><text x="0" y="-25">2</text></g>
+            <path class="demo-route demo-route-guide" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <path class="demo-route demo-route-drawing" pathLength="1" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <circle class="demo-click-origin demo-input-pc" cx="70" cy="175" r="12"/>
+            <g class="demo-input demo-input-pc demo-input-draw"><rect class="demo-mouse-shell" x="-9" y="-14" width="18" height="28" rx="8"/><path d="M0-13V-3"/><path class="demo-mouse-button" d="M-7-12H0V-3H-8Z"/></g>
+            <g class="demo-touch-only demo-touch-draw-cursor"><circle r="9"/><path d="M-13 0H13M0-13V13"/></g>
+            <g class="demo-input demo-input-touch demo-pad-draw" transform="translate(70 210)"><rect class="demo-mini-pad" x="-43" y="-18" width="86" height="36" rx="3"/><path class="demo-pad-cross" d="M-12 0H12M0-10V10"/><g class="demo-pad-finger"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/><circle class="demo-touch-ring" cy="-8" r="9"/></g></g>
+            <text x="18" y="25">PRESS · HOLD · DRAW</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="3" hidden>
+          <div class="briefing-copy"><span class="briefing-number">04 / EXECUTE</span><h2>EXECUTE THE<br>DRAWN ROUTE.</h2><p>時間切れになる前に実行。<br>Picoが線上を高速移動しTARGETを連続撃破する。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">EXECUTE BUTTON</span></div></div>
+          <svg class="briefing-demo demo-execute" viewBox="0 0 480 240" role="img" aria-label="実行入力後にPicoがルートを走り、通過した瞬間に敵を連続撃破する図">
+            <rect class="demo-execute-wash" width="480" height="240"/>
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <path class="demo-route demo-route-complete" d="M70 175C120 155 170 112 235 92S330 128 395 155L445 130"/>
+            <g class="demo-bullet demo-execute-bullet-one"><circle r="5"/><path d="M7 0H18"/></g><g class="demo-bullet demo-execute-bullet-two"><circle r="5"/><path d="M7 0H18"/></g>
+            <g class="demo-enemy demo-kill-one" transform="translate(235 92)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-enemy demo-kill-two" transform="translate(395 155)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-player demo-player-execute"><image class="demo-pico-sprite" href="assets/characters/pico.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-input demo-input-pc demo-execute-key" transform="translate(92 207)"><rect class="demo-keycap" x="-34" y="-14" width="68" height="28" rx="3"/><text x="0" y="4">SPACE</text></g>
+            <g class="demo-input demo-input-touch demo-execute-button" transform="translate(92 207)"><rect class="demo-touch-button" x="-42" y="-15" width="84" height="30" rx="3"/><text x="0" y="4">EXECUTE</text><g class="demo-tap-finger" transform="translate(36 -9)"><path class="demo-finger" d="M-5 11V-8a4 4 0 0 1 8 0v9l3-2c5-2 8 1 7 6l-2 9H-2Z"/></g></g>
+            <g class="demo-impact demo-impact-one" transform="translate(235 92)"><circle r="12"/><path d="M-22 22 22-22M-15-19 18 14"/></g>
+            <g class="demo-impact demo-impact-two" transform="translate(395 155)"><circle r="12"/><path d="M-22 22 22-22M-15-19 18 14"/></g>
+            <circle class="demo-resume-ring" cx="70" cy="175" r="14"/>
+            <rect class="demo-execute-frame" x="7" y="7" width="466" height="226"/>
+            <text x="18" y="25">EXECUTE</text>
+          </svg>
+        </article>
+      </div>
+      <div class="briefing-progress" aria-hidden="true"><i class="is-active"></i><i></i><i></i><i></i></div>
+      <div class="briefing-actions"><button id="briefing-back" class="briefing-back" type="button" disabled>BACK</button><button id="briefing-skip" class="briefing-skip" type="button">WORLD MAPへ</button><button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>NEXT</span></button></div>
     </div>
   </section>
   <section id="world-map" class="world-map" aria-labelledby="world-map-heading" hidden inert>
@@ -69,7 +135,7 @@
     <div class="map-layout">
       <div class="map-intro"><p class="map-kicker">CIRCUIT ATLAS / 01—05</p><h1 id="world-map-heading">WORLD<br><span>MAP</span></h1><p class="map-copy">止まった回路に、<br>もういちど ひかりを。</p><div class="map-progress"><strong id="map-restored-count">0 <span>/ 5</span></strong><span>AREAS ONLINE</span><div id="map-progress-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div><p id="map-notice" class="map-notice" role="status" aria-live="polite">GARDENから旅をはじめよう。</p></div>
       <div id="map-board" class="map-board" role="group" aria-label="電子回路で繋がる5つのエリア"></div>
-      <aside class="map-detail" aria-labelledby="map-area-name"><p id="map-area-number" class="map-kicker">AREA 01</p><h2 id="map-area-name">GARDEN</h2><p id="map-area-ja">蛍庭区</p><span id="map-area-status">DEAD CIRCUIT</span><p id="map-area-description">電子植物が眠る、はじまりの庭。</p><dl><div><dt>WAVE</dt><dd id="map-area-waves">01 — 02</dd></div><div><dt>SCORE</dt><dd id="map-score">0</dd></div></dl><button id="map-enter" type="button"><span>ENTER GARDEN</span><b aria-hidden="true">↗</b></button><button id="map-training" class="map-training" type="button">操作を練習する / TRAINING</button><p class="map-session-note">タイトルに戻ると旅を最初から始めます。</p></aside>
+      <aside class="map-detail" aria-labelledby="map-area-name"><p id="map-area-number" class="map-kicker">AREA 01</p><h2 id="map-area-name">GARDEN</h2><p id="map-area-ja">蛍庭区</p><span id="map-area-status">DEAD CIRCUIT</span><p id="map-area-description">電子植物が眠る、はじまりの庭。</p><dl><div><dt>WAVE</dt><dd id="map-area-waves">01 — 02</dd></div><div><dt>SCORE</dt><dd id="map-score">0</dd></div></dl><button id="map-enter" type="button"><span>ENTER GARDEN</span><b aria-hidden="true">↗</b></button><button id="map-training" class="map-training" type="button"><strong>TRAINING</strong><span>操作を練習する ↗</span></button><p class="map-session-note">タイトルに戻ると旅を最初から始めます。</p></aside>
       <aside id="journey-ending" class="journey-ending" aria-labelledby="ending-title" hidden>
         <p class="map-kicker">5 / 5 AREAS ONLINE</p><h2 id="ending-title">DEAD<span>/</span>LINE</h2>
         <p class="ending-copy">止まった回路に、<br>もういちど ひかりを。</p><p class="ending-english">LIGHT THE DEAD CIRCUIT.</p>
@@ -83,13 +149,9 @@
   <main id="game-shell" class="shell" aria-hidden="true" inert>
     <header class="masthead">
       <div class="masthead-logo" aria-label="DEAD/LINE">DEAD<span>/</span>LINE<small>LIGHT THE DEAD CIRCUIT.</small></div>
-      <div class="utilities"><button id="sound" aria-pressed="true">音 ON</button><button id="restart" title="最初から / R">最初から ↻</button></div>
+      <div class="utilities"><button id="practice-exit" type="button" hidden>WORLD MAP ↗</button><button id="sound" aria-pressed="true">音 ON</button><button id="restart" title="最初から / R">最初から ↻</button></div>
     </header>
     <section class="game" aria-label="時間停止ルートゲーム">
-      <section id="training-card" class="pico-lesson" aria-label="Picoの操作練習" hidden>
-        <div class="pico-lesson-top"><span id="training-step">FIRST FLIGHT / 01—07</span><ol id="training-progress" aria-label="練習の進み具合"><li>PICO</li><li>STOP</li><li>LINE</li><li>TARGET</li><li>DANGER</li><li>EXECUTE</li><li>CLEAR</li></ol><button id="training-exit" type="button">TITLE ↗</button></div>
-        <div class="pico-lesson-body"><div aria-live="polite" aria-atomic="true"><h2 id="training-heading"></h2><p id="training-copy"></p></div><button id="training-action" type="button" hidden></button></div>
-      </section>
       <div class="hud">
         <div class="status-stat"><span>STATUS</span><strong id="phase">NORMAL</strong><small id="status-action">MOVE / EVADE</small></div>
         <div class="wave-stat"><span>WAVE</span><strong id="wave" aria-label="Wave 1 of 10"><b id="wave-current">1</b><i> / </i><small id="wave-total">10</small></strong></div>
