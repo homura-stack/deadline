@@ -149,3 +149,5 @@ node tests/world-map-art-browser.cjs
 タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、画質調査は[TASK_G1.md](TASK_G1.md)、START遷移の検証は[TASK_G2.md](TASK_G2.md)、今回のWORLD MAPと回帰テストは[TASK_H.md](TASK_H.md)に記録します。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。
+
+TASK IのUI監査・情報階層・比較画面は[TASK_I.md](TASK_I.md)に記録しています。`node tests/ui-polish-browser.cjs`で3つのPC解像度の主要HUD、実画面のWORLD MAP背景、初回TRAININGから地区復旧、被弾とRETRYを確認できます。ゲームの操作・難易度・進行は変更していません。

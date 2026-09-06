@@ -215,26 +215,31 @@
     const w = app.world, stopped = w.phase === 'stopped', executing = w.phase === 'executing', resting = w.phase === 'wave-clear', complete = w.phase === 'complete';
     const waveConfig = C.waves.definitions[w.waveIndex], oneStop = !!waveConfig.oneStopRequired, preview = w.phase === 'rule-preview', intro = w.phase === 'rule-intro', incomplete = w.phase === 'one-stop-failed';
     const routeReady = stopped && (w.route?.points.length || 0) > 1, drawing = stopped && app.routeFx.drawing;
-    ui['stop-time'].textContent = stopped ? `${w.stopRemaining.toFixed(1)}s` : '—';
+    ui['stop-time'].textContent = stopped ? `${w.stopRemaining.toFixed(1)}s` : `${Math.floor(w.gauge / C.gauge.max * 100)}%`;
     ui['stop-gauge-label'].textContent = stopped ? 'TIME LEFT' : 'TIME STOP';
-    const locks = w.route?.locks.length || 0, targets = w.stopTargetCount || w.enemies.filter(e => e.alive).length;
-    ui['lock-count'].textContent = stopped && oneStop ? `${locks} / ${targets}` : String(locks);
-    ui['lock-label'].textContent = oneStop ? 'ONE STOP · LOCK' : 'LOCK';
+    const locks = w.route?.locks.length || 0, targets = (stopped || executing ? w.stopTargetCount : 0) || w.enemies.filter(e => e.alive).length;
+    ui['lock-count'].textContent = resting || complete ? 'CLEAR' : `${locks} / ${targets}`;
+    ui['lock-label'].textContent = 'TARGET';
     const allLocked = stopped && oneStop && targets > 0 && locks === targets;
     ui['lock-count'].classList.toggle('all-locked', allLocked); ui['lock-ready'].hidden = !allLocked;
     ui.life.textContent = String(w.life);
+    ui.life.setAttribute('aria-label', `LIFE ${w.life}`);
+    ui.life.classList.toggle('is-empty', w.life === 0);
+    const targetComplete = resting || complete || (stopped && targets > 0 && locks === targets);
+    $('target-note').textContent = targetComplete ? '✓ COMPLETE' : oneStop ? '全TARGETを通過' : 'ルートで通過';
+    $('phase-label').textContent = app.practice.active ? `TRAINING ${Math.min(4, ['move','freeze','draw','execute','complete'].indexOf(app.practice.step) + 1)} / 4` : 'PHASE / 状態';
     ui['wave-current'].textContent = String(w.wave); ui['wave-total'].textContent = String(C.waves.definitions.length);
     ui.wave.setAttribute('aria-label', `Wave ${w.wave} of ${C.waves.definitions.length}`); ui.score.textContent = String(w.score);
     const ready = S.canStop(w);
     if (stopped) {
       const duration = waveConfig.timeStopSeconds * w.timeLimitMultiplier;
       ui['stop-gauge'].max = duration; ui['stop-gauge'].value = w.stopRemaining;
-      ui['gauge-value'].textContent = 'ACTIVE';
+      ui['gauge-value'].textContent = w.stopRemaining <= C.feedback.timeStopVisual.criticalSeconds ? '残りわずか' : '残り時間';
       ui['stop-gauge'].setAttribute('aria-label', 'TIME STOP remaining');
       ui['stop-gauge'].setAttribute('aria-valuetext', `${w.stopRemaining.toFixed(1)} seconds remaining`);
     } else {
       ui['stop-gauge'].max = C.gauge.max; ui['stop-gauge'].value = w.gauge;
-      ui['gauge-value'].textContent = ready ? 'READY' : `${Math.floor(w.gauge / C.gauge.max * 100)}%`;
+      ui['gauge-value'].textContent = ready ? 'READY' : '充電中';
       ui['stop-gauge'].setAttribute('aria-label', 'TIME STOP charge');
       ui['stop-gauge'].setAttribute('aria-valuetext', ready ? 'ready' : `${Math.floor(w.gauge / C.gauge.max * 100)} percent`);
     }

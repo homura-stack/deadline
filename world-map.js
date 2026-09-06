@@ -41,7 +41,7 @@
     constructor(container,onSelect) {
       this.container=container;
       const id=`map-art-${++serial}`, h=art.height;
-      container.innerHTML=`<img class="world-before" src="${art.before}" width="2752" height="1536" alt="光を失った電子都市。下の蛍庭区、左の工業区、右の水路、上の塔群、中央の核。" decoding="async">
+      container.innerHTML=`<img class="world-before" src="${art.before}" width="2752" height="1536" alt="光を失った電子都市。下の蛍庭区、左の工業区、右の水路、上の塔群、中央の核。" decoding="sync">
         <img class="world-after-source" src="${art.after}" width="2750" height="1536" alt="" hidden decoding="async">
         <svg class="world-diagram world-art" viewBox="0 0 1000 ${h}" aria-hidden="true">
           <defs>
@@ -93,8 +93,9 @@
       this.buttons.forEach((button,i)=>{
         const status=J.status(state,i), label=status==='online'?'RESTORED':status==='available'?'UNLOCKED':'LOCKED';
         button.dataset.status=this.cities[i].dataset.status=status;
+        button.setAttribute('aria-current',i===Math.min(4,state.restored)?'location':'false');
         button.setAttribute('aria-label',`AREA ${i+1} ${J.areas[i].name} ${J.areas[i].ja} ${label}`);
-        button.setAttribute('aria-pressed',String(state.selected===i));button.querySelector('em').textContent=label;
+        button.setAttribute('aria-pressed',String(state.selected===i));button.querySelector('em').textContent=(i===Math.min(4,state.restored)?'CURRENT · ':'')+label;
         this.cities[i].classList.toggle('is-selected',state.selected===i);
       });
       this.connections.forEach((wire,i)=>wire.dataset.powered=String(i<4?state.restored>i+1:state.restored===5));

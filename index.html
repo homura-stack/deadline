@@ -23,6 +23,7 @@
   <script defer src="game.js"></script>
   <link rel="stylesheet" href="tutorial.css">
   <link rel="stylesheet" href="title-pico.css">
+  <link rel="stylesheet" href="ui-polish.css">
   <script defer src="title-screen.js"></script>
 </head>
 <body class="title-open">
@@ -159,9 +160,9 @@
     </header>
     <section class="game" aria-label="時間停止ルートゲーム">
       <div class="hud">
-        <div class="status-stat"><span>STATUS</span><strong id="phase">NORMAL</strong><small id="status-action">MOVE / EVADE</small></div>
+        <div class="status-stat"><span id="phase-label">PHASE / 状態</span><strong id="phase">NORMAL</strong><small id="status-action">MOVE / EVADE</small></div>
         <div class="wave-stat"><span>WAVE</span><strong id="wave" aria-label="Wave 1 of 10"><b id="wave-current">1</b><i> / </i><small id="wave-total">10</small></strong></div>
-        <div class="hud-secondary"><div class="score-stat"><span>SCORE</span><strong id="score">0</strong></div><div class="lock-stat"><span id="lock-label">LOCK</span><strong id="lock-count">0</strong></div><div class="life-stat"><span>LIFE</span><strong id="life">1</strong></div></div>
+        <div class="hud-secondary"><div class="lock-stat"><span id="lock-label">LOCK</span><strong id="lock-count">0</strong><small id="target-note">ルートで通過</small></div><div class="life-stat"><span>LIFE</span><strong id="life" aria-label="LIFE 1">1</strong></div></div>
       </div>
       <div class="charge"><label for="stop-gauge"><span id="stop-gauge-label">TIME STOP</span><strong id="stop-time">—</strong></label><progress id="stop-gauge" max="100" value="20"></progress><span id="gauge-value">20%</span></div>
       <div class="arena-wrap">
@@ -188,7 +189,8 @@
         <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span><svg class="practice-button-finger" aria-hidden="true" viewBox="0 0 30 38"><path d="M8 31V11a4 4 0 0 1 8 0v8l3-2c5-2 8 1 7 6l-2 10H11Z"/><circle cx="12" cy="11" r="9"/></svg></button></div>
       </div>
     </section>
-    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span class="field-legend"><i class="legend-player"></i> PICO / LINE <i class="legend-target"></i> TARGET <i class="legend-enemy"></i> ENEMY <i class="legend-bullet"></i> HAZARD</span></footer>
+    <footer class="play-footer"><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span class="field-legend"><i class="legend-player"></i> PICO / LINE <i class="legend-target"></i> TARGET <i class="legend-enemy"></i> ENEMY <i class="legend-bullet"></i> HAZARD</span><div class="score-stat"><span>SCORE</span><strong id="score">0</strong></div>
+    <details class="play-help"><summary>操作を確認する</summary><div><p><b>MOVE</b> マウス移動 / MOVE PADでPicoを操作し、敵と弾を避ける。</p><p><b>TIME STOP</b> 充電が完了したら <kbd>SPACE</kbd>。黄金のLINEを描いてシアンのTARGETを通過。</p><p><b>EXECUTE</b> <kbd>SPACE</kbd> で実行。PCではキーで実行します。</p><p><kbd>Z</kbd> 一つ戻す　<kbd>X</kbd> 描き直す　<kbd>C</kbd> 停止をキャンセル</p><small>確認中もゲームの時間は進みます。</small></div></details></footer>
     <details id="debug" hidden><summary>DEBUG</summary><label><input id="debug-shapes" type="checkbox"> 自機・敵・弾の当たり判定／ロック範囲</label><output id="debug-values"></output></details>
   </main>
 </body>
