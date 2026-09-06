@@ -148,7 +148,7 @@ kbd { border-radius: 3px; font-weight: 400; }
 footer { padding-top: 13px; align-items: center; color: #a7b8c8; }
 .field-legend { display: flex; align-items: center; gap: 7px; color: #9aabba; font: 9px var(--utility); letter-spacing: .08em; }
 .field-legend i { width: 6px; height: 6px; display: inline-block; margin-left: 12px; }
-.legend-player { background: var(--cyan); transform: rotate(45deg); }
+.legend-player { background: var(--gold); transform: rotate(45deg); }
 .legend-enemy { background: var(--red); clip-path: polygon(50% 0,100% 100%,0 100%); width: 8px !important; height: 8px !important; }
 .legend-bullet { background: var(--gold); border-radius: 50%; }
 .execution-cue { position: absolute; inset: 11% 0 auto; text-align: center; pointer-events: none; opacity: 0; color: #ffe5b5; font: 48px/.95 var(--display); letter-spacing: .09em; }

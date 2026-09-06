@@ -53,22 +53,48 @@
       g.moveTo(points[0].x, points[0].y); for (let i = 1; i < points.length; i++) g.lineTo(points[i].x, points[i].y);
       if (closed) g.closePath();
     }
-    enemy(enemy, colors, alpha = 1) {
+    /** Draw a cached transparent sprite about its collision-center anchor. Never changes world state. */
+    character(key, x, y, flash = 0) {
+      const asset = root.Deadline.characters?.entries[key];
+      if (asset?.status !== 'ready') return false;
+      const g = this.ctx, left = x - asset.width * asset.anchorX, top = y - asset.height * asset.anchorY;
+      g.drawImage(asset.stamp, left, top, asset.width, asset.height);
+      if (flash > 0) {
+        g.save(); g.globalAlpha *= Math.min(1, flash);
+        g.drawImage(asset.flash, left, top, asset.width, asset.height); g.restore();
+      }
+      return true;
+    }
+    enemy(enemy, colors, alpha = 1, hitFlash = false) {
       const g = this.ctx, r = C.enemy.radius - 2;
       g.save(); g.globalAlpha = alpha; g.fillStyle = colors.fill; g.strokeStyle = colors.stroke; g.lineWidth = 1.8;
-      const sides = { aim: 3, fan: 5, burst: 0, rotate: 4, delay: 6 }[enemy.pattern] ?? 3;
-      g.beginPath();
-      if (!sides) g.arc(enemy.x, enemy.y, r, 0, Math.PI * 2);
-      else { for (let i = 0; i < sides; i++) {
-        const a = -Math.PI / 2 + i * Math.PI * 2 / sides, x = enemy.x + Math.cos(a) * (r + 2), y = enemy.y + Math.sin(a) * (r + 2);
-        if (i) g.lineTo(x, y); else g.moveTo(x, y);
-      } g.closePath(); }
-      if (enemy.delayRemaining != null) g.fillStyle = colors.delayFill;
-      g.fill(); g.stroke();
-      // Faceted casing stays within the original radius; type silhouettes remain distinct.
-      g.save(); g.translate(enemy.x, enemy.y); g.strokeStyle = colors.stroke; g.globalAlpha *= .4;
-      g.beginPath(); g.moveTo(-r * .62, r * .45); g.lineTo(0, -r * .56); g.lineTo(r * .62, r * .45); g.stroke();
-      g.restore();
+      const sprite = root.Deadline.characters?.enemyTypes[enemy.pattern];
+      const hasSprite = this.character(sprite, enemy.x, enemy.y, hitFlash ? .85 : 0);
+      if (hasSprite) {
+        // The red danger rim remains separate from the larger cyan TARGET ring, including on the cyan-core enemy.
+        g.strokeStyle = '#ff7395'; g.lineWidth = 1;
+        g.beginPath(); g.arc(enemy.x, enemy.y, C.enemy.radius + 2, .15 * Math.PI, .85 * Math.PI); g.stroke();
+        if (enemy.pattern === 'fan') {
+          g.beginPath();
+          for (const dx of [-5, 0, 5]) { g.moveTo(enemy.x + dx, enemy.y + 19); g.lineTo(enemy.x + dx, enemy.y + 22); }
+          g.stroke();
+        }
+      } else {
+        const sides = { aim: 3, fan: 5, burst: 0, rotate: 4, delay: 6 }[enemy.pattern] ?? 3;
+        g.beginPath();
+        if (!sides) g.arc(enemy.x, enemy.y, r, 0, Math.PI * 2);
+        else { for (let i = 0; i < sides; i++) {
+          const a = -Math.PI / 2 + i * Math.PI * 2 / sides, x = enemy.x + Math.cos(a) * (r + 2), y = enemy.y + Math.sin(a) * (r + 2);
+          if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        } g.closePath(); }
+        if (enemy.delayRemaining != null) g.fillStyle = colors.delayFill;
+        g.fill(); g.stroke();
+        // Faceted casing stays within the original radius; type silhouettes remain distinct.
+        g.save(); g.translate(enemy.x, enemy.y); g.strokeStyle = colors.stroke; g.globalAlpha *= .4;
+        g.beginPath(); g.moveTo(-r * .62, r * .45); g.lineTo(0, -r * .56); g.lineTo(r * .62, r * .45); g.stroke();
+        g.restore();
+      }
+      g.strokeStyle = hasSprite ? '#ff7395' : colors.stroke;
       if (enemy.pattern === 'rotate') {
         g.beginPath(); g.moveTo(enemy.x, enemy.y); g.lineTo(enemy.x + Math.cos(enemy.rotateAngle) * 21, enemy.y + Math.sin(enemy.rotateAngle) * 21); g.stroke();
       }
@@ -78,7 +104,8 @@
         g.beginPath(); g.moveTo(enemy.x + Math.cos(enemy.delayAngle) * 18, enemy.y + Math.sin(enemy.delayAngle) * 18);
         g.lineTo(enemy.x + Math.cos(enemy.delayAngle) * 30, enemy.y + Math.sin(enemy.delayAngle) * 30); g.stroke();
       }
-      this.circle(enemy.x, enemy.y, 3, null, colors.core); g.restore();
+      if (!hasSprite) this.circle(enemy.x, enemy.y, 3, null, colors.core);
+      g.restore();
     }
     bullet(bullet, stopBlend) {
       // Pattern is communicated by the live projectile itself; no trails or prediction guides.
@@ -263,7 +290,7 @@
       for (const hit of app.hits) {
         const k = hit.life / hit.maxLife, elapsed = hit.maxLife - hit.life, defeated = !!hit.defeated;
         const flash = Math.max(0, 1 - elapsed / C.feedback.executeVisual.hitFlashSeconds);
-        if (hit.enemy && flash > 0) this.enemy(hit.enemy, { fill: '#d7fcff', stroke: '#ffffff', core: '#ffffff', delayFill: '#d7fcff', delayStroke: '#ffffff' }, 0.25 + flash * 0.7);
+        if (hit.enemy && flash > 0) this.enemy(hit.enemy, { fill: '#d7fcff', stroke: '#ffffff', core: '#ffffff', delayFill: '#d7fcff', delayStroke: '#ffffff' }, 0.25 + flash * 0.7, true);
         const dx = hit.x - hit.from.x, dy = hit.y - hit.from.y, length = Math.hypot(dx, dy) || 1, nx = -dy / length, ny = dx / length;
         const slashLength = defeated ? 27 : 20, spread = defeated ? 5 : 3;
         g.save(); g.globalCompositeOperation = 'screen'; g.strokeStyle = `rgba(255,239,199,${Math.min(1, k * 1.5)})`; g.lineCap = 'round';
@@ -299,18 +326,24 @@
       const player = w.player;
       if (app.combatFx?.releasePulse > 0 && !app.reducedMotion) {
         const k = app.combatFx.releasePulse / C.feedback.executeVisual.releasePulseSeconds;
-        this.circle(player.x, player.y, 14 + (1 - k) * 44, `rgba(121,228,242,${k * 0.7})`, null, 1.8 * k);
+        this.circle(player.x, player.y, 14 + (1 - k) * 44, rgba(gold, k * 0.7), null, 1.8 * k);
       }
       if (w.safetyRemaining > 0) this.circle(player.x, player.y, C.player.radius + 8, '#e7fcff', null, 1.5);
-      this.circle(player.x, player.y, 15 + stopBlend * 9 + (w.phase === 'executing' ? 5 : 0), null, `rgba(121,228,242,${0.07 + stopBlend * 0.2 + (w.phase === 'executing' ? 0.1 : 0)})`);
+      this.circle(player.x, player.y, 15 + stopBlend * 9 + (w.phase === 'executing' ? 5 : 0), null, rgba(gold, 0.07 + stopBlend * 0.12 + (w.phase === 'executing' ? 0.1 : 0)));
       const damage = app.damageFx?.remaining > 0 ? app.damageFx.remaining / app.damageFx.max : 0;
-      g.save(); g.translate(player.x + (damage && !app.reducedMotion ? Math.sin(damage * 35) * 2 : 0), player.y); g.rotate(Math.PI / 4);
-      if (stopBlend > 0) { g.shadowColor = '#79e4f2'; g.shadowBlur = 6 + stopBlend * 12; }
-      g.fillStyle = w.failed ? '#af4a60' : w.phase === 'executing' ? '#ffecc7' : mix('#a8eee7', stopVisual.playerFill, stopBlend); g.strokeStyle = mix('#d8faff', stopVisual.playerStroke, stopBlend); g.lineWidth = 1.5;
-      const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2);
-      g.fillStyle = '#345b64'; g.fillRect(-1.8, -1.8, 3.6, 3.6); g.restore();
+      g.save(); g.translate(player.x + (damage && !app.reducedMotion ? Math.sin(damage * 35) * 2 : 0), player.y);
+      if (w.failed) g.globalAlpha = .55;
+      const pico = this.character('pico', 0, 0, w.phase === 'executing' ? .32 : damage * .7);
+      if (!pico) {
+        g.rotate(Math.PI / 4);
+        if (stopBlend > 0) { g.shadowColor = gold; g.shadowBlur = 6 + stopBlend * 12; }
+        g.fillStyle = w.failed ? '#af4a60' : '#ffecc7'; g.strokeStyle = '#fff5dc'; g.lineWidth = 1.5;
+        const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2);
+        g.fillStyle = '#493b2d'; g.fillRect(-1.8, -1.8, 3.6, 3.6);
+      }
+      g.restore();
       if (!w.failed) {
-        g.save(); g.strokeStyle = w.phase === 'executing' ? rgba(gold, .6) : '#b1e5de65'; g.lineWidth = .8;
+        g.save(); g.strokeStyle = rgba(gold, .6); g.lineWidth = .8;
         g.beginPath(); g.moveTo(player.x - 17, player.y - 4); g.lineTo(player.x - 17, player.y + 4);
         g.moveTo(player.x + 17, player.y - 4); g.lineTo(player.x + 17, player.y + 4); g.stroke(); g.restore();
       }
