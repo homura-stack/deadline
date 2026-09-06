@@ -2,7 +2,7 @@
 .pico-how { background: #101729f5; border: 1px solid #647981; padding: 18px; border-radius: 5px; }
 .title-info .pico-how p { padding: 0; border: 0; background: none; box-shadow: none; line-height: 1.8; }
 .pico-how button { margin-top: 14px; min-height: 44px; padding: 9px 14px; border: 1px solid #e9c783; color: #fff0ce; background: #413520; }
-/* A saved FIRST FLIGHT choice skips the welcome, never this persistent entrance. */
+/* TRAINING remains directly accessible before and after completion. */
 .title-flight-actions { display: grid; gap: 10px; width: min(100%, 340px); }
 .title-flight-actions .title-start { width: 100%; }
 .title-training-launch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; padding: 12px 17px; border: 1px solid #b49d70; background: #2b2b28; color: #f5dbab; text-align: left; }
@@ -16,21 +16,6 @@
   .title-flight-actions .start-arrow { display: none; }
   .title-training-launch { flex-direction: column; justify-content: center; align-items: flex-start; gap: 3px; padding: 7px 12px; }
 }
-body.first-flight-open { overflow: hidden; }
-body.first-flight-open #game-shell { display: none; }
-.first-flight { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at center, #43372526, transparent 60%), #080e1a; }
-.first-flight[hidden] { display: none; }
-.first-flight-panel { width: min(420px, 100%); text-align: center; }
-.flight-kicker { color: #e9c783; font: 12px var(--utility); letter-spacing: .23em; }
-.first-flight-panel > img { display: block; width: 150px; height: auto; margin: 26px auto 20px; filter: drop-shadow(0 0 22px #f4c56528); }
-.first-flight h2 { color: #fff0cc; font: 500 clamp(20px, 3vw, 25px)/1.7 'Yu Gothic UI', sans-serif; margin: 0; }
-.first-flight h2 + p { color: #aab8c6; font-size: 12px; line-height: 1.8; margin: 9px 0 28px; }
-.first-flight button { display: block; width: 100%; min-height: 50px; font: 12px var(--utility); letter-spacing: .07em; }
-#first-training { background: #f3d49a; border: 1px solid #ffe7b8; color: #252119; font-weight: bold; padding: 16px 20px; }
-#first-training span { float: right; }
-#first-skip { background: transparent; border: 1px solid #39485b; color: #aab8c6; margin-top: 12px; }
-#first-training:hover { background: #ffe7b8; }
-#first-skip:hover { color: #fff0cc; border-color: #8c7d61; }
 #map-training.map-training { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; margin-top: 10px; padding: 13px 14px; border: 1px solid #b49d70; border-radius: 3px; background: #2b2b28; color: #f5dbab; text-align: left; }
 #map-training strong { font: bold 12px var(--utility); letter-spacing: .08em; }
 #map-training span { font: 11px 'Yu Gothic UI', sans-serif; }
@@ -52,15 +37,6 @@ body.first-flight-open #game-shell { display: none; }
 .briefing-progress i.is-active { background: #f2d399; }
 .tutorial-prompt { color: #ffebbd; border-color: #eac57c; }
 @media(max-width: 540px) {
-  .first-flight { padding: 20px; }
-  .first-flight-panel > img { width: 130px; margin: 20px auto 16px; }
   #map-training.map-training { min-height: 52px; }
   #practice-exit { font-size: 9px; padding: 6px 8px; }
-}
-@media(max-height: 500px) and (min-width: 541px) {
-  .first-flight-panel { display: grid; width: min(620px,100%); grid-template-columns: 160px 1fr; gap: 8px 24px; text-align: left; }
-  .flight-kicker { grid-column: 2; margin: 0; }
-  .first-flight-panel > img { grid-column: 1; grid-row: 1 / 6; width: 150px; align-self: center; margin: 0; }
-  .first-flight h2,.first-flight h2 + p { grid-column: 2; margin: 0; }
-  .first-flight button { grid-column: 2; margin: 0; }
 }

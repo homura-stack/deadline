@@ -27,15 +27,15 @@ test('historical two-target practice uses normal five-second STOP and execution 
   assert.equal(w.totalKills,2);assert.equal(w.score,750);assert.equal(w.failed,false);
 });
 function storage(saved=null){return {saved,writes:[],getItem(){return this.saved;},setItem(key,value){this.writes.push({key,value});this.saved=value;}};}
-test('only a fresh or unrecognized preference offers FIRST FLIGHT',()=>{
-  for(const value of [null,'unknown','{}'])assert.equal(T.createPreferences(()=>storage(value)).shouldOffer(),true);
-  for(const value of ['started','skipped','completed'])assert.equal(T.createPreferences(()=>storage(value)).shouldOffer(),false);
+test('only normal completion releases the START training requirement, including legacy saves',()=>{
+  for(const value of [null,'unknown','{}','started','skipped'])assert.equal(T.createPreferences(()=>storage(value)).shouldOffer(),true,value);
+  assert.equal(T.createPreferences(()=>storage('completed')).shouldOffer(),false);
 });
-test('starting and skipping are remembered across page instances with one local key',()=>{
+test('starting and leaving never write a completion or dismiss the requirement',()=>{
   for(const value of ['started','skipped']){
     const s=storage(),p=T.createPreferences(()=>s);p.remember(value);
-    assert.equal(p.shouldOffer(),false);assert.equal(T.createPreferences(()=>s).status(),value);
-    assert.deepEqual(s.writes,[{key:T.storageKey,value}]);
+    assert.equal(p.shouldOffer(),true);assert.equal(T.createPreferences(()=>s).status(),null);
+    assert.deepEqual(s.writes,[]);
   }
 });
 test('completion persists and replay cannot downgrade it to started or skipped',()=>{
@@ -44,8 +44,8 @@ test('completion persists and replay cannot downgrade it to started or skipped',
 });
 test('blocked storage falls back to this page session without errors or repeated forcing',()=>{
   const p=T.createPreferences(()=>{throw Error('storage blocked');});assert.equal(p.shouldOffer(),true);
-  p.remember('skipped');assert.equal(p.shouldOffer(),false);p.remember('completed');assert.equal(p.status(),'completed');
+  p.remember('skipped');assert.equal(p.shouldOffer(),true);p.remember('completed');assert.equal(p.status(),'completed');assert.equal(p.shouldOffer(),false);
 });
-test('invalid updates cannot dismiss FIRST FLIGHT or write unrelated settings',()=>{
+test('invalid updates cannot dismiss required training or write unrelated settings',()=>{
   const s=storage(),p=T.createPreferences(()=>s);p.remember('invalid');assert.equal(p.shouldOffer(),true);assert.deepEqual(s.writes,[]);
 });

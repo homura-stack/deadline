@@ -1,5 +1,16 @@
 # 正式タイトル背景
 
+## 現在の配信素材（TASK G.1）
+
+- 配信パス: `assets/title/pico-dead-circuit-original.jpeg`
+- 提供元: ユーザー指定の `D:/Desktop/DEADLINE/タイトル.jpeg`
+- 原寸: **2752 × 1536** / JPEG / **2,304,414 bytes**
+- SHA-256: `db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592`
+
+元ファイルとコピー先はハッシュ・サイズが一致する。再圧縮・変換・再生成はしていない。`<img>`を`object-fit: contain`で直接表示し、CSSで縦横比と原寸上限を維持する。1920×1080のChromeでは1920×約1071.63 CSS px（約0.698倍）で表示する。Canvasへの再描画、blur、filter、透過overlayは使わない。
+
+## TASK Gで提供された旧添付素材（保持・現在未参照）
+
 - 配信パス: `assets/title/pico-dead-circuit.jpg`
 - 提供元: ユーザー添付のGemini生成・正式タイトル画像
 - 添付名: `codex-clipboard-b19e6f8f-1c80-4a8b-b0ee-2f6f289390c6.jpg`

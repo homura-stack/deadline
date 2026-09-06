@@ -1,5 +1,6 @@
 /* Development-only Chrome verification for EXECUTE visuals and synthesized audio. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea,initialMap}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
@@ -10,7 +11,7 @@ const report = { browser: '', cases: {}, errors: [] };
 function hook(page) { page.on('pageerror', error => report.errors.push(String(error))); page.on('console', message => { if (message.type() === 'error') report.errors.push(message.text()); }); }
 async function state(page) { return page.evaluate(() => Deadline.inspect()); }
 async function open(page, options = {}) {
-  await page.goto(base + '?debug'); await page.waitForLoadState('networkidle');
+  await visitCompleted(page,base + '?debug'); await page.waitForLoadState('networkidle');
   await page.evaluate(settings => {
     if (settings.initialGauge != null) Deadline.config.gauge.initial = settings.initialGauge;
     if (settings.stopSeconds != null) Deadline.config.waves.definitions[0].timeStopSeconds = settings.stopSeconds;

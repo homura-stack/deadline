@@ -6,7 +6,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
 
-現在のTASK E.1版では、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しています。初回STARTではTRAININGとSKIPを明確に選べます。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。[TASK E](TASK_E.md)は変更前の記録です。
+TASK E.1で、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しました。この練習内容を現在も維持しています。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。過去TASKの初回スキップ仕様は、以下のG.1仕様へ変更しています。
 
 TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えました。旧素材は保持し、ゲームロジック・当たり判定・チュートリアル構造は変更していません。[素材・参照箇所・検証記録](TASK_F.md)を参照してください。
 
@@ -14,10 +14,12 @@ TASK F.1で、保存済みの初回選択に関係なく見つけられるよう
 
 TASK Gでは、提供された正式Picoタイトル画像を無加工で使用し、左下へSTART・TRAININGと補助メニューを配置しました。背景内のロゴ・コピーを重複表示せず、狭い画面では画像全体とメニューを分けます。F.1の進行・練習は維持しています。[タイトル素材・実装・検証記録](TASK_G.md)を参照してください。
 
+TASK G.1で、タイトルを新たに指定された2752×1536の元JPEGへ無圧縮で差し替えました。STARTはTRAINING未完了なら必ず練習へ、正常完了済みならWORLD MAPへ進みます。常設TRAININGはいつでも利用できます。[画質調査・初回判定・検証記録](TASK_G1.md)を参照してください。
+
 ## プレイ
 
-- 開発中のTASK G確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / Gは未push・未反映）
+- 開発中のTASK G.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / G / G.1は未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -34,7 +36,7 @@ TASK Gでは、提供された正式Picoタイトル画像を無加工で使用�
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面の初回STARTまたはSPACEでFIRST FLIGHTを表示します。主ボタンTRAINING STARTで操作説明・練習へ、SKIPでWORLD MAPへ進みます。開始・スキップ・完了の選択を保存し、次のSTARTではWORLD MAPへ直接進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
+タイトル画面の初回STARTまたはSPACEでTRAININGへ直接進みます。正常完了時だけ既存の`deadline.tutorial.v1`に`completed`を保存し、以降のSTARTはWORLD MAPへ直接進みます。未完了時の途中退出先はTITLEで、開始・退出だけでは受講済みになりません。旧`started` / `skipped`も未完了として扱います。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
 タイトルのSTART直下のTRAININGから、初回・受講済みのどちらでも直接練習へ入れます。HOW TO PLAY →「Picoと操作を練習する」、WORLD MAPのTRAININGボタンも利用できます。旧版と同じEVADE → FREEZE → DRAW → EXECUTEの4ページで、マウス／MOVE PADの動きを見てから実習します。練習はPicoを64px動かす → TIME STOP → 2 TARGETを一筆書きで通る → SPACEで実行、という短い構成です。TIME STOPは旧版と同じ5秒。練習だけ安全猶予があり、実行時に弾を除去する旧版の扱いを維持しています。完了表示の約1秒後にWORLD MAPへ戻り、ENTER GARDENで本編を開始します。進行中のWORLD MAPから再受講した場合は、練習を終える／中断しても元の地区解禁・スコア・LIFEへ戻ります。練習中のR／「最初から」は練習だけを再開します。
 
@@ -72,7 +74,7 @@ python -m http.server 4186 --bind 127.0.0.1
 - Web Audio API
 - Pointer Events
 - `requestAnimationFrame`
-- `localStorage`（音量・タッチ感度・初回チュートリアルの選択）
+- `localStorage`（音量・タッチ感度・TRAINING正常完了）
 
 ゲーム本体は外部JavaScriptライブラリ、ゲームフレームワーク、CDN、外部API、外部フォントを使用していません。GitHub Pagesへそのまま配置できる相対パスの静的構成です。
 
@@ -93,7 +95,7 @@ python -m http.server 4186 --bind 127.0.0.1
 | `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
 | `renderer.js` | シミュレーション状態を変更しないCanvas描画と視覚効果 |
 | `audio.js` | Web Audio APIによる合成SE、音量設定、AudioNodeの寿命管理 |
-| `tutorial.js` / `tutorial.css` | 初回選択の軽量な保存と入口・旧説明図のPico表示。旧実習のWorld・進行は`game.js` |
+| `tutorial.js` / `tutorial.css` | TRAINING完了の軽量な保存と入口・旧説明図のPico表示。旧実習のWorld・進行は`game.js` |
 | `assets/` | 正式ロゴなど、リポジトリ内で配信する静的素材 |
 | `tests/` | Nodeロジックテストと実Chromeによる操作・描画・負荷検証 |
 
@@ -119,13 +121,14 @@ python -m http.server 4186 --bind 127.0.0.1
 - `barrage.test.cjs` — 射撃パターン、弾数上限、寿命、画面外破棄
 - `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
 - `journey.test.cjs` — エリア解禁、画像準備待ち、復旧・同期発光の表示状態
-- `tutorial.test.cjs` — Git由来の旧実装との一致、2 TARGET実習、初回選択の保存と保存拒否時の動作
+- `tutorial.test.cjs` — Git由来の旧実装との一致、2 TARGET実習、正常完了だけの保存・旧保存状態・保存拒否時の動作
 
 `*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
 
 ```sh
 node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs tests/journey.test.cjs tests/tutorial.test.cjs
 node tests/title-routes-browser.cjs
+node tests/title-quality-training-browser.cjs
 node tests/browser.cjs
 node tests/pico-tutorial-browser.cjs
 node tests/tutorial-touchpad-browser.cjs
@@ -134,8 +137,8 @@ node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
 ```
 
-以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: TITLE → START → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。初回の任意選択、正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。通常のSTARTは選択保存済みで確認し、未保存時は従来のFIRST FLIGHTからSKIPして本編へ進めることを別に確認します。
+以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: 受講済みTITLE → START → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。初回STARTはスキップできず、実際に練習完了してから本編へ進むことも確認します。`title-quality-training-browser.cjs`は正常完了・再読込・途中退出・旧保存状態と元JPEGのハッシュ・表示サイズを検証します。本編用の既存テストは受講済みの隔離ブラウザで実行し、初回受講の検証と分けます。
 
-タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_G.md](TASK_G.md)に記録します。
+タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。G.1では3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_G1.md](TASK_G1.md)に記録します。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

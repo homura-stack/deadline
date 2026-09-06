@@ -1,5 +1,6 @@
 /* Chrome acceptance for the redesign. Real input runs and isolated render checks are reported separately. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
@@ -77,7 +78,7 @@ async function trainingRun(page, index) {
   const browser = await chromium.launch({ channel: 'chrome', headless: true }); report.browser = browser.version();
   try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } }); hook(page);
-    await page.goto(base + '?debug'); await page.waitForLoadState('networkidle'); await recordFrames(page);
+    await visitCompleted(page,base + '?debug'); await page.waitForLoadState('networkidle'); await recordFrames(page);
     await page.waitForTimeout(4300); await page.screenshot({ path: path.join(artifacts, 'title-1920.png') });
     assert.equal((await state(page)).world.time, 0);
     await trainingRun(page, 1); await trainingRun(page, 2);
@@ -128,7 +129,7 @@ async function trainingRun(page, index) {
     assert.ok(fixture.danger[0] > fixture.danger[1] + 35);
     assert.ok(fixture.bullet.reduce((a,b) => a+b,0) > 350);
     const reduced = await browser.newPage({ viewport:{width:1280,height:720}, reducedMotion:'reduce' }); hook(reduced);
-    await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle');
+    await visitCompleted(reduced,base + '?debug'); await reduced.waitForLoadState('networkidle');
     const a = await reduced.locator('#title-art').screenshot(); await reduced.waitForTimeout(250);
     assert.deepEqual(await reduced.locator('#title-art').screenshot(), a); await reduced.close();
     assert.deepEqual(report.errors, []); assert.deepEqual(report.externalRequests, []);

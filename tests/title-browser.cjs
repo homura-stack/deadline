@@ -1,5 +1,6 @@
 /* Focused Chrome checks for the responsive DEAD/LINE title presentation. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const {assertTitleComposition}=require('./title-helpers.cjs');
 const { chromium } = require('playwright');
@@ -21,7 +22,7 @@ const viewports = [
   try {
     const page = await browser.newPage(); page.on('pageerror', error => errors.push(String(error))); page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     for (const viewport of viewports) {
-      await page.setViewportSize(viewport); await page.goto(base + '?debug'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(700);
+      await page.setViewportSize(viewport); await visitCompleted(page,base + '?debug'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(700);
       await assertTitleComposition(page, viewport);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight), true);
       await page.screenshot({ path: path.join(artifacts, viewport.name) });
@@ -41,7 +42,7 @@ const viewports = [
       assert.ok((await page.locator('#result .result-actions button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height))).every(height => height >= 44));
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight), true);
     }
-    await page.setViewportSize({ width: 1280, height: 720 }); await page.goto(base + '?debug'); await page.waitForLoadState('networkidle');
+    await page.setViewportSize({ width: 1280, height: 720 }); await visitCompleted(page,base + '?debug'); await page.waitForLoadState('networkidle');
     await page.locator('[data-title-info="settings"]').click(); await page.locator('#master-volume').fill('37'); await page.locator('#sfx-volume').fill('64');
     await page.waitForTimeout(30); assert.deepEqual(await page.evaluate(() => { const a=Deadline.inspect().audio; return { master:a.masterVolume,sfx:a.sfxVolume,masterGain:Number(a.masterGain.toFixed(2)),sfxGain:Number(a.sfxGain.toFixed(2)) }; }), { master:37,sfx:64,masterGain:.37,sfxGain:.64 });
     await page.locator('#setting-mute').click(); await page.waitForTimeout(30); assert.deepEqual(await page.evaluate(() => { const a=Deadline.inspect().audio; return { master:a.masterVolume,sfx:a.sfxVolume,muted:a.muted,masterGain:Number(a.masterGain.toFixed(2)) }; }), { master:37,sfx:64,muted:true,masterGain:0 });
@@ -51,7 +52,7 @@ const viewports = [
     await page.locator('[data-title-info="how"]').click(); assert.equal(await page.locator('#title-how').isVisible(), true); await page.locator('[data-title-info="credits"]').click(); assert.equal(await page.locator('#title-how').isVisible(), false); assert.equal(await page.locator('#title-credits').isVisible(), true);
     await page.locator('#title-start').click(); assert.equal(await page.locator('#title-screen').evaluate(element => element.classList.contains('is-leaving')), true); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page); assert.equal(await page.evaluate(() => Deadline.inspect().titleActive), false); assert.equal(await page.evaluate(() => Deadline.inspect().briefingActive), true);
     const briefingTime = await page.evaluate(() => Deadline.inspect().world.time); await page.waitForTimeout(220); assert.equal(await page.evaluate(() => Deadline.inspect().world.time), briefingTime); for(let i=0;i<4;i++) await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(page); assert.equal(await page.evaluate(() => Deadline.inspect().practice.active),true);
-    const reduced = await browser.newPage({ reducedMotion: 'reduce' }); await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle'); assert.equal(await reduced.locator('.title-heading').evaluate(element => getComputedStyle(element).animationName), 'none'); await reduced.keyboard.press('Space'); await reduced.waitForFunction(() => document.getElementById('title-screen').hidden);await training(reduced); assert.equal(await reduced.locator('#briefing-screen').isVisible(), true); assert.equal(await reduced.locator('.briefing-demo *').first().evaluate(element=>getComputedStyle(element).animationName),'none'); await reduced.locator('#briefing-skip').click(); await reduced.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(reduced); await reduced.close();
+    const reduced = await browser.newPage({ reducedMotion: 'reduce' }); await visitCompleted(reduced,base + '?debug'); await reduced.waitForLoadState('networkidle'); assert.equal(await reduced.locator('.title-heading').evaluate(element => getComputedStyle(element).animationName), 'none'); await reduced.keyboard.press('Space'); await reduced.waitForFunction(() => document.getElementById('title-screen').hidden);await training(reduced); assert.equal(await reduced.locator('#briefing-screen').isVisible(), true); assert.equal(await reduced.locator('.briefing-demo *').first().evaluate(element=>getComputedStyle(element).animationName),'none'); await reduced.locator('#briefing-skip').click(); await reduced.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(reduced); await reduced.close();
     assert.deepEqual(errors, []); console.log(`PASS Chrome ${browser.version()} title and BRIEFING layout at ${viewports.length} viewports`); console.log('PASS title freeze, BRIEFING freeze, BEGIN input and reduced motion');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

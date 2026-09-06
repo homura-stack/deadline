@@ -1,4 +1,5 @@
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {initialMap}=require('./journey-helpers.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
@@ -10,7 +11,7 @@ const output=path.join(__dirname,'artifacts','restoration');fs.mkdirSync(output,
    const context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:profile.dpr});const p=await context.newPage();
    p.on('pageerror',e=>report.errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});
    const cdp=await context.newCDPSession(p);await cdp.send('Emulation.setCPUThrottlingRate',{rate:profile.cpu});
-   await p.goto(base+'?debug');await p.waitForLoadState('networkidle');await p.locator('#title-start').click();await initialMap(p);
+   await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await p.locator('#title-start').click();await initialMap(p);
    await p.evaluate(()=>Deadline.stageArt.prepare(4));await p.waitForFunction(()=>Deadline.stageArt.status(4)==='ready');
    const result=await p.evaluate(async()=>{
     const D=Deadline,c=document.createElement('canvas');Object.assign(c.style,{position:'fixed',left:'0',top:'0',width:'1200px',height:'750px'});document.body.append(c);

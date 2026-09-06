@@ -1,4 +1,5 @@
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,planWave,surviveUntilReady}=require('./browser.cjs');
 const {battleReady,nextArea,initialMap}=require('./journey-helpers.cjs');
@@ -14,7 +15,7 @@ async function start(p){await p.locator('#title-start').click();await initialMap
  try{
   if(!loadingOnly){
   // Isolated rendering fixtures validate actual JPEG pixels, not just loader status or canvas dimensions.
-  const fixture=await browser.newPage({viewport:{width:1920,height:1080}});hook(fixture);await fixture.goto(base+'?debug');await fixture.waitForLoadState('networkidle');
+  const fixture=await browser.newPage({viewport:{width:1920,height:1080}});hook(fixture);await visitCompleted(fixture,base+'?debug');await fixture.waitForLoadState('networkidle');
   for(let area=0;area<5;area++){
    await fixture.evaluate(i=>Deadline.stageArt.prepare(i),area);await fixture.waitForFunction(i=>Deadline.stageArt.status(i)==='ready',area);
    const result=await fixture.evaluate(i=>{
@@ -44,7 +45,7 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   await fixture.close();
   const p=await browser.newPage({viewport:{width:1920,height:1080}});hook(p);
   await p.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});
-  await p.goto(base+'?debug');await p.waitForLoadState('networkidle');await start(p);
+  await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await start(p);
   await p.evaluate(()=>{
    const original=Deadline.Renderer.prototype.draw;window.__restoration={frames:0,mutations:0,residueFrames:0,stages:{}};
    Deadline.Renderer.prototype.draw=function(app){const j=app.journey,check=j.mode==='restoring',before=check?JSON.stringify(app.world):null;original.call(this,app);if(check){const audit=window.__restoration,f=Deadline.journey.restorationFrame(j,app.reducedMotion);audit.frames++;if(app.shake||app.pendingFinal||app.hits.length||app.particles.length||app.artFx.flash||app.combatFx.releasePulse)audit.residueFrames++;if(JSON.stringify(app.world)!==before)audit.mutations++;audit.stages[`${j.active}-${f.stage}`]=true;}};
@@ -94,15 +95,15 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   // Delayed / failed file loads are explicit fixtures, separate from the no-error normal run above.
   const delayed=await browser.newPage();const delayedErrors=[];delayed.on('pageerror',e=>delayedErrors.push(String(e)));
   await delayed.route('**/garden_after.jpeg',async route=>{await new Promise(resolve=>setTimeout(resolve,1800));await route.continue();});
-  await delayed.goto(base+'?debug',{waitUntil:'domcontentloaded'});await delayed.locator('#title-start').click();await initialMap(delayed);await delayed.locator('#map-enter').click();
+  await visitCompleted(delayed,base+'?debug',{waitUntil:'domcontentloaded'});await delayed.locator('#title-start').click();await initialMap(delayed);await delayed.locator('#map-enter').click();
   await delayed.waitForTimeout(300);assert.equal((await state(delayed)).journey.mode,'entering');assert.equal((await state(delayed)).world.time,0);assert.match(await delayed.locator('#area-transition-note').innerText(),/読み込んでいます/);await battleReady(delayed);await delayed.close();
   const failed=await browser.newPage();const failureErrors=[];failed.on('pageerror',e=>failureErrors.push(String(e)));
-  await failed.route('**/garden_after.jpeg',route=>route.abort());await failed.goto(base+'?debug');await failed.locator('#title-start').click();await initialMap(failed);await failed.locator('#map-enter').click();
+  await failed.route('**/garden_after.jpeg',route=>route.abort());await visitCompleted(failed,base+'?debug');await failed.locator('#title-start').click();await initialMap(failed);await failed.locator('#map-enter').click();
   await failed.waitForFunction(()=>Deadline.stageArt.status(0)==='error');assert.equal((await state(failed)).world.time,0);assert.equal(await failed.locator('#stage-retry').isVisible(),true);
   await failed.unroute('**/garden_after.jpeg');await failed.locator('#stage-retry').focus();await failed.keyboard.press('Enter');await battleReady(failed);assert.equal((await state(failed)).world.wave,1);await failed.close();
   const cancel=await browser.newPage();cancel.on('pageerror',e=>failureErrors.push(String(e)));
   await cancel.route('**/garden_after.jpeg',async route=>{await new Promise(resolve=>setTimeout(resolve,1400));await route.continue();});
-  await cancel.goto(base+'?debug',{waitUntil:'domcontentloaded'});await cancel.locator('#title-start').click();await initialMap(cancel);await cancel.locator('#map-enter').click();await cancel.locator('#stage-title').focus();await cancel.keyboard.press('Space');
+  await visitCompleted(cancel,base+'?debug',{waitUntil:'domcontentloaded'});await cancel.locator('#title-start').click();await initialMap(cancel);await cancel.locator('#map-enter').click();await cancel.locator('#stage-title').focus();await cancel.keyboard.press('Space');
   assert.equal((await state(cancel)).titleActive,true);await cancel.waitForLoadState('networkidle');assert.equal((await state(cancel)).titleActive,true);assert.equal((await state(cancel)).world.time,0);await cancel.close();
   assert.deepEqual(delayedErrors,[]);assert.deepEqual(failureErrors,[]);report.loading={delayed:'waits without combat time or white frame',failure:'retry returns to Garden; no uncaught exception'};
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.failedRequests,[]);

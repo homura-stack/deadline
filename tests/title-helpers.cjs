@@ -1,12 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict');
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
-// The supplied 1024 x 572 artwork, not HTML text: protect its baked logo, Pico and light trail.
+// Protect the original artwork's baked logo, Pico and trail; coordinates below are normalized to the original G preview.
 async function assertTitleComposition(page,viewport){
   const art=page.locator('#title-art');
-  assert.deepEqual(await art.evaluate(img=>({loaded:img.complete,w:img.naturalWidth,h:img.naturalHeight})),{loaded:true,w:1024,h:572});
+  assert.deepEqual(await art.evaluate(img=>({loaded:img.complete,w:img.naturalWidth,h:img.naturalHeight})),{loaded:true,w:2752,h:1536});
   const box=await art.boundingBox();assert.ok(box&&box.x>=-.1&&box.y>=-.1&&box.x+box.width<=viewport.width+.1&&box.y+box.height<=viewport.height+.1,'the complete illustration stays in view');
-  assert.ok(Math.abs(box.width/box.height-1024/572)<.002,'the supplied image keeps its aspect ratio');
+  assert.ok(Math.abs(box.width/box.height-2752/1536)<.002,'the supplied image keeps its aspect ratio');
   const scale=box.width/1024,region=(x,y,width,height)=>({x:box.x+x*scale,y:box.y+y*scale,width:width*scale,height:height*scale});
   const logo=region(56,207,400,150),pico=region(529,19,370,380),trail=region(432,150,100,310),copy=region(766,386,170,38);
   for(const selector of ['#title-start','#title-training-launch','[data-title-info="how"]','[data-title-info="settings"]','[data-title-info="credits"]']){

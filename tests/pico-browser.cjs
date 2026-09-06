@@ -1,5 +1,6 @@
 /* TASK A asset acceptance. Development-only Playwright; never loaded by the game. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
@@ -54,7 +55,7 @@ async function fixture(page, mode) {
   const browser = await chromium.launch({ channel:'chrome', headless:true }); report.browser = browser.version();
   try {
     const page = await browser.newPage({ viewport:{width:1920,height:1080} }); hook(page);
-    await page.goto(base + '?debug'); await page.evaluate(() => Deadline.characters.ready);
+    await visitCompleted(page,base + '?debug'); await page.evaluate(() => Deadline.characters.ready);
     report.assets = await page.evaluate(() => Object.fromEntries(Object.entries(Deadline.characters.entries).map(([key, entry]) => {
       const canvas = document.createElement('canvas'); canvas.width = entry.image.naturalWidth; canvas.height = entry.image.naturalHeight;
       const g = canvas.getContext('2d'); g.drawImage(entry.image, 0, 0);
@@ -94,7 +95,7 @@ async function fixture(page, mode) {
       await page.locator('#asset-fixture').evaluate(element => element.remove());
     }
     const highDpi = await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:2}); hook(highDpi);
-    await highDpi.goto(base+'?debug'); await highDpi.evaluate(()=>Deadline.characters.ready);
+    await visitCompleted(highDpi,base+'?debug'); await highDpi.evaluate(()=>Deadline.characters.ready);
     const hidpi = await fixture(highDpi,'hitboxes'); assert.equal(hidpi.ratio,2);
     fs.writeFileSync(path.join(artifacts,'hitboxes-1280-dpr2.png'), Buffer.from(hidpi.image.split(',')[1],'base64'));
     await highDpi.close();
@@ -102,7 +103,7 @@ async function fixture(page, mode) {
     const slow = await browser.newPage({viewport:{width:1280,height:720}}); hook(slow);
     let releaseImages; const hold = new Promise(resolve => { releaseImages = resolve; });
     await slow.route('**/assets/characters/*.png', async route => { await hold; await route.continue(); });
-    await slow.goto(base+'?debug',{waitUntil:'domcontentloaded'});
+    await visitCompleted(slow,base+'?debug',{waitUntil:'domcontentloaded'});
     assert.ok((await slow.evaluate(()=>Object.values(Deadline.characters.entries).map(e=>e.status))).every(status=>status==='loading'));
     await enter(slow); const before = await slow.evaluate(()=>Deadline.inspect().world);
     releaseImages(); assert.deepEqual(await slow.evaluate(()=>Deadline.characters.ready),['ready','ready','ready','ready']);
@@ -114,14 +115,14 @@ async function fixture(page, mode) {
     failure.on('pageerror',error=>report.errors.push(String(error)));
     failure.on('console',message=>{if(message.type()==='error')expectedErrors.push(message.text());});
     await failure.route('**/assets/characters/*.png',route=>{failedImages.push(route.request().url());return route.abort();});
-    await failure.goto(base+'?debug'); assert.deepEqual(await failure.evaluate(()=>Deadline.characters.ready),['error','error','error','error']);
+    await visitCompleted(failure,base+'?debug'); assert.deepEqual(await failure.evaluate(()=>Deadline.characters.ready),['error','error','error','error']);
     await enter(failure); assert.ok((await failure.evaluate(()=>Deadline.inspect().world.time))>0);
     // The Pico welcome may request the same PNG separately after an aborted preload.
     assert.equal(new Set(failedImages).size,4); assert.equal(expectedErrors.length,failedImages.length);
     assert.ok(expectedErrors.every(text=>text.includes('ERR_FAILED')));
     report.failure={fallbackPlayable:true,expectedNetworkErrors:expectedErrors.length}; await failure.close();
     const local = await browser.newPage(); hook(local);
-    await local.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href+'?debug');
+    await visitCompleted(local,pathToFileURL(path.resolve(__dirname,'../index.html')).href+'?debug');
     assert.deepEqual(await local.evaluate(()=>Deadline.characters.ready),['ready','ready','ready','ready']);
     await enter(local); report.file={fourSpritesLoaded:true,gameStarted:true}; await local.close();
     assert.deepEqual(report.errors,[]); assert.deepEqual(report.externalRequests,[]);

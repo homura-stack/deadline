@@ -8,11 +8,12 @@
     try { const saved = getStorage().getItem(storageKey); if (valid.has(saved)) state = saved; } catch (_) { /* Session fallback when storage is unavailable. */ }
     return {
       status: () => state,
-      shouldOffer: () => state === null,
+      // Legacy started/skipped saves do not prove that the rehearsal was completed.
+      shouldOffer: () => state !== 'completed',
       remember(value) {
-        if (!valid.has(value) || state === 'completed') return;
+        if (value !== 'completed' || state === 'completed') return;
         state = value;
-        try { getStorage().setItem(storageKey, state); } catch (_) { /* Keep the choice for this page session. */ }
+        try { getStorage().setItem(storageKey, state); } catch (_) { /* Keep completion for this page session. */ }
       }
     };
   }

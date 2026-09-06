@@ -1,9 +1,10 @@
 // Development-only isolated worst-case bullet load; not a survival test.
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/',artifacts=path.join(__dirname,'artifacts'),errors=[],results=[];
 async function benchmark(page,label,rate){
- page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page.goto(base+'?debug');await page.waitForLoadState('networkidle');
+ page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await visitCompleted(page,base+'?debug');await page.waitForLoadState('networkidle');
  const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate});
  const detail=await page.evaluate(async()=>{
   const {config:C,sim:S,Renderer}=Deadline,canvas=document.createElement('canvas');canvas.style.width='960px';canvas.style.height='600px';document.body.appendChild(canvas);

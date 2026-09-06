@@ -48,15 +48,15 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
       report.layouts.push(viewport);
     }
     await page.close();
-    // Fresh START keeps F.1's optional choice, never forcibly enters training.
-    const fresh=await open(null);await fresh.locator('#title-start').click();await fresh.waitForFunction(()=>Deadline.inspect().firstFlightActive);assert.equal((await state(fresh)).practice.active,false);await fresh.locator('#first-skip').click();await map(fresh);await garden(fresh);await fresh.close();report.firstStart='FIRST FLIGHT -> SKIP -> MAP -> GARDEN';
-    const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/pico-dead-circuit.jpg'))).digest('hex');assert.equal(digest,'a41694b88af44d79f420ec0f3a9c8a8db5a7418938744e3bd399fd0e2a20e839');report.backgroundSHA256=digest;
+    // G.1 supersedes the optional choice: fresh START completes the real rehearsal first.
+    const fresh=await open(null);await fresh.locator('#title-start').click();await fresh.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(fresh);await plan(fresh);await fresh.keyboard.press('Space');await map(fresh);await garden(fresh);await fresh.close();report.firstStart='START -> TRAINING -> completed -> MAP -> GARDEN';
+    const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/pico-dead-circuit-original.jpeg'))).digest('hex');assert.equal(digest,'db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592');report.backgroundSHA256=digest;
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(oldArt,[]);report.errors=errors;report.externalRequests=external;
     // Isolated negative case: the title still has its name and working buttons if just its JPG fails.
     const failed=await browser.newPage({viewport:{width:1366,height:768}}),pageErrors=[];failed.on('pageerror',e=>pageErrors.push(String(e)));
-    await failed.route('**/assets/title/pico-dead-circuit.jpg',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
+    await failed.route('**/assets/title/pico-dead-circuit-original.jpeg',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
     assert.equal(await failed.locator('#title-screen').evaluate(e=>e.classList.contains('title-background-failed')),true);assert.equal(await failed.locator('.title-heading').evaluate(e=>getComputedStyle(e).clipPath),'none');
     await failed.locator('#title-training-launch').click();assert.equal((await state(failed)).briefingActive,true);assert.deepEqual(pageErrors,[]);await failed.close();report.imageFailureFallback='name + TRAINING usable; expected JPG request failure isolated';
-    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS mandatory routes A-E, optional first choice, unchanged Pico, ten resized layouts, title asset integrity, errors 0 and image failure fallback');
+    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS mandatory routes A-E, mandatory fresh completion, unchanged Pico, ten resized layouts, title asset integrity, errors 0 and image failure fallback');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

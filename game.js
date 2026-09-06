@@ -27,7 +27,6 @@
     touchSensitivity: $('touch-sensitivity'), touchSensitivityValue: $('touch-sensitivity-value') };
   const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
     counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
-  const firstUi = { screen: $('first-flight'), train: $('first-training'), skip: $('first-skip') };
   const trainingPreference = root.Deadline.training.createPreferences(() => localStorage);
   let trainingReturn = null;
   const renderer = new Renderer(ui.arena), sound = new Sound();
@@ -35,7 +34,7 @@
   /** @type {RuntimeApp} */
   const app = { world: S.createWorld(), journey: J.create(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
     tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
-    firstFlightActive: false, briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
+    briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
     timeFx: { blend: 0, enterRemaining: 0, exitRemaining: 0, origin: { x: 0, y: 0 } },
     routeFx: { drawing: false, lockFlashes: [] },
     touchDraw: { cursor: null },
@@ -73,7 +72,7 @@
     const restored=restoring&&J.restorationFrame(j,app.reducedMotion).complete, loading=Stage.status(j.active);
     document.body.classList.toggle('map-open',onMap);document.body.classList.toggle('restoring-area',restoring);
     mapUi['world-map'].hidden=!onMap;mapUi['world-map'].inert=!onMap;
-    titleUi.shell.inert=onMap||app.titleActive||app.briefingActive||app.firstFlightActive;
+    titleUi.shell.inert=onMap||app.titleActive||app.briefingActive;
     titleUi.shell.setAttribute('aria-hidden',String(titleUi.shell.inert));
     mapUi['area-caption'].hidden=app.practice.active;
     mapUi['area-caption'].textContent=`AREA ${String(j.active+1).padStart(2,'0')} · ${area.name} / ${area.ja} · WAVE ${Math.max(1,Math.min(2,app.world.wave-area.first+1))} / 2`;
@@ -130,22 +129,12 @@
     if(app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
     handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
   }
-  function showFirstFlight() {
-    app.firstFlightActive = true; firstUi.screen.hidden = false;
-    document.body.classList.add('first-flight-open'); updateUi(); firstUi.train.focus({ preventScroll: true });
-  }
-  function closeFirstFlight() {
-    app.firstFlightActive = false; firstUi.screen.hidden = true; document.body.classList.remove('first-flight-open');
-  }
-  function skipFirstFlight() {
-    if (!app.firstFlightActive) return;
-    trainingPreference.remember('skipped'); closeFirstFlight(); sound.playUiConfirm(); showWorldMap();
-  }
   function openTraining() {
-    if (app.titleLeaving || app.practice.active || app.briefingActive || (!app.titleActive && !app.firstFlightActive && app.journey.mode !== 'map')) return;
+    if (app.titleLeaving || app.practice.active || app.briefingActive || (!app.titleActive && app.journey.mode !== 'map')) return;
     // Keep the campaign objects untouched while the historical rehearsal uses its own world.
     trainingReturn = { world: app.world, journey: app.journey };
-    trainingPreference.remember('started'); closeFirstFlight();
+    const exitLabel = trainingPreference.shouldOffer() ? 'TITLEへ戻る' : 'WORLD MAPへ';
+    briefingUi.skip.textContent = exitLabel; $('practice-exit').textContent = exitLabel;
     app.journey = J.create(); app.journey.mode = 'battle';
     app.titleActive = false; titleUi.screen.hidden = true; document.body.classList.remove('title-open');
     app.briefingActive = true; app.briefingPage = 0; sound.unlock(); sound.playUiConfirm();
@@ -154,6 +143,8 @@
   }
   function returnFromTraining() {
     if (!app.briefingActive && !app.practice.active) return;
+    // Aborting is allowed, but only finishPractice() unlocks the first campaign entry.
+    if (trainingPreference.shouldOffer()) { returnToTitle(); return; }
     const saved = trainingReturn;
     app.briefingActive = false; briefingUi.screen.hidden = true; document.body.classList.remove('briefing-open');
     reset(false); if (saved) { app.world = saved.world; app.journey = saved.journey; }
@@ -444,9 +435,11 @@
     if (!app.titleActive || app.titleLeaving) return;
     sound.unlock(); sound.playUiConfirm(); app.titleLeaving = true; titleUi.screen.classList.add('is-leaving');
     const finish = () => {
+      app.titleLeaving = false;
+      if (trainingPreference.shouldOffer()) { openTraining(); return; }
       app.titleActive = false; app.titleLeaving = false; app.briefingActive = false; titleUi.screen.hidden = true;
       document.body.classList.remove('title-open');
-      if (trainingPreference.shouldOffer()) showFirstFlight(); else showWorldMap();
+      showWorldMap();
     };
     if (app.reducedMotion) finish(); else setTimeout(finish, 340);
   }
@@ -457,10 +450,10 @@
   }
   function skipTutorial() {
     if (!app.briefingActive) return;
-    trainingPreference.remember('skipped'); sound.unlock(); sound.playUiConfirm(); returnFromTraining();
+    sound.unlock(); sound.playUiConfirm(); returnFromTraining();
   }
   function returnToTitle() {
-    closeFirstFlight(); trainingReturn = null;
+    trainingReturn = null;
     app.journey=J.create();
     releasePointer(); releaseTouchPad(); sound.stopTimeClock(); sound.stopAll(); reset(false);
     app.titleActive = true; app.titleLeaving = false; app.briefingActive = false;
@@ -716,8 +709,6 @@
   mapUi['map-training'].addEventListener('click',openTraining);
   $('title-training').addEventListener('click',openTraining);
   $('title-training-launch').addEventListener('click',openTraining);
-  firstUi.train.addEventListener('click',openTraining);
-  firstUi.skip.addEventListener('click',skipFirstFlight);
   bindTouchSafeCommand($('practice-exit'),returnFromTraining);
   mapUi['map-title'].addEventListener('click',returnToTitle);
   mapUi['stage-retry'].addEventListener('click',()=>{Stage.retry(app.journey.active);updateUi();});
@@ -740,10 +731,6 @@
         heldKeys.add(event.code); startFromTitle();
       }
       return;
-    }
-    if (app.firstFlightActive) {
-      if (event.code === 'Escape') { event.preventDefault(); skipFirstFlight(); }
-      return; // Native keyboard activation of the two explicit choices.
     }
     if (app.briefingActive) {
       if (event.target.closest?.('button') && event.target !== briefingUi.begin) return;
@@ -819,7 +806,7 @@
         if (app.combatFx.pendingCompletion) { app.combatFx.completionRemaining = 0.08; }
       }
     }
-    if (app.titleActive || app.firstFlightActive || app.briefingActive || J.paused(app.journey) || releaseHold || resumeHold) accumulator = 0;
+    if (app.titleActive || app.briefingActive || J.paused(app.journey) || releaseHold || resumeHold) accumulator = 0;
     else {
       accumulator += dt;
       while (accumulator >= C.world.fixedStep) {
@@ -885,7 +872,7 @@
   }
   touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
-    firstFlightActive: app.firstFlightActive, trainingPreference: trainingPreference.status(), journey: app.journey, stageArt: Stage.inspect(),
+    trainingPreference: trainingPreference.status(), journey: app.journey, stageArt: Stage.inspect(),
     particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, artFx: app.artFx, tutorial: app.tutorial, practice: app.practice,
     touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
     damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));

@@ -1,5 +1,6 @@
 /* TASK B: color separation, background readability and render isolation in real Chrome. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
@@ -15,7 +16,7 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
   const browser=await chromium.launch({channel:'chrome',headless:true});report.browser=browser.version();
   try {
     const page=await browser.newPage({viewport:{width:1920,height:1080}});hook(page);
-    await page.goto(base+'?debug');await page.waitForLoadState('networkidle');await page.evaluate(()=>Deadline.characters.ready);
+    await visitCompleted(page,base+'?debug');await page.waitForLoadState('networkidle');await page.evaluate(()=>Deadline.characters.ready);
     report.background=await page.evaluate(()=>{
       const canvas=Deadline.battleArt.backdrop(1),g=canvas.getContext('2d'),pixels=g.getImageData(0,0,960,600).data;
       const luminance=[],colors=new Set();let maxChannel=0;

@@ -35,10 +35,10 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
         const pico=await page.evaluate(()=>{const e=Deadline.characters.entries.pico;return {file:e.file,status:e.status,width:e.width,height:e.height,anchorX:e.anchorX,anchorY:e.anchorY};});
         assert.deepEqual(pico,{file:'pico-final.png',status:'ready',width:48,height:48*1214/1295,anchorX:.56,anchorY:.47});report.pico=pico;
         await page.screenshot({path:path.join(out,'garden.png')});
-      }else{await page.locator('#briefing-skip').click();await map(page);}
-      await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();await map(page);
-      assert.equal((await state(page)).firstFlightActive,false,'normal START still respects the saved choice');
-      report.preferences.push({saved,directTraining:true,normalStart:'WORLD MAP'});await page.close();
+      }else{await page.locator('#briefing-skip').click();assert.equal((await state(page)).titleActive,true);}
+      await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();await page.waitForFunction(()=>!Deadline.inspect().titleActive);
+      if(saved==='completed')await map(page);else assert.equal((await state(page)).briefingActive,true,'uncompleted START requires training');
+      report.preferences.push({saved,directTraining:true,normalStart:saved==='completed'?'WORLD MAP':'TRAINING'});await page.close();
     }
     for(const viewport of [{width:1920,height:1080},{width:1280,height:720},{width:768,height:800},{width:390,height:844},{width:320,height:800},{width:844,height:390}]){
       const page=await open('completed',viewport);

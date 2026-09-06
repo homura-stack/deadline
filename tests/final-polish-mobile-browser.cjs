@@ -1,5 +1,6 @@
 /* Focused touch-Chrome pass for SETTINGS -> BRIEFING -> tutorial -> result -> retry. */
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path');
@@ -9,7 +10,7 @@ const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
   try{
     const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
     const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-    await page.goto(base+'?debug');await page.waitForLoadState('networkidle');
+    await visitCompleted(page,base+'?debug');await page.waitForLoadState('networkidle');
     await page.locator('[data-title-info="settings"]').tap();await page.locator('#master-volume').fill('72');await page.locator('#sfx-volume').fill('68');
     assert.equal(await page.locator('#master-value').innerText(),'72');assert.equal(await page.locator('#sfx-value').innerText(),'68');
     await page.locator('#setting-mute').tap();assert.equal(await page.locator('#setting-mute').getAttribute('aria-pressed'),'true');await page.locator('#setting-mute').tap();

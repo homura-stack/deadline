@@ -1,4 +1,5 @@
 'use strict';
+const {visitCompleted}=require('./journey-helpers.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,move,planWave,surviveUntilReady}=require('./browser.cjs');
 const {battleReady,initialMap}=require('./journey-helpers.cjs');
@@ -13,7 +14,7 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
  try{
   const p=await browser.newPage({viewport:{width:1920,height:1080}});hook(p);
   await p.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});
-  await p.goto(base+'?debug');await p.waitForLoadState('networkidle');await mapStart(p);
+  await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await mapStart(p);
   assert.equal((await state(p)).world.time,0);assert.equal((await state(p)).journey.restored,0);
   assert.equal(await p.locator('[data-area][data-status="locked"]').count(),4);assert.equal(await p.locator('[data-city][data-status="online"]').count(),0);
   await frozen(p);
@@ -66,7 +67,7 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   assert.match(await p.locator('#area-caption').innerText(),/FORGE.*WAVE 1 \/ 2/);await p.screenshot({path:path.join(output,'forge-wave-3.png')});
   await p.keyboard.press('KeyR');assert.equal((await state(p)).journey.mode,'map');assert.equal((await state(p)).journey.restored,0);assert.equal((await state(p)).world.score,0);
   await p.reload();await p.waitForLoadState('networkidle');assert.equal((await state(p)).titleActive,true);await mapStart(p);assert.equal((await state(p)).journey.restored,0);
-  const reduced=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:'reduce'});hook(reduced);await reduced.goto(base+'?debug');await mapStart(reduced);await reduced.locator('#map-enter').focus();await reduced.keyboard.press('Enter');await battleReady(reduced);assert.equal((await state(reduced)).world.phase,'normal');await reduced.close();
+  const reduced=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:'reduce'});hook(reduced);await visitCompleted(reduced,base+'?debug');await mapStart(reduced);await reduced.locator('#map-enter').focus();await reduced.keyboard.press('Enter');await battleReady(reduced);assert.equal((await state(reduced)).world.phase,'normal');await reduced.close();
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.externalRequests,[]);
   console.log('PASS real title → map → Garden Waves 1–2 → LIGHT RESTORED → Garden ONLINE → Forge Wave 3; locks, pause, score/life, restart, reload, five layouts, reduced motion and render isolation');
  }finally{fs.writeFileSync(path.join(output,'acceptance.json'),JSON.stringify(report,null,2));await browser.close();}
