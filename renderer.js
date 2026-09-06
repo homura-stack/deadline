@@ -13,12 +13,12 @@
    * @property {boolean} touchControls
    * @property {boolean} reducedMotion
    */
-  const cyan = '#a8eee7', red = '#ff8d92', gold = '#f6cc86';
+  const cyan = '#8debf1', red = '#ff7395', gold = '#f4c565';
+  const light = { core: '#fff7db', middle: '#ffdb85', outer: gold };
   // Presentation palette deliberately stays outside gameplay config.
   const frozenPalette = { background: '#080c1a', grid: '#101a29', innerBorder: '#273747',
     enemyFill: '#292532', enemyStroke: '#ad8797', enemyCore: '#dbc1c8',
-    bulletFill: '#ddcbb4', bulletStroke: '#aa9585', bulletHalo: '#f6cc8610',
-    playerFill: '#defff3', playerStroke: '#ffffff' };
+    bulletFill: '#e6acbf', bulletStroke: '#c77498', bulletHalo: '#ed7aab10' };
   const rgb = hex => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
   const rgba = (hex, alpha) => { const color = rgb(hex); return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`; };
   const mix = (from, to, amount) => {
@@ -71,7 +71,7 @@
       const sprite = root.Deadline.characters?.enemyTypes[enemy.pattern];
       const hasSprite = this.character(sprite, enemy.x, enemy.y, hitFlash ? .85 : 0);
       if (hasSprite) {
-        // The red danger rim remains separate from the larger cyan TARGET ring, including on the cyan-core enemy.
+        // The red danger rim remains separate from the larger cyan TARGET ring on every enemy silhouette.
         g.strokeStyle = '#ff7395'; g.lineWidth = 1;
         g.beginPath(); g.arc(enemy.x, enemy.y, C.enemy.radius + 2, .15 * Math.PI, .85 * Math.PI); g.stroke();
         if (enemy.pattern === 'fan') {
@@ -100,7 +100,7 @@
       }
       if (enemy.delayRemaining != null) {
         const progress = 1 - enemy.delayRemaining / C.shooting.patterns.delay.warningSeconds;
-        g.strokeStyle = colors.delayStroke; g.lineWidth = 2; g.beginPath(); g.arc(enemy.x, enemy.y, 22, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, progress)); g.stroke();
+        g.strokeStyle = hasSprite ? '#ed9cda' : colors.delayStroke; g.lineWidth = 2; g.beginPath(); g.arc(enemy.x, enemy.y, 22, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, progress)); g.stroke();
         g.beginPath(); g.moveTo(enemy.x + Math.cos(enemy.delayAngle) * 18, enemy.y + Math.sin(enemy.delayAngle) * 18);
         g.lineTo(enemy.x + Math.cos(enemy.delayAngle) * 30, enemy.y + Math.sin(enemy.delayAngle) * 30); g.stroke();
       }
@@ -109,8 +109,8 @@
     }
     bullet(bullet, stopBlend) {
       // Pattern is communicated by the live projectile itself; no trails or prediction guides.
-      const palette = { aim: ['#ffd6a8', '#ffae68'], fan: ['#ffc28a', '#f58a61'], burst: ['#ffaaa0', '#ef6f72'],
-        rotate: ['#e9a0aa', '#cf6f80'], delay: ['#ffe0ad', '#ff966d'] }[bullet.pattern] || ['#ffd6a8', '#ffae68'];
+      const palette = { aim: ['#ffc3cf', '#ed5478'], fan: ['#ffc1dd', '#dc538f'], burst: ['#ffbfc5', '#ff566e'],
+        rotate: ['#ebcbff', '#ad78e6'], delay: ['#ffd1ed', '#e367bc'] }[bullet.pattern] || ['#ffc3cf', '#ed5478'];
       const colors = { fill: mix(palette[0], frozenPalette.bulletFill, stopBlend), stroke: mix(palette[1], frozenPalette.bulletStroke, stopBlend),
         halo: stopBlend > 0.5 ? frozenPalette.bulletHalo : rgba(palette[1], 0.11) };
       const g = this.ctx, r = C.shooting.bulletRadius;
@@ -147,11 +147,11 @@
       const g = this.ctx, point = app.touchDraw.cursor, active = !!app.routeFx?.drawing;
       const pulse = app.reducedMotion ? 0 : (Math.sin(performance.now() * 0.008) + 1) * 0.5;
       g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen';
-      g.shadowColor = '#79e4f2'; g.shadowBlur = active ? 12 : 7;
-      g.strokeStyle = active ? '#e6fdff' : '#a9f5fb'; g.lineWidth = active ? 1.8 : 1.35;
+      g.shadowColor = gold; g.shadowBlur = active ? 12 : 7;
+      g.strokeStyle = active ? light.core : light.middle; g.lineWidth = active ? 1.8 : 1.35;
       g.beginPath(); g.moveTo(-12, 0); g.lineTo(-4, 0); g.moveTo(4, 0); g.lineTo(12, 0); g.moveTo(0, -12); g.lineTo(0, -4); g.moveTo(0, 4); g.lineTo(0, 12); g.stroke();
-      this.circle(0, 0, 7 + pulse * 1.5, `rgba(190,249,255,${active ? 0.72 : 0.45})`, 'rgba(121,228,242,.08)', 1.2);
-      this.circle(0, 0, 1.7, null, '#efffff'); g.restore();
+      this.circle(0, 0, 7 + pulse * 1.5, rgba(gold, active ? .72 : .45), rgba(gold,.08), 1.2);
+      this.circle(0, 0, 1.7, null, light.core); g.restore();
     }
     practiceGuide(app) {
       if (!app.practice?.active || app.practice.step === 'running' || app.practice.step === 'complete') return;
@@ -160,9 +160,9 @@
         if (touch) return;
         const phase = app.reducedMotion ? 0.72 : (Math.sin(time * 3.4) + 1) * 0.5;
         const x = w.player.x + 34 + phase * 70, y = w.player.y - 28 - phase * 18;
-        g.save(); g.setLineDash([5, 6]); g.strokeStyle = 'rgba(121,228,242,.55)'; g.lineWidth = 1.4;
+        g.save(); g.setLineDash([5, 6]); g.strokeStyle = rgba(gold,.55); g.lineWidth = 1.4;
         g.beginPath(); g.moveTo(w.player.x + 17, w.player.y - 10); g.lineTo(x - 13, y + 5); g.stroke(); g.setLineDash([]);
-        this.circle(w.player.x + 72, w.player.y - 43, 7, 'rgba(121,228,242,.62)', 'rgba(121,228,242,.08)', 1.2);
+        this.circle(w.player.x + 72, w.player.y - 43, 7, rgba(gold,.62), rgba(gold,.08), 1.2);
         g.restore(); this.inputCue(x, y, false, false); return;
       }
       if (app.practice.step !== 'draw' || app.practice.drawStarted || w.phase !== 'stopped') return;
@@ -173,16 +173,16 @@
       for (let i = 1; i < points.length; i++) { const length = S.distance(points[i - 1], points[i]); legs.push({ a: points[i - 1], b: points[i], start: total, length }); total += length; }
       const progress = app.reducedMotion ? 0.62 : (time % 2.35) / 2.35, along = total * progress;
       let point = points[0]; for (const leg of legs) if (along >= leg.start && along <= leg.start + leg.length) { const t = (along - leg.start) / leg.length; point = { x: leg.a.x + (leg.b.x - leg.a.x) * t, y: leg.a.y + (leg.b.y - leg.a.y) * t }; break; }
-      g.save(); this.path(points); g.setLineDash([8, 9]); g.lineDashOffset = app.reducedMotion ? 0 : -time * 18; g.strokeStyle = 'rgba(121,228,242,.42)'; g.lineWidth = 2; g.stroke(); g.setLineDash([]);
+      g.save(); this.path(points); g.setLineDash([8, 9]); g.lineDashOffset = app.reducedMotion ? 0 : -time * 18; g.strokeStyle = rgba(gold,.42); g.lineWidth = 2; g.stroke(); g.setLineDash([]);
       for (let i = 1; i < points.length; i++) {
         const a = points[i - 1], b = points[i], angle = Math.atan2(b.y - a.y, b.x - a.x), x = a.x + (b.x - a.x) * .72, y = a.y + (b.y - a.y) * .72;
-        g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = 'rgba(216,251,255,.72)'; g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.restore();
+        g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = rgba(light.middle,.72); g.beginPath(); g.moveTo(7, 0); g.lineTo(-5, -4); g.lineTo(-5, 4); g.closePath(); g.fill(); g.restore();
       }
       g.restore();
       if (touch) {
-        g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen'; g.shadowColor = '#79e4f2'; g.shadowBlur = 8;
-        g.strokeStyle = '#c8fbff'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-10, 0); g.lineTo(10, 0); g.moveTo(0, -10); g.lineTo(0, 10); g.stroke();
-        this.circle(0, 0, 6, 'rgba(200,251,255,.7)', 'rgba(121,228,242,.08)', 1.1); g.restore();
+        g.save(); g.translate(point.x, point.y); g.globalCompositeOperation = 'screen'; g.shadowColor = gold; g.shadowBlur = 8;
+        g.strokeStyle = light.core; g.lineWidth = 1.4; g.beginPath(); g.moveTo(-10, 0); g.lineTo(10, 0); g.moveTo(0, -10); g.lineTo(0, 10); g.stroke();
+        this.circle(0, 0, 6, rgba(light.middle,.7), rgba(gold,.08), 1.1); g.restore();
       } else this.inputCue(point.x + 13, point.y + 17, false, true);
     }
     /**
@@ -202,33 +202,20 @@
       const alpha = (entering ? 0.46 : 0.25) * (1 - progress);
       g.save(); g.globalCompositeOperation = 'screen';
       const wash = g.createRadialGradient(fx.origin.x, fx.origin.y, 0, fx.origin.x, fx.origin.y, 150);
-      wash.addColorStop(0, `rgba(190,247,255,${(entering ? .1 : .045) * (1 - progress)})`);
-      wash.addColorStop(1, 'rgba(190,247,255,0)');
+      wash.addColorStop(0, rgba(gold, (entering ? .1 : .045) * (1 - progress)));
+      wash.addColorStop(1, rgba(gold, 0));
       g.fillStyle = wash; g.fillRect(fx.origin.x - 150, fx.origin.y - 150, 300, 300);
-      g.strokeStyle = `rgba(174,243,255,${alpha})`; g.lineWidth = entering ? 2.2 : 1.4;
+      g.strokeStyle = rgba(light.middle, alpha); g.lineWidth = entering ? 2.2 : 1.4;
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius), 0, Math.PI * 2); g.stroke();
-      g.strokeStyle = `rgba(121,228,242,${alpha * 0.35})`; g.lineWidth = 7;
+      g.strokeStyle = rgba(gold, alpha * .35); g.lineWidth = 7;
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius + 5), 0, Math.PI * 2); g.stroke();
       g.restore();
     }
-    /** Quiet instrument face. Every mark is decorative; no implied collision geometry. */
+    /** Cached dormant circuit city. Its state never changes with Wave progress or kills. */
     backdrop(stopBlend) {
       const g = this.ctx;
-      const wash = g.createRadialGradient(480, 245, 20, 480, 300, 570);
-      wash.addColorStop(0, mix('#19233a', '#0d1826', stopBlend));
-      wash.addColorStop(1, mix('#0c1224', '#080c1a', stopBlend));
-      g.fillStyle = wash; g.fillRect(0, 0, C.world.width, C.world.height);
-      g.fillStyle = mix('#36435b', '#273545', stopBlend);
-      for (let x = 48; x < 935; x += 48) for (let y = 48; y < 576; y += 48) g.fillRect(x, y, .85, .85);
-      g.strokeStyle = mix('#26334b', '#152735', stopBlend); g.lineWidth = .6;
-      this.circle(480, 300, 215, g.strokeStyle); this.circle(480, 300, 221, g.strokeStyle);
-      g.save(); g.globalAlpha = .48; g.beginPath();
-      for (let i = 0; i < 120; i++) {
-        const a = i * Math.PI / 60, inner = i % 10 === 0 ? 210 : 216;
-        g.moveTo(480 + Math.cos(a) * inner, 300 + Math.sin(a) * inner);
-        g.lineTo(480 + Math.cos(a) * 220, 300 + Math.sin(a) * 220);
-      }
-      g.stroke(); g.restore();
+      g.drawImage(root.Deadline.battleArt.backdrop(this.scale * this.ratio), 0, 0, C.world.width, C.world.height);
+      if (stopBlend > 0) { g.fillStyle = rgba('#000000', stopBlend * .38); g.fillRect(0, 0, C.world.width, C.world.height); }
       g.strokeStyle = mix('#354359', '#334a55', stopBlend); g.lineWidth = .8;
       g.strokeRect(24, 24, 912, 552);
       // Four cropped corners describe the real input bounds.
@@ -237,8 +224,38 @@
         g.moveTo(x, y + dy * 13); g.lineTo(x, y); g.lineTo(x + dx * 13, y);
       }
       g.stroke();
-      g.font = '8px Consolas, monospace'; g.fillStyle = '#748ba278'; g.textAlign = 'center';
-      for (let i = 1; i <= 5; i++) g.fillText(String(i * 160).padStart(3, '0'), i * 160, 17);
+    }
+    /** A short wake follows observed player positions only. Its clock freezes with simulation time. */
+    picoWake(app) {
+      const w = app.world, g = this.ctx;
+      if (this.wakeWorld !== w || app.reducedMotion || app.titleActive || app.briefingActive || w.failed ||
+          !['normal', 'stopped'].includes(w.phase)) { this.wake = []; this.wakeWorld = w; }
+      if (!this.wake) this.wake = [];
+      if (!app.reducedMotion && !app.titleActive && !app.briefingActive && !w.failed && w.phase === 'normal') {
+        this.wake = this.wake.filter(p => w.time >= p.time && w.time - p.time < .18);
+        const previous = this.wake[this.wake.length - 1];
+        if (!previous || S.distance(previous,w.player) > 1) {
+          this.wake.push({x:w.player.x,y:w.player.y,time:w.time});
+          if (this.wake.length > 12) this.wake.shift();
+        }
+      }
+      g.save(); g.lineCap='round';
+      for (let i=1;i<this.wake.length;i++) {
+        const a=this.wake[i-1],b=this.wake[i],k=Math.max(0,1-(w.time-a.time)/.18);
+        // Long pointer jumps retain only the final 48 logical pixels, keeping the field clear.
+        const length=S.distance(a,b),trim=length>48?1-48/length:0;
+        this.path([{x:a.x+(b.x-a.x)*trim,y:a.y+(b.y-a.y)*trim},b]);
+        g.strokeStyle=rgba(gold,k*.07);g.lineWidth=7;g.stroke();
+        g.strokeStyle=rgba(light.middle,k*.34);g.lineWidth=1.1;g.stroke();
+      }
+      g.restore();
+    }
+    picoHalo(player, stopBlend, executing, failed) {
+      const g=this.ctx,r=executing?32:stopBlend>0?29:25;
+      const wash=g.createRadialGradient(player.x,player.y+3,2,player.x,player.y+3,r);
+      wash.addColorStop(0,rgba(light.middle,failed ? .045 : .2));
+      wash.addColorStop(.4,rgba(gold,failed ? .02 : .09));wash.addColorStop(1,rgba(gold,0));
+      g.fillStyle=wash;g.fillRect(player.x-r,player.y+3-r,r*2,r*2);
     }
     /** A warm echo of the completed path, fading before the next decision. */
     ignitionEcho(app) {
@@ -277,14 +294,14 @@
         const strength = app.shake * (this.width < 650 ? C.feedback.mobileShakeScale : 1);
         g.translate((Math.random() - 0.5) * strength, (Math.random() - 0.5) * strength);
       }
-      this.backdrop(stopBlend); this.ignitionEcho(app);
+      this.backdrop(stopBlend); this.ignitionEcho(app); this.picoWake(app);
       for (const e of w.enemies) if (e.alive) this.enemy(e, enemyColors);
       if (w.route) this.route(app, stopBlend);
       if (w.phase === 'stopped' && C.waves.definitions[w.waveIndex].oneStopRequired) {
         const locked = new Set(w.route.locks.map(lock => lock.enemyId)), pulse = 0.45 + (Math.sin(performance.now() * 0.009) + 1) * 0.18;
         for (const e of w.enemies) if (e.alive && !locked.has(e.id)) {
-          this.circle(e.x, e.y, C.enemy.radius + 9, `rgba(255,177,110,${pulse})`, null, 2);
-          this.circle(e.x, e.y, C.enemy.radius + 14, `rgba(255,105,113,${pulse * 0.45})`, null, 1);
+          this.circle(e.x, e.y, C.enemy.radius + 9, rgba(cyan,pulse), null, 2);
+          this.circle(e.x, e.y, C.enemy.radius + 14, rgba(cyan,pulse*.45), null, 1);
         }
       }
       for (const hit of app.hits) {
@@ -328,8 +345,8 @@
         const k = app.combatFx.releasePulse / C.feedback.executeVisual.releasePulseSeconds;
         this.circle(player.x, player.y, 14 + (1 - k) * 44, rgba(gold, k * 0.7), null, 1.8 * k);
       }
-      if (w.safetyRemaining > 0) this.circle(player.x, player.y, C.player.radius + 8, '#e7fcff', null, 1.5);
-      this.circle(player.x, player.y, 15 + stopBlend * 9 + (w.phase === 'executing' ? 5 : 0), null, rgba(gold, 0.07 + stopBlend * 0.12 + (w.phase === 'executing' ? 0.1 : 0)));
+      if (w.safetyRemaining > 0) this.circle(player.x, player.y, C.player.radius + 8, light.core, null, 1.5);
+      this.picoHalo(player, stopBlend, w.phase === 'executing', w.failed);
       const damage = app.damageFx?.remaining > 0 ? app.damageFx.remaining / app.damageFx.max : 0;
       g.save(); g.translate(player.x + (damage && !app.reducedMotion ? Math.sin(damage * 35) * 2 : 0), player.y);
       if (w.failed) g.globalAlpha = .55;
@@ -377,34 +394,45 @@
      */
     route(app, stopBlend = 0) {
       const g = this.ctx, w = app.world, route = w.route, executing = w.phase === 'executing';
-      const stopVisual = C.feedback.timeStopVisual, visual = C.feedback.routeVisual;
+      const visual = C.feedback.routeVisual;
       g.save(); g.lineJoin = 'round'; g.lineCap = 'round'; this.path(route.points);
       if (!executing) {
-        g.strokeStyle = rgba(cyan, .045); g.lineWidth = 15; g.stroke();
-        this.path(route.points); g.strokeStyle = rgba(cyan, .13); g.lineWidth = 6; g.stroke();
-        this.path(route.points); g.strokeStyle = mix(cyan, '#e2fff2', stopBlend); g.lineWidth = 2.1; g.stroke();
+        // Soft amber falloff surrounds a narrow ivory core on the exact compiled polyline.
+        g.strokeStyle = rgba(light.outer,.045); g.lineWidth = 15; g.stroke();
+        this.path(route.points); g.strokeStyle = rgba(light.outer,.09); g.lineWidth = 8; g.stroke();
+        this.path(route.points); g.strokeStyle = rgba(light.middle,.42); g.lineWidth = 3.8; g.stroke();
+        this.path(route.points); g.strokeStyle = mix(light.middle, light.core, .65 + stopBlend*.2); g.lineWidth = 1.65; g.stroke();
         if (route.length > 0) {
           this.path(route.points); g.setLineDash([visual.flowDash, visual.flowGap]);
           g.lineDashOffset = app.reducedMotion ? 0 : -(performance.now() * 0.001 * visual.flowSpeed) % (visual.flowDash + visual.flowGap);
-          g.strokeStyle = `rgba(255,255,255,${0.12 + stopBlend * 0.16})`; g.lineWidth = 1.25; g.stroke(); g.setLineDash([]);
+          g.strokeStyle = rgba(light.core,.12 + stopBlend*.16); g.lineWidth = 1.15; g.stroke(); g.setLineDash([]);
           const recentStart = Math.max(0, route.length - visual.recentLength);
-          this.routeSection(route, recentStart, route.length); g.strokeStyle = rgba(visual.glow, app.routeFx?.drawing ? 0.3 : 0.17); g.lineWidth = visual.recentGlowWidth; g.stroke();
-          this.routeSection(route, recentStart, route.length); g.strokeStyle = visual.recentCore; g.lineWidth = 2.1; g.globalAlpha = app.routeFx?.drawing ? 0.92 : 0.7; g.stroke(); g.globalAlpha = 1;
+          this.routeSection(route, recentStart, route.length); g.strokeStyle = rgba(gold, app.routeFx?.drawing ? .22 : .1); g.lineWidth = visual.recentGlowWidth; g.stroke();
+          this.routeSection(route, recentStart, route.length); g.strokeStyle = light.core; g.lineWidth = 1.7; g.globalAlpha = app.routeFx?.drawing ? .96 : .7; g.stroke(); g.globalAlpha = 1;
           // Direction cues follow the compiled polyline; they never smooth or shortcut it.
           for (let d = 70; d < route.length; d += Math.max(100, route.length / 20)) {
             const a = S.pointAt(route, d - 3), b = S.pointAt(route, d + 3);
             g.save(); g.translate(b.x, b.y); g.rotate(Math.atan2(b.y - a.y, b.x - a.x));
-            g.strokeStyle = '#dffff09c'; g.lineWidth = 1; g.beginPath(); g.moveTo(-4, -3); g.lineTo(0, 0); g.lineTo(-4, 3); g.stroke(); g.restore();
+            g.strokeStyle = rgba(light.middle,.48); g.lineWidth = .8; g.beginPath(); g.moveTo(-4, -3); g.lineTo(0, 0); g.lineTo(-4, 3); g.stroke(); g.restore();
+          }
+          // At most 16 small light motes travel along the real route. No smoothing or extra control points.
+          const count=Math.min(16,Math.floor(route.length/55)),now=app.reducedMotion?0:performance.now()*.001;
+          for (let i=0;i<count;i++) {
+            const d=(i*route.length/count+now*15)%route.length;
+            if (route.danger.some(span=>d>=span.start-5 && d<=span.end+5)) continue;
+            const p=S.pointAt(route,d),q=S.pointAt(route,Math.max(0,d-2));
+            const angle=Math.atan2(p.y-q.y,p.x-q.x),offset=(i%2?1:-1)*2.4;
+            this.circle(p.x-Math.sin(angle)*offset,p.y+Math.cos(angle)*offset,.65,null,rgba(light.middle,app.routeFx?.drawing ? .5 : .28));
           }
         }
       } else {
         if (w.execution.along < route.length) {
-          this.routeSection(route, w.execution.along, route.length); g.strokeStyle = '#79e4f22e'; g.lineWidth = C.render.routeGlowWidth; g.stroke();
-          this.routeSection(route, w.execution.along, route.length); g.strokeStyle = '#8dcbd35c'; g.lineWidth = C.render.routeWidth; g.stroke();
+          this.routeSection(route, w.execution.along, route.length); g.strokeStyle = rgba(gold,.09); g.lineWidth = C.render.routeGlowWidth; g.stroke();
+          this.routeSection(route, w.execution.along, route.length); g.strokeStyle = rgba(light.middle,.38); g.lineWidth = 1.7; g.stroke();
         }
         if (w.execution.along > 0) {
-          this.routeSection(route, 0, w.execution.along); g.strokeStyle = '#f6cc8633'; g.lineWidth = 12; g.stroke();
-          this.routeSection(route, 0, w.execution.along); g.strokeStyle = '#f6cc86b3'; g.lineWidth = 1.7; g.stroke();
+          this.routeSection(route, 0, w.execution.along); g.strokeStyle = rgba(gold,.16); g.lineWidth = 12; g.stroke();
+          this.routeSection(route, 0, w.execution.along); g.strokeStyle = rgba(light.middle,.7); g.lineWidth = 1.7; g.stroke();
         }
       }
       if (!executing) for (const span of route.danger) {
@@ -416,18 +444,19 @@
       }
       if (executing) {
         this.routeSection(route, Math.max(0, w.execution.along - C.feedback.trailLength), w.execution.along);
-        g.strokeStyle = '#f6cc864d'; g.lineWidth = 19; g.stroke();
+        g.strokeStyle = rgba(gold,.16); g.lineWidth = 19; g.stroke();
         this.routeSection(route, Math.max(0, w.execution.along - C.feedback.trailLength), w.execution.along);
-        g.strokeStyle = '#fff1d2'; g.lineWidth = 3.4; g.shadowColor = gold; g.shadowBlur = app.reducedMotion ? 0 : 15; g.stroke(); g.shadowBlur = 0;
+        g.strokeStyle = light.middle; g.lineWidth = 4.2; g.stroke();
+        g.strokeStyle = light.core; g.lineWidth = 2; g.shadowColor = gold; g.shadowBlur = app.reducedMotion ? 0 : 12; g.stroke(); g.shadowBlur = 0;
       }
       if (route.points.length > 1) {
         const end = route.points[route.points.length - 1];
-        if (executing) this.circle(end.x, end.y, 6, cyan, '#0b1420', 1.8);
+        if (executing) this.circle(end.x, end.y, 6, light.middle, '#1b1720', 1.8);
         else {
           const animate = app.routeFx?.drawing && !app.reducedMotion;
           const pulse = animate ? (Math.sin(performance.now() * 0.014) + 1) * 0.5 : 0.35;
-          this.circle(end.x, end.y, visual.tipHaloRadius + pulse * 2, rgba(visual.glow, 0.26 + pulse * 0.14), rgba(visual.glow, 0.07 + pulse * 0.04), 1.2);
-          this.circle(end.x, end.y, visual.tipRadius + pulse * 0.55, '#d8fbff', visual.tip, 1.2);
+          this.circle(end.x, end.y, visual.tipHaloRadius + pulse * 2, rgba(gold,.26+pulse*.14), rgba(gold,.07+pulse*.04), 1.2);
+          this.circle(end.x, end.y, visual.tipRadius + pulse * .55, light.middle, light.core, 1.2);
         }
       }
       for (const lock of route.locks) {

@@ -5,7 +5,8 @@
   --line: #2b354b; --cyan: #a8eee7; --red: #f28d91; --gold: #f6cc86;
   --display: Impact, Haettenschweiler, "Arial Narrow", sans-serif;
   --utility: "Consolas", "SFMono-Regular", monospace;
-  --demo-player: #a8eee7; --demo-player-stop: #ddfff5;
+  --demo-player: #ffdb85; --demo-player-stop: #fff7db; --demo-player-stroke: #fff1c8;
+  --demo-route: #fff0be; --demo-bullet: #ffc3cf; --demo-bullet-stroke: #ed5478;
   --demo-enemy: #42283e; --demo-enemy-stroke: #f69399;
   --demo-enemy-stop: #292532; --demo-enemy-stop-stroke: #ad8797;
 }
@@ -149,8 +150,18 @@ footer { padding-top: 13px; align-items: center; color: #a7b8c8; }
 .field-legend { display: flex; align-items: center; gap: 7px; color: #9aabba; font: 9px var(--utility); letter-spacing: .08em; }
 .field-legend i { width: 6px; height: 6px; display: inline-block; margin-left: 12px; }
 .legend-player { background: var(--gold); transform: rotate(45deg); }
+.legend-target { border: 1px solid var(--cyan); border-radius: 50%; }
 .legend-enemy { background: var(--red); clip-path: polygon(50% 0,100% 100%,0 100%); width: 8px !important; height: 8px !important; }
-.legend-bullet { background: var(--gold); border-radius: 50%; }
+.legend-bullet { background: #ff668c; border-radius: 50%; }
+/* The same Pico color grammar applies to the input pad and explanatory route drawings. */
+.move-pad-origin, .move-pad-cursor { border-color: #f4c565; }
+.move-pad-cursor { background: #f4c56529; box-shadow: 0 0 8px #f4c56552; }
+.move-pad-vector { background: #f4c565; box-shadow: 0 0 5px #f4c565; }
+.briefing-demo .demo-player, .briefing-demo .demo-route { filter: drop-shadow(0 0 6px #f4c56570); }
+.briefing-demo .demo-player-halo { fill: #f4c56518; stroke: #f4c5657a; }
+.briefing-demo .demo-route-guide { stroke: #f4c56538; filter: none; }
+.briefing-demo .demo-bullet { filter: drop-shadow(0 0 3px #ed547850); }
+.demo-execute .demo-bullet { fill: #e6acbf; stroke: #c77498; filter: none; }
 .execution-cue { position: absolute; inset: 11% 0 auto; text-align: center; pointer-events: none; opacity: 0; color: #ffe5b5; font: 48px/.95 var(--display); letter-spacing: .09em; }
 .execution-cue span { display: block; font: 11px "Yu Gothic UI", sans-serif; letter-spacing: .25em; margin-top: 11px; }
 .executing .execution-cue { animation: ignition-cue .45s ease-out both; }

@@ -122,7 +122,9 @@ async function trainingRun(page, index) {
     });
     const fixture = report.renderChecks.fixture;
     assert.equal(fixture.worldUnchanged, true); assert.ok(fixture.dangerSpans > 0);
-    assert.ok(fixture.safe[1] > fixture.safe[0]); assert.ok(fixture.danger[0] > fixture.danger[1] + 35);
+    // TASK B: Pico's safe route is warm ivory/gold; red danger remains a separate signal.
+    assert.ok(fixture.safe[0] > fixture.safe[1] && fixture.safe[1] > fixture.safe[2] + 20);
+    assert.ok(fixture.danger[0] > fixture.danger[1] + 35);
     assert.ok(fixture.bullet.reduce((a,b) => a+b,0) > 350);
     const reduced = await browser.newPage({ viewport:{width:1280,height:720}, reducedMotion:'reduce' }); hook(reduced);
     await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle');

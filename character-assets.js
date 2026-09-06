@@ -19,7 +19,10 @@
       const stamp = document.createElement('canvas');
       stamp.width = 192; stamp.height = Math.round(stamp.width * image.naturalHeight / image.naturalWidth);
       const context = stamp.getContext('2d');
-      context.imageSmoothingQuality = 'high'; context.drawImage(image, 0, 0, stamp.width, stamp.height);
+      context.imageSmoothingQuality = 'high';
+      // TASK B reserves cyan for TARGET. Recolor only the displayed triangular enemy; source PNG stays intact.
+      if (key === 'enemy02') context.filter = 'hue-rotate(125deg)';
+      context.drawImage(image, 0, 0, stamp.width, stamp.height); context.filter = 'none';
       const flash = document.createElement('canvas'); flash.width = stamp.width; flash.height = stamp.height;
       const glow = flash.getContext('2d'); glow.drawImage(stamp, 0, 0);
       glow.globalCompositeOperation = 'source-in'; glow.fillStyle = '#fff5dc'; glow.fillRect(0, 0, flash.width, flash.height);
