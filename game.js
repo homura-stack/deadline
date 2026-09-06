@@ -436,10 +436,7 @@
     sound.unlock(); sound.playUiConfirm(); app.titleLeaving = true; titleUi.screen.classList.add('is-leaving');
     const finish = () => {
       app.titleLeaving = false;
-      if (trainingPreference.shouldOffer()) { openTraining(); return; }
-      app.titleActive = false; app.titleLeaving = false; app.briefingActive = false; titleUi.screen.hidden = true;
-      document.body.classList.remove('title-open');
-      showWorldMap();
+      openTraining();
     };
     if (app.reducedMotion) finish(); else setTimeout(finish, 340);
   }

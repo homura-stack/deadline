@@ -25,7 +25,10 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
     report.routes.A='TITLE -> TRAINING -> completed -> WORLD MAP -> GARDEN';
     const pico=await page.evaluate(()=>{const e=Deadline.characters.entries.pico;return {file:e.file,width:e.width,anchorX:e.anchorX,anchorY:e.anchorY,status:e.status};});
     assert.deepEqual(pico,{file:'pico-final.png',width:48,anchorX:.56,anchorY:.47,status:'ready'});report.pico=pico;
-    await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();await map(page);await garden(page);report.routes.B='TITLE -> START -> WORLD MAP -> GARDEN';
+    await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();
+    await page.waitForFunction(()=>!Deadline.inspect().titleActive);assert.equal((await state(page)).briefingActive,true,'completed START also enters training');
+    assert.equal(await page.locator('#world-map').isVisible(),false);await begin(page);await plan(page);await page.keyboard.press('Space');
+    await map(page);await garden(page);report.routes.B='completed TITLE -> START -> TRAINING -> completed -> WORLD MAP -> GARDEN';
     for(const [route,name]of[['C','how'],['D','settings'],['E','credits']]){
       await page.reload();await page.waitForLoadState('networkidle');const before=(await state(page)).world;
       await page.locator(`[data-title-info="${name}"]`).click();assert.equal(await page.locator('#title-'+name).isVisible(),true);

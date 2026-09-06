@@ -8,6 +8,12 @@ async function visitCompleted(page,url,options){
 }
 async function initialMap(page){
   await page.waitForFunction(()=>!Deadline.inspect().titleActive);
+  // Battle-only fixtures retain the completed user's existing manual exit.
+  // The START acceptance suites complete the real rehearsal instead of using this helper.
+  if(await page.evaluate(()=>Deadline.inspect().briefingActive)){
+    assert.equal(await page.evaluate(()=>Deadline.inspect().trainingPreference),'completed');
+    await page.locator('#briefing-skip').click();
+  }
   await page.waitForFunction(()=>Deadline.inspect().journey.mode==='map');
 }
 async function training(page){

@@ -6,7 +6,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
 
-TASK E.1で、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しました。この練習内容を現在も維持しています。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。過去TASKの初回スキップ仕様は、以下のG.1仕様へ変更しています。
+TASK E.1で、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しました。この練習内容を現在も維持しています。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。STARTの現在の仕様は以下のG.2です。
 
 TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えました。旧素材は保持し、ゲームロジック・当たり判定・チュートリアル構造は変更していません。[素材・参照箇所・検証記録](TASK_F.md)を参照してください。
 
@@ -14,12 +14,14 @@ TASK F.1で、保存済みの初回選択に関係なく見つけられるよう
 
 TASK Gでは、提供された正式Picoタイトル画像を無加工で使用し、左下へSTART・TRAININGと補助メニューを配置しました。背景内のロゴ・コピーを重複表示せず、狭い画面では画像全体とメニューを分けます。F.1の進行・練習は維持しています。[タイトル素材・実装・検証記録](TASK_G.md)を参照してください。
 
-TASK G.1で、タイトルを新たに指定された2752×1536の元JPEGへ無圧縮で差し替えました。STARTはTRAINING未完了なら必ず練習へ、正常完了済みならWORLD MAPへ進みます。常設TRAININGはいつでも利用できます。[画質調査・初回判定・検証記録](TASK_G1.md)を参照してください。
+TASK G.1で、タイトルを新たに指定された2752×1536の元JPEGへ再圧縮せず差し替えました。[画質調査・当時の初回判定・検証記録](TASK_G1.md)を参照してください。
+
+TASK G.2では、受講済みでもSTARTから毎回TRAININGへ入るよう遷移だけを修正しました。`69521cf`型の現行チュートリアル本体・タイトル・正式Picoは変更していません。[変更範囲・テスト・復元手順](TASK_G2.md)を参照してください。
 
 ## プレイ
 
-- 開発中のTASK G.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / G / G.1は未push・未反映）
+- 開発中のTASK G.2確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / G / G.1 / G.2は未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -36,7 +38,7 @@ TASK G.1で、タイトルを新たに指定された2752×1536の元JPEGへ無�
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面の初回STARTまたはSPACEでTRAININGへ直接進みます。正常完了時だけ既存の`deadline.tutorial.v1`に`completed`を保存し、以降のSTARTはWORLD MAPへ直接進みます。未完了時の途中退出先はTITLEで、開始・退出だけでは受講済みになりません。旧`started` / `skipped`も未完了として扱います。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
+タイトル画面のSTARTまたはSPACEで、保存状態に関係なく毎回TRAININGへ直接進みます。練習を正常完了するとWORLD MAPへ進みます。既存の`deadline.tutorial.v1`への`completed`保存は維持しますが、STARTの遷移先を分ける判定には使いません。既存の途中退出先は未完了時がTITLE、受講済みの再練習時がWORLD MAPのままです。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
 タイトルのSTART直下のTRAININGから、初回・受講済みのどちらでも直接練習へ入れます。HOW TO PLAY →「Picoと操作を練習する」、WORLD MAPのTRAININGボタンも利用できます。旧版と同じEVADE → FREEZE → DRAW → EXECUTEの4ページで、マウス／MOVE PADの動きを見てから実習します。練習はPicoを64px動かす → TIME STOP → 2 TARGETを一筆書きで通る → SPACEで実行、という短い構成です。TIME STOPは旧版と同じ5秒。練習だけ安全猶予があり、実行時に弾を除去する旧版の扱いを維持しています。完了表示の約1秒後にWORLD MAPへ戻り、ENTER GARDENで本編を開始します。進行中のWORLD MAPから再受講した場合は、練習を終える／中断しても元の地区解禁・スコア・LIFEへ戻ります。練習中のR／「最初から」は練習だけを再開します。
 
@@ -137,8 +139,8 @@ node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
 ```
 
-以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: 受講済みTITLE → START → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。初回STARTはスキップできず、実際に練習完了してから本編へ進むことも確認します。`title-quality-training-browser.cjs`は正常完了・再読込・途中退出・旧保存状態と元JPEGのハッシュ・表示サイズを検証します。本編用の既存テストは受講済みの隔離ブラウザで実行し、初回受講の検証と分けます。
+以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: 受講済みTITLE → START → TRAINING → 実習完了 → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。未保存時と完了済みのどちらもSTARTでTRAININGへ入り、実際に練習完了してから本編へ進むことを確認します。`title-quality-training-browser.cjs`は再読込・途中退出・旧保存状態と元JPEGのハッシュ・表示サイズも検証します。本編専用のテストは受講済みの隔離ブラウザを使い、TRAININGへ入った後に既存の手動退出ボタンでMAPへ移ります。STARTの受け入れテストでは実習を操作して完了します。
 
-タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。G.1では3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_G1.md](TASK_G1.md)に記録します。
+タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、画質調査は[TASK_G1.md](TASK_G1.md)、今回の再検証は[TASK_G2.md](TASK_G2.md)に記録します。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

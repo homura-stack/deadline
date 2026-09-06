@@ -1,9 +1,9 @@
-/* G.1: fresh/legacy completion gates and source-quality rendering, with real practice input. */
+/* G.1 quality / G.2 START routing: all saved states enter the unchanged rehearsal. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {state,begin,plan}=require('./tutorial-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
-const out=path.join(__dirname,'artifacts','task-g1');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive:true});
 (async()=>{
   const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],report={browser:browser.version(),cases:{},layouts:[]};
   async function open(saved=null){
@@ -15,7 +15,11 @@ const out=path.join(__dirname,'artifacts','task-g1');fs.mkdirSync(out,{recursive
     if(saved){await p.evaluate(value=>localStorage.setItem('deadline.tutorial.v1',value),saved);await p.reload();}
     await p.waitForLoadState('networkidle');return p;
   }
-  async function start(p){await p.locator('#title-start').click();await p.waitForFunction(()=>!Deadline.inspect().titleActive);}
+  async function start(p){
+    await p.locator('#title-start').click();await p.waitForFunction(()=>!Deadline.inspect().titleActive);
+    const s=await state(p);assert.equal(s.briefingActive,true,'every START must enter TRAINING, including completed saves');
+    assert.equal(s.briefingPage,0);assert.equal(await p.locator('#world-map').isVisible(),false);
+  }
   async function map(p){await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map'&&!Deadline.inspect().practice.active);}
   async function complete(p){await begin(p);await plan(p);await p.keyboard.press('Space');await p.waitForFunction(()=>Deadline.inspect().practice.step==='complete');await map(p);assert.equal(await p.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),'completed');}
   try{
@@ -30,9 +34,9 @@ const out=path.join(__dirname,'artifacts','task-g1');fs.mkdirSync(out,{recursive
     assert.equal(await p.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),null);
     await p.reload();await p.waitForLoadState('networkidle');await start(p);await complete(p);
     report.cases.A='fresh START -> TRAINING; briefing/practice abort and reload stay incomplete; actual completion -> MAP';
-    await p.locator('#map-title').click();await start(p);await map(p);
-    await p.reload();await p.waitForLoadState('networkidle');await start(p);await map(p);
-    report.cases.B='completed START -> MAP, including reload';
+    await p.locator('#map-title').click();await start(p);await complete(p);
+    await p.reload();await p.waitForLoadState('networkidle');await start(p);await complete(p);
+    report.cases.B='completed START -> TRAINING -> normal completion -> MAP, including reload';
     await p.locator('#map-title').click();await p.locator('#title-training-launch').click();await complete(p);
     await p.locator('#map-training').click();await p.locator('#briefing-skip').click();await map(p);
     report.cases.C='permanent TRAINING -> actual completion -> MAP; MAP replay/exit preserved';
@@ -51,8 +55,8 @@ const out=path.join(__dirname,'artifacts','task-g1');fs.mkdirSync(out,{recursive
     for(const saved of ['started','skipped']){
       const legacy=await open(saved);await start(legacy);assert.equal((await state(legacy)).briefingActive,true,saved+' is not completed');
       await legacy.locator('#briefing-skip').click();assert.equal((await state(legacy)).titleActive,true);assert.equal(await legacy.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),saved);
-      await start(legacy);await complete(legacy);await legacy.reload();await legacy.waitForLoadState('networkidle');await start(legacy);await map(legacy);await legacy.close();
+      await start(legacy);await complete(legacy);await legacy.reload();await legacy.waitForLoadState('networkidle');await start(legacy);await complete(legacy);await legacy.close();
     }
-    assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS G.1 cases A-D, legacy started/skipped migration, abort/reload gate, replay, source hash and four render sizes; errors 0');
+    assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS G.2 START cases A-C, completed/legacy saves, abort/reload, replay, unchanged title quality; errors 0');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

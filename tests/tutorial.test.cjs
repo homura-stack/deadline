@@ -27,7 +27,7 @@ test('historical two-target practice uses normal five-second STOP and execution 
   assert.equal(w.totalKills,2);assert.equal(w.score,750);assert.equal(w.failed,false);
 });
 function storage(saved=null){return {saved,writes:[],getItem(){return this.saved;},setItem(key,value){this.writes.push({key,value});this.saved=value;}};}
-test('only normal completion releases the START training requirement, including legacy saves',()=>{
+test('only normal completion permits the existing manual exit to MAP, including legacy saves',()=>{
   for(const value of [null,'unknown','{}','started','skipped'])assert.equal(T.createPreferences(()=>storage(value)).shouldOffer(),true,value);
   assert.equal(T.createPreferences(()=>storage('completed')).shouldOffer(),false);
 });
