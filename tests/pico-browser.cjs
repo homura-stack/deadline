@@ -110,13 +110,15 @@ async function fixture(page, mode) {
     assert.ok(after.time >= before.time); assert.equal(after.wave,before.wave); assert.equal(after.score,before.score);
     report.loading={simulationStartedWhileLoading:true,recovered:true}; await slow.close();
     // Failed requests are expected in this isolated negative case; normal sessions still require zero console errors.
-    const failure = await browser.newPage(); const expectedErrors=[];
+    const failure = await browser.newPage(); const expectedErrors=[], failedImages=[];
     failure.on('pageerror',error=>report.errors.push(String(error)));
     failure.on('console',message=>{if(message.type()==='error')expectedErrors.push(message.text());});
-    await failure.route('**/assets/characters/*.png',route=>route.abort());
+    await failure.route('**/assets/characters/*.png',route=>{failedImages.push(route.request().url());return route.abort();});
     await failure.goto(base+'?debug'); assert.deepEqual(await failure.evaluate(()=>Deadline.characters.ready),['error','error','error','error']);
     await enter(failure); assert.ok((await failure.evaluate(()=>Deadline.inspect().world.time))>0);
-    assert.equal(expectedErrors.length,4); assert.ok(expectedErrors.every(text=>text.includes('ERR_FAILED')));
+    // The Pico welcome may request the same PNG separately after an aborted preload.
+    assert.equal(new Set(failedImages).size,4); assert.equal(expectedErrors.length,failedImages.length);
+    assert.ok(expectedErrors.every(text=>text.includes('ERR_FAILED')));
     report.failure={fallbackPlayable:true,expectedNetworkErrors:expectedErrors.length}; await failure.close();
     const local = await browser.newPage(); hook(local);
     await local.goto(pathToFileURL(path.resolve(__dirname,'../index.html')).href+'?debug');

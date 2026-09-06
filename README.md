@@ -4,12 +4,14 @@
 
 DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世界に一筆書きの攻撃ルートを描く10 Waveのブラウザアクションゲームです。SPACEで実行すると、自機だけが描いた線を超高速で移動し、ロックした敵を順番に撃破します。
 
-現在のTASK D版は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
+TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
+
+現在のTASK E版では、Picoと実操作で学ぶ7段階のチュートリアルを導入しています。[TASK Eの実装・検証・復元手順](TASK_E.md)を参照してください。
 
 ## プレイ
 
-- 開発中のTASK D確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK Dは未push・未反映）
+- 開発中のTASK E確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK Eは未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -28,7 +30,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 タイトル画面のSTARTまたはSPACEでWORLD MAPへ進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
-GARDENの開始前は「操作を練習する」から、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGと安全なPRACTICEも選べます。SKIP TUTORIAL、練習完了のどちらからもGARDENのWAVE 1へ進みます。リトライ時は説明を再表示しません。
+タイトルのHOW TO PLAY →「Picoと操作を練習する」、またはGARDEN開始前の「操作を練習する」からFIRST FLIGHTへ入れます。Picoの移動、TIME STOP、黄金LINE、シアンTARGET、敵・敵弾の回避、EXECUTE、WAVE CLEARの順に実操作で学びます。回避練習では実際の当たり判定を使い、触れるとその練習から再試行。練習のSTOPだけ時間無制限で、本番は従来どおり制限時間があります。完了画面の「GARDEN / WAVE 1へ」で新しい通常ゲームへ進み、練習のスコアや被弾を持ち越しません。TITLEから再受講できます。「練習せずGARDENへ」は実習を完了扱いにせず本番へ進みます。
 
 GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、短い静けさの後、Picoの位置からホタルの光が世界へ広がります。LIGHT RESTOREDの後、マップに復旧状態が残ります。CORE後は5地区の光が応答・同期し、エンディングを表示。RESTARTまたはTITLEを選べます。進行は今回のプレイ中だけ保持されます。R／「最初から」、タイトルへの帰還、リロードで新しい旅になります。
 
@@ -84,6 +86,7 @@ python -m http.server 4186 --bind 127.0.0.1
 | `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
 | `renderer.js` | シミュレーション状態を変更しないCanvas描画と視覚効果 |
 | `audio.js` | Web Audio APIによる合成SE、音量設定、AudioNodeの寿命管理 |
+| `tutorial.js` / `tutorial.css` | Picoの7段階実習、練習専用World・進行条件・表示 |
 | `assets/` | 正式ロゴなど、リポジトリ内で配信する静的素材 |
 | `tests/` | Nodeロジックテストと実Chromeによる操作・描画・負荷検証 |
 
@@ -109,12 +112,14 @@ python -m http.server 4186 --bind 127.0.0.1
 - `barrage.test.cjs` — 射撃パターン、弾数上限、寿命、画面外破棄
 - `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
 - `journey.test.cjs` — エリア解禁、画像準備待ち、復旧・同期発光の表示状態
+- `tutorial.test.cjs` — 必須操作、回避・安全ルート条件、通常ゲームとの分離
 
 `*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
 
 ```sh
-node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs tests/journey.test.cjs
+node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs tests/journey.test.cjs tests/tutorial.test.cjs
 node tests/browser.cjs
+node tests/pico-tutorial-browser.cjs
 node tests/tutorial-touchpad-browser.cjs
 node tests/astra-browser.cjs
 node tests/restoration-browser.cjs

@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const { config: C, sim: S, Renderer, Sound, journey: J, WorldMapView, stageArt: Stage } = root.Deadline;
+  const { config: C, sim: S, Renderer, Sound, journey: J, WorldMapView, stageArt: Stage, training: T } = root.Deadline;
   const $ = id => document.getElementById(id);
   /**
    * Browser-only presentation state layered over the DOM-free simulation world.
@@ -25,13 +25,14 @@
   const titleUi = { screen: $('title-screen'), shell: $('game-shell'), start: $('title-start'), infoButtons: [...document.querySelectorAll('[data-title-info]')], panels: [...document.querySelectorAll('[data-title-panel]')],
     master: $('master-volume'), masterValue: $('master-value'), sfx: $('sfx-volume'), sfxValue: $('sfx-value'), mute: $('setting-mute'),
     touchSensitivity: $('touch-sensitivity'), touchSensitivityValue: $('touch-sensitivity-value') };
-  const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
-    counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
+  const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip') };
+  const trainingUi = Object.fromEntries(['training-card','training-step','training-heading','training-copy','training-progress','training-action','training-exit'].map(id => [id, $(id)]));
+  let trainingUiKey = '';
   const renderer = new Renderer(ui.arena), sound = new Sound();
   const mapUi = Object.fromEntries(['world-map','map-board','map-title','map-enter','map-training','map-notice','map-restored-count','map-progress-lights','map-area-number','map-area-name','map-area-ja','map-area-status','map-area-description','map-area-waves','map-score','area-caption','area-transition','area-transition-kicker','area-transition-name','area-transition-ja','area-transition-note','stage-loading-actions','stage-retry','stage-title','world-sync','journey-ending','ending-score','ending-restart','ending-title-button'].map(id=>[id,$(id)]));
   /** @type {RuntimeApp} */
   const app = { world: S.createWorld(), journey: J.create(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
-    tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
+    tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, drawStarted: false },
     briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
     timeFx: { blend: 0, enterRemaining: 0, exitRemaining: 0, origin: { x: 0, y: 0 } },
     routeFx: { drawing: false, lockFlashes: [] },
@@ -127,10 +128,13 @@
     if(app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
     handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
   }
-  function openMapTraining() {
-    if(app.journey.mode!=='map'||app.journey.restored>0)return;
-    app.journey.mode='battle';app.briefingActive=true;app.briefingPage=0;
-    document.body.classList.add('briefing-open');briefingUi.screen.hidden=false;updateBriefingPage();updateUi();briefingUi.begin.focus({preventScroll:true});
+  function openTraining() {
+    if (app.titleLeaving || (!app.titleActive && (app.journey.mode !== 'map' || app.journey.restored > 0))) return;
+    sound.unlock(); sound.playUiConfirm(); reset(false); app.journey = J.create(); app.journey.mode = 'battle';
+    app.titleActive = false; titleUi.screen.hidden = true; document.body.classList.remove('title-open');
+    app.briefingActive = true; app.briefingPage = 0;
+    document.body.classList.add('briefing-open'); briefingUi.screen.hidden = false;
+    updateBriefingPage(); updateUi(); briefingUi.begin.focus({ preventScroll: true });
   }
   function restartJourney() {
     app.journey=J.create();reset(false);showWorldMap();
@@ -154,20 +158,7 @@
     try { localStorage.setItem(C.controls.touchStorageKey, JSON.stringify({ touchSensitivity })); } catch (_) { /* Storage may be unavailable in private contexts. */ }
   }
   function updateBriefingPage() {
-    const last = briefingUi.pages.length - 1;
-    app.briefingPage = S.clamp(app.briefingPage, 0, last);
-    briefingUi.pages.forEach((page, index) => { page.hidden = index !== app.briefingPage; });
-    briefingUi.progress.forEach((item, index) => item.classList.toggle('is-active', index === app.briefingPage));
-    briefingUi.counter.textContent = `BRIEFING / ${String(app.briefingPage + 1).padStart(2, '0')} OF ${String(briefingUi.pages.length).padStart(2, '0')}`;
-    briefingUi.back.disabled = app.briefingPage === 0;
     briefingUi.begin.querySelector('kbd').textContent = touchControls ? 'TAP' : 'SPACE';
-    briefingUi.begin.querySelector('span').textContent = app.briefingPage === last ? 'BEGIN TRAINING' : 'NEXT';
-  }
-  function changeBriefingPage(delta) {
-    if (!app.briefingActive) return;
-    const next = S.clamp(app.briefingPage + delta, 0, briefingUi.pages.length - 1);
-    if (next === app.briefingPage) return;
-    sound.unlock(); sound.playUiConfirm(); app.briefingPage = next; updateBriefingPage(); briefingUi.begin.focus({ preventScroll: true });
   }
   function syncSoundUi() {
     const settings = sound.preferences();
@@ -177,21 +168,24 @@
     ui.sound.textContent = settings.muted ? '音 OFF' : '音 ON'; ui.sound.setAttribute('aria-pressed', String(!settings.muted));
   }
   function updateTutorial() {
-    const visible = app.practice.active && !app.world.failed && app.practice.step !== 'running';
-    ui['tutorial-prompt'].hidden = !visible; if (!visible) return;
-    ui['tutorial-prompt'].replaceChildren();
-    if (app.practice.step === 'move') {
-      if (!touchControls) { const mouse = document.createElement('i'); mouse.className = 'guide-mouse'; mouse.setAttribute('aria-hidden', 'true'); ui['tutorial-prompt'].append(mouse); }
-      ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'MOVE PAD · SWIPE' : 'MOVE · EVADE'));
-    }
-    else if (app.practice.step === 'freeze') {
-      if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
-      ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'TIME STOPをタップ / FREEZE' : 'FREEZE TIME'));
-    } else if (app.practice.step === 'draw') ui['tutorial-prompt'].textContent = touchControls ? (app.practice.drawStarted ? 'MOVE PAD · DRAW THROUGH TARGETS' : 'MOVE PAD · DRAW ROUTE') : (app.practice.drawStarted ? 'DRAW THROUGH BOTH TARGETS' : 'PRESS · HOLD · DRAW');
-    else if (app.practice.step === 'execute') {
-      if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
-      ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'EXECUTEをタップ' : 'EXECUTE THE ROUTE'));
-    } else ui['tutorial-prompt'].textContent = 'TUTORIAL COMPLETE';
+    const p = app.practice, active = p.active;
+    trainingUi['training-card'].hidden = !active;
+    ui['tutorial-prompt'].hidden = !active || ['running','complete'].includes(p.step);
+    if (!active) { trainingUiKey = ''; return; }
+    const lesson = T.lessons[p.step], key = [p.step, touchControls, p.notice, app.world.phase].join('/');
+    app.tutorial.step = p.step;
+    if (key === trainingUiKey) return;
+    trainingUiKey = key;
+    trainingUi['training-step'].textContent = `FIRST FLIGHT / ${String(lesson[0]).padStart(2,'0')} OF 07`;
+    trainingUi['training-heading'].textContent = lesson[1];
+    trainingUi['training-copy'].textContent = p.notice || lesson[2];
+    [...trainingUi['training-progress'].children].forEach((item, i) => { item.classList.toggle('is-done', i < lesson[0] - 1); item.classList.toggle('is-current', i === lesson[0] - 1); if(i === lesson[0]-1)item.setAttribute('aria-current','step');else item.removeAttribute('aria-current'); });
+    const action = trainingUi['training-action'];
+    action.hidden = !['dangerIntro','complete'].includes(p.step);
+    action.textContent = p.step === 'complete' ? 'GARDEN / WAVE 1へ ↗' : '回避を練習する ↗';
+    ui['tutorial-prompt'].textContent = lesson[touchControls ? 4 : 3];
+    if (p.step === 'route' && app.world.phase === 'stopped') ui['tutorial-prompt'].textContent = '3 TARGETS / 弾を回り込む · CLEARで引き直し';
+    if (p.step === 'complete') action.focus({ preventScroll: true });
   }
   function updateUi() {
     const w = app.world, stopped = w.phase === 'stopped', executing = w.phase === 'executing', resting = w.phase === 'wave-clear', complete = w.phase === 'complete';
@@ -234,6 +228,7 @@
     document.body.classList.toggle('touch-controls', touchControls);
     document.body.classList.toggle('touch-draw-pad', touchControls && stopped);
     app.touchControls = touchControls;
+    document.body.classList.toggle('practice-active', app.practice.active);
     for (const step of ['move', 'freeze', 'draw', 'execute']) document.body.classList.toggle(`practice-${step}`, app.practice.active && app.practice.step === step);
     ui['time-stop-label'].textContent = stopped ? touchControls ? 'EXECUTE / 実行' : 'EXECUTE' : executing ? 'EXECUTING…' : resting ? 'NEXT WAVE…' : preview ? 'NEXT WAVE' : intro ? 'NEW RULE' : incomplete || w.failed ? `RETRY WAVE ${w.wave}` : complete ? 'RETRY' : ready ? 'TIME STOP' : 'TIME STOP · CHARGING';
     ui['time-stop'].disabled = stopped ? !touchCapable : !ready; ui.restart.disabled = executing;
@@ -273,8 +268,12 @@
     if (app.practice.active) {
       ui['wave-current'].textContent = 'P'; ui['wave-total'].textContent = '—'; ui.wave.setAttribute('aria-label', 'Practice');
       ui.phase.textContent = app.practice.step === 'complete' ? 'COMPLETE' : stopped ? 'TIME STOP' : executing ? 'EXECUTING' : 'PRACTICE';
-      ui['status-action'].textContent = app.practice.step === 'move' ? 'MOVE / EVADE' : app.practice.step === 'freeze' ? 'TIME STOP READY' : app.practice.step === 'draw' ? 'ROUTE INPUT' : app.practice.step === 'execute' ? 'READY TO EXECUTE' : 'TRAINING COMPLETE';
-      ui.hint.textContent = app.practice.step === 'move' ? (touchControls ? 'MOVE PADで自機を少し動かす' : 'マウスで自機を少し動かす') : app.practice.step === 'freeze' ? (touchControls ? 'TIME STOPボタンで世界を止める' : 'SPACEで世界を止める') : app.practice.step === 'draw' ? (touchControls ? 'MOVE PADで2体を通るルートを描く' : '停止中の2体を線で通過してTARGETにする') : app.practice.step === 'execute' ? (touchControls ? 'EXECUTEボタンでルートを実行' : 'SPACEでルートを実行') : 'WAVE 1を開始します';
+      ui['status-action'].textContent = 'FIRST FLIGHT';
+      ui.hint.textContent = '練習は時間無制限 / 本番はTIME STOPの制限時間があります';
+      ui['stop-time'].textContent = stopped ? '∞' : '—';
+      ui['stop-gauge'].setAttribute('aria-valuetext', stopped ? '練習中は時間無制限' : ready ? 'ready' : '操作を練習中');
+      ui['time-stop'].disabled = !['freeze','execute','route'].includes(app.practice.step) || (stopped && (!touchCapable || !T.canExecute(w, app.practice)));
+      ui.restart.disabled = executing;
       ui['lock-label'].textContent = 'TARGET'; ui['lock-count'].textContent = stopped ? `${locks} / ${targets}` : '—';
       ui['wave-banner'].hidden = true; ui.result.hidden = true; ui.complete.hidden = true;
     }
@@ -317,9 +316,7 @@
     ui['move-pad'].style.setProperty('--pad-length', `${Math.hypot(dx, dy)}px`); ui['move-pad'].style.setProperty('--pad-angle', `${Math.atan2(dy, dx)}rad`);
   }
   function notePracticeMovement() {
-    if (!app.practice.active || app.practice.step !== 'move' || !app.practice.origin) return;
-    if (S.distance(app.practice.origin, app.world.player) < C.practice.moveDistance) return;
-    app.practice.step = 'freeze'; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; sound.playUiConfirm(); updateUi();
+    if (app.practice.active && T.movement(app.world, app.practice)) { sound.playUiConfirm(); updateUi(); }
   }
   /**
    * Converts screen-space PAD motion into world-space motion with precision near the origin.
@@ -369,33 +366,24 @@
     }
     updateTouchPadVisual();
   }
-  function configurePracticeWorld() {
-    const w = S.createWorld();
-    w.phase = 'normal'; w.gauge = 0; w.waveBannerRemaining = 0; w.waveGraceRemaining = 999; w.safetyRemaining = 999;
-    w.score = 0; w.totalKills = 0; w.events.length = 0;
-    w.enemies = w.enemies.slice(0, C.practice.enemies.length).map((enemy, index) => ({ ...enemy,
-      x: C.practice.enemies[index].x, y: C.practice.enemies[index].y, vx: 0, vy: 0, shotRemaining: 999, burstRemaining: 0, delayRemaining: null }));
-    w.bullets = C.practice.bullets.map((bullet, index) => ({ id: w.nextBulletId++, enemyId: 0, ...bullet, life: 999, grazed: false, pattern: index ? 'fan' : 'aim' }));
-    return w;
-  }
   function startPractice() {
-    resetArtFx();
-    releasePointer(); releaseTouchPad(); app.world = configurePracticeWorld(); app.practice.active = true; app.practice.step = 'move';
-    app.touchDraw.cursor = null;
-    app.practice.origin = { ...app.world.player }; app.practice.completeRemaining = 0; app.practice.drawStarted = false; app.tutorial.active = true; app.tutorial.step = 'move';
-    app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null; app.damageFx.remaining = 0;
+    reset(false);
+    app.world = T.world(); app.practice = T.create();
+    app.tutorial.active = true; app.tutorial.step = 'move';
     app.briefingActive = false; briefingUi.screen.hidden = true; document.body.classList.remove('briefing-open');
-    titleUi.shell.inert = false; titleUi.shell.removeAttribute('aria-hidden'); renderer.resize(); accumulator = 0; lastTime = 0; updateUi(); ui.arena.focus({ preventScroll: true });
+    titleUi.shell.inert = false; titleUi.shell.removeAttribute('aria-hidden'); renderer.resize();
+    updateUi(); ui.arena.focus({ preventScroll: true });
   }
   function finishPractice() {
-    app.practice.active = false; app.tutorial.active = false; reset(false);app.journey.mode='map';enterArea(0);
+    if (!app.practice.active || app.practice.step !== 'complete') return;
+    app.practice.active = false; app.tutorial.active = false; app.journey = J.create(); reset(false);app.journey.mode='map';enterArea(0);
   }
   function reset(showTutorial = false) {
     Stage.prepare(0);
     resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = S.createWorld(); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.touchDraw.cursor = null;
-    app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.completeRemaining = 0; app.practice.drawStarted = false;
+    app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.drawStarted = false;
     app.tutorial.active = showTutorial; app.tutorial.step = 'move'; app.damageFx.remaining = 0;
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
     app.routeFx.lockFlashes = []; sound.stopTimeClock(); sound.stopAll();
@@ -423,7 +411,6 @@
   }
   function beginFromBriefing() {
     if (!app.briefingActive) return;
-    if (app.briefingPage < briefingUi.pages.length - 1) { changeBriefingPage(1); return; }
     sound.unlock(); sound.playUiConfirm(); startPractice();
   }
   function skipTutorial() {
@@ -457,7 +444,7 @@
     for (const event of app.world.events) {
       if (event.type === 'stop') {
         resetArtFx();
-        if (app.practice.active) { app.practice.step = 'draw'; app.practice.drawStarted = false; app.tutorial.step = 'draw'; }
+        if (app.practice.active) { T.setStep(app.practice, app.practice.evaded ? 'route' : 'draw'); app.practice.drawStarted = false; }
         releasePointer(); releaseTouchPad(); sound.play('stop'); app.shake = 0; ui.callout.textContent = ''; app.calloutLife = 0;
         resetTouchDrawCursor();
         app.routeFx.lockFlashes = []; sound.startTimeClock();
@@ -466,15 +453,12 @@
         app.timeFx.enterRemaining = C.feedback.timeStopVisual.enterSeconds; app.timeFx.exitRemaining = 0;
         ui.phase.classList.remove('stop-phase-pulse'); void ui.phase.offsetWidth; ui.phase.classList.add('stop-phase-pulse');
       } else if (event.type === 'cancel') {
-        if (app.practice.active) { app.practice.step = 'freeze'; app.practice.drawStarted = false; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; }
+        if (app.practice.active) { T.setStep(app.practice, app.practice.evaded ? 'route' : 'freeze'); app.practice.drawStarted = false; app.world.gauge = C.gauge.max; }
         releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); sound.playTimeResume();
         Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = C.feedback.timeStopVisual.exitSeconds;
       }
       else if (event.type === 'lock') {
-        if (app.practice.active && app.world.route?.locks.length === app.world.enemies.filter(enemy => enemy.alive).length) {
-          app.practice.step = 'execute'; app.tutorial.step = 'execute';
-        }
         app.routeFx.lockFlashes = app.routeFx.lockFlashes.filter(flash => flash.enemyId !== event.enemyId);
         app.routeFx.lockFlashes.push({ enemyId: event.enemyId, order: event.order, life: C.feedback.routeVisual.lockFlashSeconds });
         sound.playTargetLock(event.order); ui['lock-count'].classList.remove('lock-pulse'); void ui['lock-count'].offsetWidth; ui['lock-count'].classList.add('lock-pulse');
@@ -482,7 +466,7 @@
       else if (event.type === 'execute') {
         app.artFx.pendingRoute = app.world.route?.points.map(point => ({ ...point })) || null;
         app.artFx.origin = { ...app.world.player };
-        if (app.practice.active) { app.practice.step = 'running'; app.tutorial.step = 'running'; }
+        if (app.practice.active) { T.setStep(app.practice, 'running'); }
         releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.beginExecute();
         Object.assign(app.combatFx, { releaseRemaining: C.feedback.executeVisual.chargeSeconds, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: { ...app.world.player }, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
@@ -502,10 +486,10 @@
       } else if (event.type === 'done') {
         app.artFx.echo = app.artFx.pendingRoute; app.artFx.pendingRoute = null; app.artFx.life = .65;
         if (app.practice.active && event.allClear) {
-          app.practice.step = 'complete'; app.tutorial.step = 'complete'; app.practice.completeRemaining = C.practice.completeSeconds;
+          T.setStep(app.practice, 'complete');
           app.world.phase = 'practice-complete'; app.world.bullets.length = 0;
         } else if (app.practice.active) {
-          app.practice.step = 'freeze'; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max;
+          T.setStep(app.practice, 'route'); app.world.gauge = C.gauge.max;
         } else if (app.tutorial.active && event.kills > 0) app.tutorial.active = false;
         app.combatFx.releaseRemaining = 0; app.combatFx.resumeRemaining = C.feedback.executeVisual.resumeAfterglowSeconds;
         if (event.finalWave) { ui.callout.textContent = ''; app.calloutLife = 0; app.pendingFinal = { ...event, wait: C.feedback.finalSilence }; }
@@ -527,7 +511,13 @@
       else if (event.type === 'oneStopFail') { app.tutorial.active = false; releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); app.combatFx.pendingCompletion = 'incomplete'; }
       else if (event.type === 'fail') {
         resetArtFx();
-        if (app.practice.active) { app.world.failed = false; app.world.life = 1; app.world.phase = 'normal'; app.world.safetyRemaining = 999; app.world.waveGraceRemaining = 999; app.world.gauge = app.practice.step === 'move' ? 0 : C.gauge.max; }
+        if (app.practice.active) {
+          const wasEvading = ['evade','route','execute','running'].includes(app.practice.step);
+          app.world = T.world();
+          if (wasEvading) { app.practice.evaded = false; T.beginEvade(app.world, app.practice); }
+          else { T.setStep(app.practice, 'move'); app.practice.origin = { ...app.world.player }; }
+          app.practice.notice = '危険に触れました。敵と弾の間を通らず、上下に大きく回り込もう。ここから何度でも練習できます。';
+        }
         else app.tutorial.active = false;
         sound.stopTimeClock(); sound.playDamage(); particle(event.x, event.y, '#ff6971', 12); app.shake = C.feedback.damageShake;
         app.damageFx.remaining = app.damageFx.max; ui.life.classList.remove('life-hit'); void ui.life.offsetWidth; ui.life.classList.add('life-hit');
@@ -536,15 +526,15 @@
         releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; ui.callout.textContent = ''; app.calloutLife = 0;
       }
     }
-    app.world.events.length = 0; updateUi();
+    app.world.events.length = 0; syncPracticeRouteStep(); updateUi();
   }
   /** Routes the shared TIME STOP / EXECUTE command without duplicating phase rules in input handlers. */
   function toggleTime() {
     if(J.paused(app.journey))return;
     sound.unlock();
+    if (app.practice.active && (app.world.phase === 'normal' ? !['freeze','route'].includes(app.practice.step) : !T.canExecute(app.world, app.practice))) return;
     if (app.world.phase === 'normal') S.stopTime(app.world);
     else if (app.world.phase === 'stopped') {
-      if (app.practice.active) app.world.bullets.length = 0;
       S.executeRoute(app.world);
     }
     handleEvents();
@@ -619,9 +609,16 @@
   ui['move-pad'].addEventListener('pointercancel', endTouchPad);
   ui['move-pad'].addEventListener('lostpointercapture', event => { if (event.pointerId === touchPad.id) releaseTouchPad(); });
   function syncPracticeRouteStep() {
-    if (!app.practice.active || app.world.phase !== 'stopped') return;
-    const locked = app.world.route?.locks.length || 0, alive = app.world.enemies.filter(enemy => enemy.alive).length;
-    app.practice.step = locked > 0 && locked === alive ? 'execute' : 'draw'; app.tutorial.step = app.practice.step;
+    if (app.practice.active) T.routeStep(app.world, app.practice);
+  }
+  function trainingAction() {
+    if (!app.practice.active) return;
+    if (app.practice.step === 'complete') { sound.playUiConfirm(); finishPractice(); return; }
+    if (app.practice.step !== 'dangerIntro') return;
+    releasePointer(); releaseTouchPad(); heldKeys.clear(); sound.stopTimeClock(); resetArtFx();
+    T.beginEvade(app.world, app.practice); app.touchDraw.cursor = null;
+    app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = C.feedback.timeStopVisual.exitSeconds;
+    app.routeFx.lockFlashes = []; updateUi(); ui.arena.focus({ preventScroll: true });
   }
   function undo() { releasePointer(); releaseTouchPad(); app.routeFx.lockFlashes = []; S.undoRoute(app.world); syncTouchDrawCursor(); syncPracticeRouteStep(); updateUi(); }
   function clear() { releasePointer(); releaseTouchPad(); app.routeFx.lockFlashes = []; S.clearRoute(app.world); resetTouchDrawCursor(); syncPracticeRouteStep(); updateUi(); }
@@ -667,7 +664,7 @@
   bindTouchSafeCommand(ui['clear-route'], clear);
   bindTouchSafeCommand(ui['undo-route'], undo);
   bindTouchSafeCommand(ui['cancel-stop'], cancel);
-  ui.restart.addEventListener('click', restartJourney);
+  ui.restart.addEventListener('click', () => app.practice.active ? startPractice() : restartJourney());
   ui.retry.addEventListener('click', () => retryWave());
   ui['play-again'].addEventListener('click', restartJourney);
   ui['game-over-title'].addEventListener('click', returnToTitle);
@@ -684,14 +681,17 @@
   });
   titleUi.start.addEventListener('click', startFromTitle);
   mapUi['map-enter'].addEventListener('click',()=>enterArea(app.journey.selected));
-  mapUi['map-training'].addEventListener('click',openMapTraining);
+  mapUi['map-training'].addEventListener('click',openTraining);
+  $('title-training').addEventListener('click',openTraining);
+  bindTouchSafeCommand(trainingUi['training-exit'],returnToTitle);
+  bindTouchSafeCommand(trainingUi['training-action'],trainingAction);
   mapUi['map-title'].addEventListener('click',returnToTitle);
   mapUi['stage-retry'].addEventListener('click',()=>{Stage.retry(app.journey.active);updateUi();});
   mapUi['stage-title'].addEventListener('click',returnToTitle);
   mapUi['ending-title-button'].addEventListener('click',returnToTitle);
   mapUi['ending-restart'].addEventListener('click',restartJourney);
   briefingUi.begin.addEventListener('click', beginFromBriefing);
-  briefingUi.back.addEventListener('click', () => changeBriefingPage(-1));
+  briefingUi.back.addEventListener('click', returnToTitle);
   briefingUi.skip.addEventListener('click', skipTutorial);
   for (const button of titleUi.infoButtons) button.addEventListener('click', () => { sound.unlock(); sound.playUiConfirm(); toggleTitleInfo(button.dataset.titleInfo); });
   titleUi.master.addEventListener('input', () => { sound.setMasterVolume(titleUi.master.value); syncSoundUi(); });
@@ -708,13 +708,15 @@
       return;
     }
     if (app.briefingActive) {
+      if (event.target.closest?.('button') && event.target !== briefingUi.begin) return;
       if (['Space', 'Enter', 'KeyZ'].includes(event.code)) {
         event.preventDefault();
         if (event.repeat || heldKeys.has(event.code)) return;
         heldKeys.add(event.code); beginFromBriefing();
-      } else if (['Escape', 'KeyX', 'ArrowLeft'].includes(event.code)) { event.preventDefault(); changeBriefingPage(-1); }
+      } else if (['Escape', 'KeyX', 'ArrowLeft'].includes(event.code)) { event.preventDefault(); returnToTitle(); }
       return;
     }
+    if (app.practice.active && event.target.closest?.('#training-card button')) return;
     if(J.onMap(app.journey)) {
       if(event.code==='Escape'){event.preventDefault();returnToTitle();}
       return; // Native keyboard activation of map buttons; never leak SPACE into TIME STOP.
@@ -738,7 +740,7 @@
     else if (event.code === 'KeyZ') undo();
     else if (event.code === 'KeyX') clear();
     else if (event.code === 'KeyC' || event.code === 'Escape') cancel();
-    else if (event.code === 'KeyR' && app.world.phase !== 'executing') restartJourney();
+    else if (event.code === 'KeyR' && app.world.phase !== 'executing') { if (app.practice.active) startPractice(); else restartJourney(); }
     else if (app.world.failed && event.code === 'Enter') retryWave();
   });
   document.addEventListener('keyup', event => {
@@ -784,14 +786,13 @@
       accumulator += dt;
       while (accumulator >= C.world.fixedStep) {
         if (J.paused(app.journey) || (app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0) || app.combatFx.resumeRemaining > 0) { accumulator = 0; break; }
+        // Rehearsal only: hold STOP indefinitely; execution still uses the unchanged simulation.
+        if (app.practice.active && ['stopped','practice-complete'].includes(app.world.phase)) { accumulator = 0; break; }
+        if (app.practice.active && ['move','evade'].includes(app.practice.step)) app.world.gauge = 0;
         S.step(app.world); accumulator -= C.world.fixedStep; handleEvents();
       }
     }
-    if (app.practice.active && app.practice.step === 'complete') {
-      app.practice.completeRemaining = Math.max(0, app.practice.completeRemaining - dt);
-      if (app.practice.completeRemaining <= 0) finishPractice();
-    }
-    sound.updateTimeClock(app.world.phase === 'stopped', app.world.stopRemaining);
+    sound.updateTimeClock(!app.practice.active && app.world.phase === 'stopped', app.world.stopRemaining);
     const stopFx = C.feedback.timeStopVisual, stopTarget = ['stopped', 'executing'].includes(app.world.phase) || app.combatFx.resumeRemaining > 0 ? 1 : 0;
     const blendStep = dt / (stopTarget ? stopFx.enterSeconds : stopFx.exitSeconds);
     app.timeFx.blend = stopTarget ? Math.min(1, app.timeFx.blend + blendStep) : Math.max(0, app.timeFx.blend - blendStep);
