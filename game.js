@@ -36,6 +36,7 @@
     routeFx: { drawing: false, lockFlashes: [] },
     touchDraw: { cursor: null },
     combatFx: { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 },
+    artFx: { pendingRoute: null, echo: null, life: 0, flash: 0, origin: { x: 0, y: 0 }, scores: [] },
     titleActive: true, titleLeaving: false, briefingActive: false,
     debugEnabled: C.debug.enabled || (C.debug.allowQueryFlag && new URLSearchParams(location.search).has('debug')),
     debugShapes: false, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches };
@@ -208,6 +209,9 @@
     updateTutorial();
   }
   function comboText(kills) { return ['', '1 KILL', 'DOUBLE', 'TRIPLE', 'QUAD'][kills] || `${kills} KILLS`; }
+  function resetArtFx() {
+    Object.assign(app.artFx, { pendingRoute: null, echo: null, life: 0, flash: 0, scores: [] });
+  }
   function showCallout(kills, allClear, perfect = false, finalWave = false) {
     ui.callout.replaceChildren(document.createTextNode(perfect ? 'PERFECT EXECUTION' : comboText(kills)));
     if (allClear) { const bonus = document.createElement('small'); bonus.textContent = finalWave ? `${kills} / ${kills} · FINAL EXECUTION` : `${comboText(kills)} · ALL CLEAR  +${C.scoring.allClearBonus}`; ui.callout.append(bonus); }
@@ -302,6 +306,7 @@
     return w;
   }
   function startPractice() {
+    resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = configurePracticeWorld(); app.practice.active = true; app.practice.step = 'move';
     app.touchDraw.cursor = null;
     app.practice.origin = { ...app.world.player }; app.practice.completeRemaining = 0; app.practice.drawStarted = false; app.tutorial.active = true; app.tutorial.step = 'move';
@@ -313,6 +318,7 @@
     app.practice.active = false; app.tutorial.active = false; reset(false); ui.arena.focus({ preventScroll: true });
   }
   function reset(showTutorial = false) {
+    resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = S.createWorld(); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.touchDraw.cursor = null;
     app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.completeRemaining = 0; app.practice.drawStarted = false;
@@ -376,6 +382,7 @@
   function handleEvents() {
     for (const event of app.world.events) {
       if (event.type === 'stop') {
+        resetArtFx();
         if (app.practice.active) { app.practice.step = 'draw'; app.practice.drawStarted = false; app.tutorial.step = 'draw'; }
         releasePointer(); releaseTouchPad(); sound.play('stop'); app.shake = 0; ui.callout.textContent = ''; app.calloutLife = 0;
         resetTouchDrawCursor();
@@ -399,6 +406,8 @@
         sound.playTargetLock(event.order); ui['lock-count'].classList.remove('lock-pulse'); void ui['lock-count'].offsetWidth; ui['lock-count'].classList.add('lock-pulse');
       }
       else if (event.type === 'execute') {
+        app.artFx.pendingRoute = app.world.route?.points.map(point => ({ ...point })) || null;
+        app.artFx.origin = { ...app.world.player };
         if (app.practice.active) { app.practice.step = 'running'; app.tutorial.step = 'running'; }
         releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.beginExecute();
         Object.assign(app.combatFx, { releaseRemaining: C.feedback.executeVisual.chargeSeconds, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: { ...app.world.player }, pendingCompletion: null, completionRemaining: 0 });
@@ -407,10 +416,17 @@
       else if (event.type === 'hit') {
         sound.playSlash(event.order, event.last); if (event.defeated) sound.playKill(event.order, event.last);
         app.shake = event.last ? C.feedback.finalShake : C.feedback.shake;
-        particle(event.x, event.y, event.defeated ? '#baf9ff' : '#ff9499', event.defeated ? C.feedback.particlesPerEnemy : 4, event.last ? 1.25 : 1);
+        particle(event.x, event.y, event.defeated ? '#f6cc86' : '#ff9499', event.defeated ? C.feedback.particlesPerEnemy : 4, event.last ? 1.5 : 1.1);
+        if (event.defeated) {
+          app.artFx.scores.push({ x: event.x, y: event.y, life: .65,
+            value: C.scoring.baseKill + (app.world.execution.kills - 1) * C.scoring.chainBonus });
+          if (app.artFx.scores.length > 12) app.artFx.scores.shift();
+          ui.score.classList.remove('score-earned'); void ui.score.offsetWidth; ui.score.classList.add('score-earned');
+        }
         const enemy = app.world.enemies.find(item => item.id === event.enemyId);
-        app.hits.push({ ...event, enemy: enemy ? { ...enemy } : null, life: C.feedback.hitEffectLifetime, maxLife: C.feedback.hitEffectLifetime });
+        app.hits.push({ ...event, enemy: enemy ? { ...enemy } : null, life: C.feedback.hitEffectLifetime * 1.5, maxLife: C.feedback.hitEffectLifetime * 1.5 });
       } else if (event.type === 'done') {
+        app.artFx.echo = app.artFx.pendingRoute; app.artFx.pendingRoute = null; app.artFx.life = .65;
         if (app.practice.active && event.allClear) {
           app.practice.step = 'complete'; app.tutorial.step = 'complete'; app.practice.completeRemaining = C.practice.completeSeconds;
           app.world.phase = 'practice-complete'; app.world.bullets.length = 0;
@@ -427,6 +443,7 @@
       else if (event.type === 'rulePreview') { releasePointer(); sound.stopTimeClock(); ui.callout.textContent = ''; app.calloutLife = 0; }
       else if (event.type === 'oneStopFail') { app.tutorial.active = false; releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); app.combatFx.pendingCompletion = 'incomplete'; }
       else if (event.type === 'fail') {
+        resetArtFx();
         if (app.practice.active) { app.world.failed = false; app.world.life = 1; app.world.phase = 'normal'; app.world.safetyRemaining = 999; app.world.waveGraceRemaining = 999; app.world.gauge = app.practice.step === 'move' ? 0 : C.gauge.max; }
         else app.tutorial.active = false;
         sound.stopTimeClock(); sound.playDamage(); particle(event.x, event.y, '#ff6971', 12); app.shake = C.feedback.damageShake;
@@ -525,6 +542,7 @@
   function showRuleIntro() { S.acknowledgeRulePreview(app.world); handleEvents(); }
   function startOneStop() { S.startPendingWave(app.world); handleEvents(); }
   function retryWave(multiplier = C.waves.timeLimitAssist.standard) {
+    resetArtFx();
     releasePointer(); releaseTouchPad(); S.retryWave(app.world, multiplier); app.touchDraw.cursor = null; app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.tutorial.active = false; app.damageFx.remaining = 0;
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
@@ -645,7 +663,7 @@
     const resumeHold = app.combatFx.resumeRemaining > 0;
     if (releaseHold) {
       app.combatFx.releaseRemaining = Math.max(0, app.combatFx.releaseRemaining - dt); accumulator = 0;
-      if (app.combatFx.releaseRemaining <= 0) { sound.playExecuteRelease(); app.combatFx.releasePulse = C.feedback.executeVisual.releasePulseSeconds; }
+      if (app.combatFx.releaseRemaining <= 0) { sound.playExecuteRelease(); app.combatFx.releasePulse = C.feedback.executeVisual.releasePulseSeconds; app.artFx.flash = .22; }
     }
     if (resumeHold) {
       app.combatFx.resumeRemaining = Math.max(0, app.combatFx.resumeRemaining - dt); accumulator = 0;
@@ -704,6 +722,13 @@
         if (app.combatFx.completionRemaining <= 0 && app.combatFx.pendingCompletion) { sound.play(app.combatFx.pendingCompletion); app.combatFx.pendingCompletion = null; }
       }
     }
+    app.artFx.flash = Math.max(0, app.artFx.flash - dt);
+    app.artFx.life = Math.max(0, app.artFx.life - dt);
+    if (app.artFx.life <= 0) app.artFx.echo = null;
+    for (let i = app.artFx.scores.length - 1; i >= 0; i--) {
+      app.artFx.scores[i].life -= dt;
+      if (app.artFx.scores[i].life <= 0) app.artFx.scores.splice(i, 1);
+    }
     renderer.draw(app);
     if (app.debugEnabled && now - debugClock > 200) {
       debugClock = now; const w = app.world;
@@ -713,7 +738,7 @@
   }
   touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
-    particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, tutorial: app.tutorial, practice: app.practice,
+    particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, artFx: app.artFx, tutorial: app.tutorial, practice: app.practice,
     touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
     damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));
 })(globalThis);

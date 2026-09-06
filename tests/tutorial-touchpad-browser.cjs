@@ -180,7 +180,7 @@ async function within(inner, outer, label) {
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-01-evade.png'), fullPage: true });
     await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1850);
     const freezeColors = await visual.evaluate(() => { const page = document.querySelector('[data-briefing-page="1"]'); return { body: getComputedStyle(page.querySelector('.demo-enemy-body')).fill, barrel: getComputedStyle(page.querySelector('.demo-enemy-part')).fill, bullet: getComputedStyle(page.querySelector('.demo-bullet')).fill, bulletTransform: getComputedStyle(page.querySelector('.demo-bullet')).transform }; });
-    assert.equal(freezeColors.body, 'rgb(41, 40, 46)'); assert.equal(freezeColors.barrel, freezeColors.body); assert.equal(freezeColors.bullet, 'rgb(199, 192, 184)');
+    assert.equal(freezeColors.body, 'rgb(41, 37, 50)'); assert.equal(freezeColors.barrel, freezeColors.body); assert.equal(freezeColors.bullet, 'rgb(199, 192, 184)');
     await setDemoTime(visual, 2850); assert.equal(await visual.locator('.briefing-page:visible .demo-bullet').evaluate(el => getComputedStyle(el).transform), freezeColors.bulletTransform, 'STEP 2 bullet must remain frozen');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-02-freeze.png'), fullPage: true });
     await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 420);
@@ -194,11 +194,11 @@ async function within(inner, outer, label) {
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-03-draw.png'), fullPage: true });
     await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 500);
     let executeState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,key:getComputedStyle(page.querySelector('.demo-execute-key')).transform,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:getComputedStyle(page.querySelector('.demo-enemy-body')).fill};});
-    assert.equal(executeState.player,'0%');assert.equal(executeState.enemy,'rgb(41, 40, 46)');
+    assert.equal(executeState.player,'0%');assert.equal(executeState.enemy,'rgb(41, 37, 50)');
     await setDemoTime(visual,700);let releaseState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,ring:getComputedStyle(page.querySelector('.demo-resume-ring')).opacity,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform};});
     assert.equal(releaseState.player,'0%');assert.ok(Number(releaseState.ring)>0);assert.equal(releaseState.bullet,executeState.bullet,'bullet must remain stopped through SPACE release');
     await setDemoTime(visual,950);const resumedState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:parseFloat(getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance),bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:getComputedStyle(page.querySelector('.demo-enemy-body')).fill};});
-    assert.ok(resumedState.player>0);assert.notEqual(resumedState.bullet,executeState.bullet);assert.equal(resumedState.enemy,'rgb(75, 43, 58)');
+    assert.ok(resumedState.player>0);assert.notEqual(resumedState.bullet,executeState.bullet);assert.equal(resumedState.enemy,'rgb(66, 40, 62)');
     await setDemoTime(visual, 1700);
     assert.equal(await visual.locator('.briefing-page:visible .demo-kill-one').evaluate(el => getComputedStyle(el).opacity), '0');
     assert.equal(await visual.locator('.briefing-page:visible .demo-kill-two').evaluate(el => getComputedStyle(el).opacity), '1');

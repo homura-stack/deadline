@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101a29">
-  <meta name="description" content="時間を止めてルートを描き、自機だけが超高速で敵を連続撃破する操作検証用プロトタイプ。">
+  <meta name="theme-color" content="#080c1b">
+  <meta name="description" content="時間を止めろ。結末を、描け。停止した弾幕に一本のルートを描き、一瞬で発火させる10 Waveのアクションゲーム。">
   <title>DEAD/LINE — 時間停止ルート</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="astra.css">
+  <script defer src="title-art.js"></script>
   <script defer src="config.js"></script>
   <script defer src="simulation.js"></script>
   <script defer src="audio.js"></script>
@@ -17,10 +19,13 @@
 <body class="title-open">
   <section id="title-screen" class="title-screen" aria-label="DEAD/LINE タイトル画面">
     <span class="title-cut" aria-hidden="true"></span>
+    <div class="title-topline"><span><i class="brand-diamond" aria-hidden="true"></i> TIME-STOP ARCADE</span><span>10 WAVES / ONE CONTINUOUS LINE</span></div>
+    <canvas id="title-art" aria-hidden="true"></canvas>
     <div class="title-content">
-      <h1 class="title-heading"><img class="title-logo" src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE" decoding="async"></h1>
+      <p class="title-eyebrow">時間を止めろ。結末を、描け。</p>
+      <h1 class="title-heading" aria-label="DEAD/LINE"><span>DEAD</span><span class="title-line">LINE<span class="title-slash" aria-hidden="true">/</span></span></h1>
       <p class="title-tagline">FREEZE. DRAW. EXECUTE.</p>
-      <button id="title-start" class="title-start" type="button"><span>START</span><kbd>SPACE</kbd></button>
+      <button id="title-start" class="title-start" type="button"><span>START</span><span class="start-arrow" aria-hidden="true">↗</span><kbd>SPACE</kbd></button>
       <nav class="title-secondary" aria-label="タイトルメニュー">
         <button type="button" data-title-info="settings" aria-controls="title-settings" aria-expanded="false">SETTINGS</button>
         <span aria-hidden="true">/</span>
@@ -35,10 +40,11 @@
           <label class="touch-setting" for="touch-sensitivity"><span>TOUCH</span><input id="touch-sensitivity" type="range" min="50" max="150" step="5" value="100"><output id="touch-sensitivity-value" for="touch-sensitivity">100%</output></label>
           <button id="setting-mute" class="setting-mute" type="button" aria-pressed="false"><span>MUTE</span><strong>OFF</strong></button>
         </section>
-        <p id="title-how" data-title-panel="how" hidden><span class="device-pc">MOVE — マウス　·　TIME STOP — SPACE　·　DRAW — ドラッグ</span><span class="device-touch">MOVE — TOUCH PAD　·　TIME STOP / EXECUTE — 画面ボタン　·　DRAW — フィールドをドラッグ</span></p>
-        <p id="title-credits" data-title-panel="credits" hidden>PROTOTYPE — HTML · CSS · JAVASCRIPT</p>
+        <p id="title-how" data-title-panel="how" hidden><span class="device-pc">マウスで回避 → SPACEで時間停止 → ドラッグで導線 → SPACEで発火。赤い区間は危険。</span><span class="device-touch">MOVE PADで移動・導線描画。TIME STOP / EXECUTEは画面ボタン。赤い区間は危険。</span></p>
+        <p id="title-credits" data-title-panel="credits" hidden>DEAD/LINE — HTML · CSS · JAVASCRIPT<br>GRAPHICS: CANVAS / SOUND: WEB AUDIO</p>
       </div>
     </div>
+    <div class="title-bottomline"><span>止まった弾幕に、一本の導線を。<br><b>最後の一瞬で、すべてを貫く。</b></span><span class="title-input-note">MOUSE + SPACE<span class="device-touch"> / MOVE PAD</span><small>音あり推奨 · チュートリアル付き</small></span></div>
   </section>
   <section id="briefing-screen" class="briefing-screen" aria-label="初回操作説明" aria-modal="true" role="dialog" hidden>
     <div class="briefing-panel">
@@ -115,7 +121,7 @@
   </section>
   <main id="game-shell" class="shell" aria-hidden="true" inert>
     <header class="masthead">
-      <div class="masthead-logo"><img src="assets/logo-deadline.png" width="2172" height="724" alt="DEAD/LINE"></div>
+      <div class="masthead-logo" aria-label="DEAD/LINE">DEAD<span>/</span>LINE<small>TIME-STOP ARCADE</small></div>
       <div class="utilities"><button id="sound" aria-pressed="true">音 ON</button><button id="restart" title="最初から / R">最初から ↻</button></div>
     </header>
     <section class="game" aria-label="時間停止ルートゲーム">
@@ -127,6 +133,8 @@
       <div class="charge"><label for="stop-gauge"><span id="stop-gauge-label">TIME STOP</span><strong id="stop-time">—</strong></label><progress id="stop-gauge" max="100" value="20"></progress><span id="gauge-value">20%</span></div>
       <div class="arena-wrap">
         <canvas id="arena" width="960" height="600" tabindex="0" aria-label="PCではマウスで移動とルート描画。スマートフォンではMOVE PADで移動とルート描画を行い、ゲームフィールドへの直接タッチは使用しません。"></canvas>
+        <div class="field-caption" aria-hidden="true"><span class="field-mode">LIVE FIELD</span><span>FREEZE / DRAW / EXECUTE</span></div>
+        <div id="execution-cue" class="execution-cue" aria-hidden="true">EXECUTE<span>導線、発火。</span></div>
         <div id="wave-banner" class="wave-banner" aria-live="polite">WAVE 01 / 10</div>
         <div id="tutorial-prompt" class="tutorial-prompt" aria-live="polite" hidden></div>
         <div id="lock-ready" class="lock-ready" hidden>ALL TARGETS LOCKED<small>SPACEで実行</small></div>
@@ -145,7 +153,7 @@
         <div class="controls" aria-label="戦闘操作"><button id="undo-route" disabled><kbd>Z</kbd><span>UNDO</span></button><button id="clear-route" disabled><kbd>X</kbd><span>CLEAR</span></button><button id="cancel-stop" disabled><kbd>C</kbd><span>CANCEL</span></button><button id="time-stop" disabled><kbd>SPACE</kbd><span id="time-stop-label">TIME STOP  充電中</span><svg class="practice-button-finger" aria-hidden="true" viewBox="0 0 30 38"><path d="M8 31V11a4 4 0 0 1 8 0v8l3-2c5-2 8 1 7 6l-2 10H11Z"/><circle cx="12" cy="11" r="9"/></svg></button></div>
       </div>
     </section>
-    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span>マウス・TOUCH PAD対応</span></footer>
+    <footer><p id="hint">移動 → TIME STOP / Space → ルートを描く</p><span class="field-legend"><i class="legend-player"></i> YOU <i class="legend-enemy"></i> ENEMY <i class="legend-bullet"></i> HAZARD</span></footer>
     <details id="debug" hidden><summary>DEBUG</summary><label><input id="debug-shapes" type="checkbox"> 自機・敵・弾の当たり判定／ロック範囲</label><output id="debug-values"></output></details>
   </main>
 </body>

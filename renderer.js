@@ -13,7 +13,12 @@
    * @property {boolean} touchControls
    * @property {boolean} reducedMotion
    */
-  const cyan = '#79e4f2', red = '#ff6971';
+  const cyan = '#a8eee7', red = '#ff8d92', gold = '#f6cc86';
+  // Presentation palette deliberately stays outside gameplay config.
+  const frozenPalette = { background: '#080c1a', grid: '#101a29', innerBorder: '#273747',
+    enemyFill: '#292532', enemyStroke: '#ad8797', enemyCore: '#dbc1c8',
+    bulletFill: '#ddcbb4', bulletStroke: '#aa9585', bulletHalo: '#f6cc8610',
+    playerFill: '#defff3', playerStroke: '#ffffff' };
   const rgb = hex => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
   const rgba = (hex, alpha) => { const color = rgb(hex); return `rgba(${color[0]},${color[1]},${color[2]},${alpha})`; };
   const mix = (from, to, amount) => {
@@ -60,6 +65,10 @@
       } g.closePath(); }
       if (enemy.delayRemaining != null) g.fillStyle = colors.delayFill;
       g.fill(); g.stroke();
+      // Faceted casing stays within the original radius; type silhouettes remain distinct.
+      g.save(); g.translate(enemy.x, enemy.y); g.strokeStyle = colors.stroke; g.globalAlpha *= .4;
+      g.beginPath(); g.moveTo(-r * .62, r * .45); g.lineTo(0, -r * .56); g.lineTo(r * .62, r * .45); g.stroke();
+      g.restore();
       if (enemy.pattern === 'rotate') {
         g.beginPath(); g.moveTo(enemy.x, enemy.y); g.lineTo(enemy.x + Math.cos(enemy.rotateAngle) * 21, enemy.y + Math.sin(enemy.rotateAngle) * 21); g.stroke();
       }
@@ -75,8 +84,8 @@
       // Pattern is communicated by the live projectile itself; no trails or prediction guides.
       const palette = { aim: ['#ffd6a8', '#ffae68'], fan: ['#ffc28a', '#f58a61'], burst: ['#ffaaa0', '#ef6f72'],
         rotate: ['#e9a0aa', '#cf6f80'], delay: ['#ffe0ad', '#ff966d'] }[bullet.pattern] || ['#ffd6a8', '#ffae68'];
-      const colors = { fill: mix(palette[0], C.feedback.timeStopVisual.bulletFill, stopBlend), stroke: mix(palette[1], C.feedback.timeStopVisual.bulletStroke, stopBlend),
-        halo: stopBlend > 0.5 ? C.feedback.timeStopVisual.bulletHalo : rgba(palette[1], 0.08) };
+      const colors = { fill: mix(palette[0], frozenPalette.bulletFill, stopBlend), stroke: mix(palette[1], frozenPalette.bulletStroke, stopBlend),
+        halo: stopBlend > 0.5 ? frozenPalette.bulletHalo : rgba(palette[1], 0.11) };
       const g = this.ctx, r = C.shooting.bulletRadius;
       this.circle(bullet.x, bullet.y, r + 1.5, null, colors.halo);
       g.save(); g.translate(bullet.x, bullet.y); g.rotate(Math.atan2(bullet.vy, bullet.vx)); g.fillStyle = colors.fill; g.strokeStyle = colors.stroke; g.lineWidth = 1;
@@ -165,11 +174,65 @@
       const radius = app.reducedMotion ? 90 : entering ? 18 + maxRadius * eased : maxRadius * (1 - eased);
       const alpha = (entering ? 0.46 : 0.25) * (1 - progress);
       g.save(); g.globalCompositeOperation = 'screen';
-      g.fillStyle = `rgba(190,247,255,${(entering ? 0.13 : 0.055) * (1 - progress)})`; g.fillRect(0, 0, C.world.width, C.world.height);
+      const wash = g.createRadialGradient(fx.origin.x, fx.origin.y, 0, fx.origin.x, fx.origin.y, 150);
+      wash.addColorStop(0, `rgba(190,247,255,${(entering ? .1 : .045) * (1 - progress)})`);
+      wash.addColorStop(1, 'rgba(190,247,255,0)');
+      g.fillStyle = wash; g.fillRect(fx.origin.x - 150, fx.origin.y - 150, 300, 300);
       g.strokeStyle = `rgba(174,243,255,${alpha})`; g.lineWidth = entering ? 2.2 : 1.4;
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius), 0, Math.PI * 2); g.stroke();
       g.strokeStyle = `rgba(121,228,242,${alpha * 0.35})`; g.lineWidth = 7;
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius + 5), 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
+    /** Quiet instrument face. Every mark is decorative; no implied collision geometry. */
+    backdrop(stopBlend) {
+      const g = this.ctx;
+      const wash = g.createRadialGradient(480, 245, 20, 480, 300, 570);
+      wash.addColorStop(0, mix('#19233a', '#0d1826', stopBlend));
+      wash.addColorStop(1, mix('#0c1224', '#080c1a', stopBlend));
+      g.fillStyle = wash; g.fillRect(0, 0, C.world.width, C.world.height);
+      g.fillStyle = mix('#36435b', '#273545', stopBlend);
+      for (let x = 48; x < 935; x += 48) for (let y = 48; y < 576; y += 48) g.fillRect(x, y, .85, .85);
+      g.strokeStyle = mix('#26334b', '#152735', stopBlend); g.lineWidth = .6;
+      this.circle(480, 300, 215, g.strokeStyle); this.circle(480, 300, 221, g.strokeStyle);
+      g.save(); g.globalAlpha = .48; g.beginPath();
+      for (let i = 0; i < 120; i++) {
+        const a = i * Math.PI / 60, inner = i % 10 === 0 ? 210 : 216;
+        g.moveTo(480 + Math.cos(a) * inner, 300 + Math.sin(a) * inner);
+        g.lineTo(480 + Math.cos(a) * 220, 300 + Math.sin(a) * 220);
+      }
+      g.stroke(); g.restore();
+      g.strokeStyle = mix('#354359', '#334a55', stopBlend); g.lineWidth = .8;
+      g.strokeRect(24, 24, 912, 552);
+      // Four cropped corners describe the real input bounds.
+      g.strokeStyle = mix('#8399ab', '#98c3c0', stopBlend); g.lineWidth = 1.4; g.beginPath();
+      for (const [x, y, dx, dy] of [[24,24,1,1],[936,24,-1,1],[24,576,1,-1],[936,576,-1,-1]]) {
+        g.moveTo(x, y + dy * 13); g.lineTo(x, y); g.lineTo(x + dx * 13, y);
+      }
+      g.stroke();
+      g.font = '8px Consolas, monospace'; g.fillStyle = '#748ba278'; g.textAlign = 'center';
+      for (let i = 1; i <= 5; i++) g.fillText(String(i * 160).padStart(3, '0'), i * 160, 17);
+    }
+    /** A warm echo of the completed path, fading before the next decision. */
+    ignitionEcho(app) {
+      const fx = app.artFx, g = this.ctx;
+      if (!fx?.echo || fx.life <= 0) return;
+      const k = fx.life / .65;
+      g.save(); g.globalCompositeOperation = 'screen'; g.lineJoin = 'round'; g.lineCap = 'round';
+      this.path(fx.echo); g.strokeStyle = rgba(gold, k * .075); g.lineWidth = 17 * k + 2; g.stroke();
+      this.path(fx.echo); g.strokeStyle = rgba(gold, k * .58); g.lineWidth = 1.3; g.stroke();
+      g.restore();
+    }
+    /** Localized energy release instead of a full-screen white strobe. */
+    ignitionBurst(app) {
+      const fx = app.artFx, g = this.ctx;
+      if (!fx || fx.flash <= 0 || app.reducedMotion) return;
+      const k = fx.flash / .22, p = fx.origin;
+      g.save(); g.globalCompositeOperation = 'screen';
+      const wash = g.createRadialGradient(p.x, p.y, 3, p.x, p.y, 180);
+      wash.addColorStop(0, rgba(gold, k * .2)); wash.addColorStop(1, rgba(gold, 0));
+      g.fillStyle = wash; g.fillRect(p.x - 180, p.y - 180, 360, 360);
+      this.circle(p.x, p.y, 20 + (1 - k) * 130, rgba(gold, k * .55), null, 1.4);
       g.restore();
     }
     /**
@@ -177,20 +240,17 @@
      * @param {RenderAppState} app
      */
     draw(app) {
-      const g = this.ctx, w = app.world, stopBlend = app.timeFx?.blend || 0, stopVisual = C.feedback.timeStopVisual;
-      const enemyColors = { fill: mix('#4b2b3a', stopVisual.enemyFill, stopBlend), stroke: mix('#ff6971', stopVisual.enemyStroke, stopBlend),
-        core: mix('#ff9c9c', stopVisual.enemyCore, stopBlend), delayFill: mix('#875537', '#4d4747', stopBlend), delayStroke: mix('#ffd4a6', '#a69b94', stopBlend) };
-      g.setTransform(this.ratio, 0, 0, this.ratio, 0, 0); g.fillStyle = mix('#0e1926', stopVisual.background, stopBlend); g.fillRect(0, 0, this.width, this.height);
+      const g = this.ctx, w = app.world, stopBlend = app.timeFx?.blend || 0, stopVisual = frozenPalette;
+      const enemyColors = { fill: mix('#42283e', stopVisual.enemyFill, stopBlend), stroke: mix('#f69399', stopVisual.enemyStroke, stopBlend),
+        core: mix('#ffdad0', stopVisual.enemyCore, stopBlend), delayFill: mix('#875537', '#4d4747', stopBlend), delayStroke: mix('#ffd4a6', '#c5b099', stopBlend) };
+      g.setTransform(this.ratio, 0, 0, this.ratio, 0, 0); g.fillStyle = mix('#10162a', stopVisual.background, stopBlend); g.fillRect(0, 0, this.width, this.height);
       g.save(); g.translate(this.offsetX, this.offsetY); g.scale(this.scale, this.scale);
       g.beginPath(); g.rect(0, 0, C.world.width, C.world.height); g.clip();
       if (app.shake > 0 && !app.reducedMotion) {
         const strength = app.shake * (this.width < 650 ? C.feedback.mobileShakeScale : 1);
         g.translate((Math.random() - 0.5) * strength, (Math.random() - 0.5) * strength);
       }
-      g.strokeStyle = mix('#162333', stopVisual.grid, stopBlend); g.lineWidth = 0.6; g.beginPath();
-      for (let x = 40; x < C.world.width; x += 40) { g.moveTo(x, 24); g.lineTo(x, C.world.height - 24); }
-      for (let y = 40; y < C.world.height; y += 40) { g.moveTo(24, y); g.lineTo(C.world.width - 24, y); }
-      g.stroke(); g.strokeStyle = mix('#233549', stopVisual.innerBorder, stopBlend); g.strokeRect(24, 24, C.world.width - 48, C.world.height - 48);
+      this.backdrop(stopBlend); this.ignitionEcho(app);
       for (const e of w.enemies) if (e.alive) this.enemy(e, enemyColors);
       if (w.route) this.route(app, stopBlend);
       if (w.phase === 'stopped' && C.waves.definitions[w.waveIndex].oneStopRequired) {
@@ -206,14 +266,25 @@
         if (hit.enemy && flash > 0) this.enemy(hit.enemy, { fill: '#d7fcff', stroke: '#ffffff', core: '#ffffff', delayFill: '#d7fcff', delayStroke: '#ffffff' }, 0.25 + flash * 0.7);
         const dx = hit.x - hit.from.x, dy = hit.y - hit.from.y, length = Math.hypot(dx, dy) || 1, nx = -dy / length, ny = dx / length;
         const slashLength = defeated ? 27 : 20, spread = defeated ? 5 : 3;
-        g.save(); g.globalCompositeOperation = 'screen'; g.strokeStyle = `rgba(226,253,255,${Math.min(1, k * 1.5)})`; g.lineCap = 'round';
+        g.save(); g.globalCompositeOperation = 'screen'; g.strokeStyle = `rgba(255,239,199,${Math.min(1, k * 1.5)})`; g.lineCap = 'round';
         for (const offset of [-spread, spread]) { g.lineWidth = defeated ? 2.5 : 1.7; g.beginPath(); g.moveTo(hit.x - nx * slashLength + dx / length * offset, hit.y - ny * slashLength + dy / length * offset); g.lineTo(hit.x + nx * slashLength + dx / length * offset, hit.y + ny * slashLength + dy / length * offset); g.stroke(); }
-        this.circle(hit.x, hit.y, 10 + (1 - k) * (hit.last ? 38 : defeated ? 29 : 20), `rgba(121,228,242,${k * (defeated ? 0.95 : 0.65)})`, null, (defeated ? 2.4 : 1.5) * k);
+        this.circle(hit.x, hit.y, 10 + (1 - k) * (hit.last ? 58 : defeated ? 40 : 20), rgba(gold, k * (defeated ? .95 : .65)), null, (defeated ? 2.4 : 1.5) * k);
+        if (defeated) {
+          const reach = app.reducedMotion ? 22 : 24 + (1 - k) * (hit.last ? 75 : 42);
+          g.strokeStyle = rgba(gold, k * .8); g.lineWidth = 1;
+          g.beginPath(); g.moveTo(hit.x - reach, hit.y + reach * .28); g.lineTo(hit.x + reach, hit.y - reach * .28); g.stroke();
+        }
         if (defeated && !app.reducedMotion) for (let i = 0; i < C.feedback.executeVisual.fragmentCount; i++) {
           const angle = i * Math.PI * 2 / C.feedback.executeVisual.fragmentCount + hit.order * 0.37, distance = (1 - k) * (hit.last ? 34 : 24);
-          g.save(); g.translate(hit.x + Math.cos(angle) * distance, hit.y + Math.sin(angle) * distance); g.rotate(angle); g.globalAlpha = k * 0.75; g.fillStyle = i % 2 ? '#79e4f2' : '#e5fdff'; g.fillRect(-3, -1, 6, 2); g.restore();
+          g.save(); g.translate(hit.x + Math.cos(angle) * distance, hit.y + Math.sin(angle) * distance); g.rotate(angle); g.globalAlpha = k * 0.75; g.fillStyle = i % 2 ? gold : '#fff2d5'; g.fillRect(-5, -.8, 10, 1.6); g.restore();
         }
         g.restore();
+      }
+      for (const label of app.artFx?.scores || []) {
+        const k = Math.min(1, label.life / .18);
+        g.save(); g.globalAlpha = k; g.font = 'bold 12px Consolas, monospace'; g.textAlign = 'left';
+        g.fillStyle = '#fce6bb'; g.shadowColor = '#080c1b'; g.shadowBlur = 4;
+        g.fillText(`+${label.value}`, Math.min(880, label.x + 22), Math.max(48, label.y - 20 - (app.reducedMotion ? 0 : (.65 - label.life) * 24))); g.restore();
       }
       for (const p of app.particles) {
         g.globalAlpha = Math.max(0, p.life / p.maxLife); g.fillStyle = p.color;
@@ -222,7 +293,7 @@
       g.globalAlpha = 1;
       for (const echo of app.combatFx?.trail || []) {
         const k = echo.life / echo.maxLife; g.save(); g.translate(echo.x, echo.y); g.rotate(Math.PI / 4); g.globalAlpha = k * 0.2;
-        g.fillStyle = '#9af2fb'; const er = C.player.radius * (0.45 + k * 0.2); g.fillRect(-er, -er, er * 2, er * 2); g.restore();
+        g.fillStyle = gold; const er = C.player.radius * (0.45 + k * 0.2); g.fillRect(-er, -er, er * 2, er * 2); g.restore();
       }
       for (const bullet of w.bullets) this.bullet(bullet, stopBlend);
       const player = w.player;
@@ -235,8 +306,15 @@
       const damage = app.damageFx?.remaining > 0 ? app.damageFx.remaining / app.damageFx.max : 0;
       g.save(); g.translate(player.x + (damage && !app.reducedMotion ? Math.sin(damage * 35) * 2 : 0), player.y); g.rotate(Math.PI / 4);
       if (stopBlend > 0) { g.shadowColor = '#79e4f2'; g.shadowBlur = 6 + stopBlend * 12; }
-      g.fillStyle = w.failed ? '#af4a60' : mix('#50b9ff', stopVisual.playerFill, stopBlend); g.strokeStyle = mix('#d8faff', stopVisual.playerStroke, stopBlend); g.lineWidth = 1.8 + stopBlend * 0.7;
-      const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2); g.restore();
+      g.fillStyle = w.failed ? '#af4a60' : w.phase === 'executing' ? '#ffecc7' : mix('#a8eee7', stopVisual.playerFill, stopBlend); g.strokeStyle = mix('#d8faff', stopVisual.playerStroke, stopBlend); g.lineWidth = 1.5;
+      const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2);
+      g.fillStyle = '#345b64'; g.fillRect(-1.8, -1.8, 3.6, 3.6); g.restore();
+      if (!w.failed) {
+        g.save(); g.strokeStyle = w.phase === 'executing' ? rgba(gold, .6) : '#b1e5de65'; g.lineWidth = .8;
+        g.beginPath(); g.moveTo(player.x - 17, player.y - 4); g.lineTo(player.x - 17, player.y + 4);
+        g.moveTo(player.x + 17, player.y - 4); g.lineTo(player.x + 17, player.y + 4); g.stroke(); g.restore();
+      }
+      this.ignitionBurst(app);
       this.touchDrawCursor(app);
       this.practiceGuide(app);
       this.timeShock(app);
@@ -269,16 +347,22 @@
       const stopVisual = C.feedback.timeStopVisual, visual = C.feedback.routeVisual;
       g.save(); g.lineJoin = 'round'; g.lineCap = 'round'; this.path(route.points);
       if (!executing) {
-        g.strokeStyle = rgba(visual.outerGlow, visual.outerGlowAlpha * stopBlend); g.lineWidth = visual.outerGlowWidth; g.stroke();
-        this.path(route.points); g.strokeStyle = rgba(visual.glow, C.render.routeGlowAlpha + stopBlend * (stopVisual.routeGlowAlpha - C.render.routeGlowAlpha)); g.lineWidth = C.render.routeGlowWidth + stopBlend * 4; g.stroke();
-        this.path(route.points); g.strokeStyle = mix(cyan, visual.core, stopBlend); g.lineWidth = C.render.routeWidth + stopBlend * 0.9; g.stroke();
+        g.strokeStyle = rgba(cyan, .045); g.lineWidth = 15; g.stroke();
+        this.path(route.points); g.strokeStyle = rgba(cyan, .13); g.lineWidth = 6; g.stroke();
+        this.path(route.points); g.strokeStyle = mix(cyan, '#e2fff2', stopBlend); g.lineWidth = 2.1; g.stroke();
         if (route.length > 0) {
           this.path(route.points); g.setLineDash([visual.flowDash, visual.flowGap]);
           g.lineDashOffset = app.reducedMotion ? 0 : -(performance.now() * 0.001 * visual.flowSpeed) % (visual.flowDash + visual.flowGap);
           g.strokeStyle = `rgba(255,255,255,${0.12 + stopBlend * 0.16})`; g.lineWidth = 1.25; g.stroke(); g.setLineDash([]);
           const recentStart = Math.max(0, route.length - visual.recentLength);
           this.routeSection(route, recentStart, route.length); g.strokeStyle = rgba(visual.glow, app.routeFx?.drawing ? 0.3 : 0.17); g.lineWidth = visual.recentGlowWidth; g.stroke();
-          this.routeSection(route, recentStart, route.length); g.strokeStyle = visual.recentCore; g.lineWidth = C.render.routeWidth + 0.45; g.globalAlpha = app.routeFx?.drawing ? 0.92 : 0.7; g.stroke(); g.globalAlpha = 1;
+          this.routeSection(route, recentStart, route.length); g.strokeStyle = visual.recentCore; g.lineWidth = 2.1; g.globalAlpha = app.routeFx?.drawing ? 0.92 : 0.7; g.stroke(); g.globalAlpha = 1;
+          // Direction cues follow the compiled polyline; they never smooth or shortcut it.
+          for (let d = 70; d < route.length; d += Math.max(100, route.length / 20)) {
+            const a = S.pointAt(route, d - 3), b = S.pointAt(route, d + 3);
+            g.save(); g.translate(b.x, b.y); g.rotate(Math.atan2(b.y - a.y, b.x - a.x));
+            g.strokeStyle = '#dffff09c'; g.lineWidth = 1; g.beginPath(); g.moveTo(-4, -3); g.lineTo(0, 0); g.lineTo(-4, 3); g.stroke(); g.restore();
+          }
         }
       } else {
         if (w.execution.along < route.length) {
@@ -286,18 +370,22 @@
           this.routeSection(route, w.execution.along, route.length); g.strokeStyle = '#8dcbd35c'; g.lineWidth = C.render.routeWidth; g.stroke();
         }
         if (w.execution.along > 0) {
-          this.routeSection(route, 0, w.execution.along); g.strokeStyle = '#79e4f238'; g.lineWidth = C.render.routeWidth + 0.8; g.stroke();
+          this.routeSection(route, 0, w.execution.along); g.strokeStyle = '#f6cc8633'; g.lineWidth = 12; g.stroke();
+          this.routeSection(route, 0, w.execution.along); g.strokeStyle = '#f6cc86b3'; g.lineWidth = 1.7; g.stroke();
         }
       }
       if (!executing) for (const span of route.danger) {
         this.routeSection(route, Math.max(0, span.start - 2), Math.min(route.length, span.end + 2));
-        g.strokeStyle = red; g.lineWidth = C.render.routeWidth + 0.5; g.stroke();
+        g.strokeStyle = '#150d1f'; g.lineWidth = 7; g.stroke();
+        g.strokeStyle = red; g.lineWidth = 3.6; g.stroke();
+        const p = S.pointAt(route, (span.start + span.end) / 2);
+        g.strokeStyle = red; g.lineWidth = 1.4; g.beginPath(); g.moveTo(p.x - 4, p.y - 12); g.lineTo(p.x + 4, p.y - 20); g.moveTo(p.x + 4, p.y - 12); g.lineTo(p.x - 4, p.y - 20); g.stroke();
       }
       if (executing) {
         this.routeSection(route, Math.max(0, w.execution.along - C.feedback.trailLength), w.execution.along);
-        g.strokeStyle = '#79e4f252'; g.lineWidth = C.render.routeGlowWidth; g.stroke();
+        g.strokeStyle = '#f6cc864d'; g.lineWidth = 19; g.stroke();
         this.routeSection(route, Math.max(0, w.execution.along - C.feedback.trailLength), w.execution.along);
-        g.strokeStyle = '#e7fdff'; g.lineWidth = C.render.routeWidth + 1.2; g.stroke();
+        g.strokeStyle = '#fff1d2'; g.lineWidth = 3.4; g.shadowColor = gold; g.shadowBlur = app.reducedMotion ? 0 : 15; g.stroke(); g.shadowBlur = 0;
       }
       if (route.points.length > 1) {
         const end = route.points[route.points.length - 1];
@@ -319,7 +407,8 @@
           g.moveTo(e.x + x * 17, e.y + y * 22); g.lineTo(e.x + x * 22, e.y + y * 22); g.lineTo(e.x + x * 22, e.y + y * 17);
         }
         g.stroke(); g.font = `bold ${Math.max(12, 8 / this.scale)}px Consolas, monospace`;
-        g.fillStyle = '#cef8ff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(lock.order), e.x, e.y - 33); g.restore();
+        g.fillStyle = '#0c1e2b'; g.fillRect(e.x - 12, e.y - 43, 24, 18); g.strokeStyle = '#a8eee788'; g.lineWidth = .7; g.strokeRect(e.x - 12, e.y - 43, 24, 18);
+        g.fillStyle = '#d8fff0'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(lock.order).padStart(2, '0'), e.x, e.y - 33); g.restore();
       }
       if (!executing) for (const flash of app.routeFx?.lockFlashes || []) {
         const e = w.enemies.find(enemy => enemy.id === flash.enemyId); if (!e?.alive) continue;

@@ -4,6 +4,8 @@
 
 DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世界に一筆書きの攻撃ルートを描く10 Waveのブラウザアクションゲームです。SPACEで実行すると、自機だけが描いた線を超高速で移動し、ロックした敵を順番に撃破します。
 
+アストラ改装版は、時間を観測する計器をモチーフに、翡翠色の静かな導線が金白色の斬光へ変わるビジュアルへ全面改装しています。ゲームルールは元版のままです。[元版と改装版の切り替え手順](RESTORE.md)、[作品分析とアートディレクション](REDESIGN.md)、[今回の検証結果](ASTRA_VERIFICATION.md)を参照してください。
+
 ## プレイ
 
 - 公開URL: https://homura-stack.github.io/deadline/
@@ -67,6 +69,8 @@ python -m http.server 4186 --bind 127.0.0.1
 | --- | --- |
 | `index.html` | タイトル、チュートリアル、ゲームHUDの静的な画面構造 |
 | `styles.css` | レスポンシブ配置、状態別UI、短い画面演出 |
+| `astra.css` | 改装版の配色・文字組み・画面構成と状態別演出 |
+| `title-art.js` | ゲーム状態から独立したCanvasタイトル図。非表示時は描画を停止 |
 | `config.js` | Wave、弾幕、入力、描画、音響の調整値とWave定義 |
 | `simulation.js` | DOMに依存しないゲーム状態、TIME STOP、ルート・TARGET判定、EXECUTE、敵弾、衝突、Wave進行 |
 | `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
@@ -79,7 +83,8 @@ python -m http.server 4186 --bind 127.0.0.1
 
 ## 素材・クレジット
 
-- 正式ロゴ: プロジェクト提供の透過PNG
+- 既存ロゴ: プロジェクト提供の透過PNGを保存。改装版のタイトル・ヘッダーはローカル書体の文字組み
+- タイトルの図: Vanilla JavaScript / Canvasによるオリジナルの経路・目盛り表現
 - キャラクター、敵、弾、エフェクト: Canvasによる図形表現
 - 効果音: Web Audio APIによる実行時合成
 - 外部画像・音声素材: なし
@@ -101,6 +106,7 @@ python -m http.server 4186 --bind 127.0.0.1
 node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs
 node tests/browser.cjs
 node tests/tutorial-touchpad-browser.cjs
+node tests/astra-browser.cjs
 ```
 
 確認済みviewportは1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。全検証の対象、コマンド、結果、物理端末で残る確認事項は[VERIFICATION.md](VERIFICATION.md)に記録しています。
