@@ -1,6 +1,7 @@
 /* Focused Chrome checks for the responsive DEAD/LINE title presentation. */
 'use strict';
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
+const {assertTitleComposition}=require('./title-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
@@ -21,10 +22,7 @@ const viewports = [
     const page = await browser.newPage(); page.on('pageerror', error => errors.push(String(error))); page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     for (const viewport of viewports) {
       await page.setViewportSize(viewport); await page.goto(base + '?debug'); await page.waitForLoadState('networkidle'); await page.waitForTimeout(700);
-      const logo = await page.locator('.title-heading').boundingBox(), start = await page.locator('#title-start').boundingBox();
-      assert.ok(logo.x >= 12 && logo.x + logo.width <= viewport.width - 12); assert.ok(start.y + start.height < viewport.height);
-      assert.equal(await page.locator('.title-heading').getAttribute('aria-label'), 'DEAD/LINE');
-      assert.ok(logo.y >= 0 && logo.y + logo.height < start.y, 'title must clear its start action');
+      await assertTitleComposition(page, viewport);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight), true);
       await page.screenshot({ path: path.join(artifacts, viewport.name) });
       await page.locator('[data-title-info="settings"]').click(); const settings = await page.locator('#title-settings').boundingBox();

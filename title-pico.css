@@ -1,0 +1,102 @@
+/* TASK G: the supplied illustration owns the logo, copy and Pico. Title-only styles. */
+.pico-title {
+  --flight-gold: #f5d895; --flight-ivory: #fff1ce; --flight-ink: #211d14;
+  --flight-night: #050c16; --flight-cyan: #acd4d9; --flight-teal: #76aaa2;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  background: var(--flight-night); isolation: isolate;
+}
+.pico-title::before, .pico-title::after { display: none; }
+.pico-title .title-scene {
+  position: relative; flex: none; width: min(100vw, 179.020979svh); height: min(100svh, 55.859375vw);
+}
+.pico-title #title-art {
+  position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; max-width: none;
+  object-fit: contain; object-position: center; aspect-ratio: 1024 / 572;
+  transform: none; opacity: 1; pointer-events: none; transition: none;
+}
+/* Accessible text only; the supplied image already contains the visible title and copy. */
+.pico-title .title-heading, .pico-title .title-accessible-copy {
+  position: absolute; left: 6%; top: 39%; width: 1px; height: 1px; padding: 0; margin: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  font: inherit; animation: none;
+}
+.pico-title .title-content {
+  position: absolute; left: 6%; bottom: 7%; width: 34%; max-width: 420px;
+  text-align: left; z-index: 2; transition: opacity .24s ease;
+}
+.pico-title.is-leaving .title-content { transform: none; opacity: 0; }
+.pico-title .title-flight-actions { display: grid; grid-template-columns: 1fr; width: 100%; gap: 10px; }
+.pico-title .title-start {
+  width: 100%; min-height: 60px; padding: 14px 22px; border-radius: 4px;
+  border: 1px solid #fff0bd; background: linear-gradient(110deg, #ffeabd, var(--flight-gold));
+  color: var(--flight-ink); box-shadow: 0 3px 24px #f5ce6d21, inset 0 1px #fff8de80;
+  font: 700 15px var(--utility); letter-spacing: .15em;
+  transition: box-shadow .24s ease, background .24s ease;
+}
+.pico-title .title-start .start-arrow { display: inline-block; margin: 0 auto 0 17px; color: #6e572b; font-size: 21px; }
+.pico-title .title-start kbd { color: #6a5734; border-color: #a08a565c; font-size: 10px; }
+.pico-title .title-start:hover { background: #fff1c9; box-shadow: 0 2px 32px #f6d5874d, inset 0 1px #fff; }
+.pico-title .title-training-launch {
+  flex-direction: row; align-items: center; justify-content: space-between; width: 100%; min-height: 52px;
+  padding: 12px 20px; border: 1px solid #e9ca858c; border-radius: 4px;
+  background: #08111bdb; color: var(--flight-ivory); box-shadow: 0 3px 20px #0003;
+  transition: background .24s ease, border-color .24s ease;
+}
+.pico-title .title-training-launch strong { font: bold 13px var(--utility); letter-spacing: .1em; }
+.pico-title .title-training-launch span { color: #e4d4ad; font: 11px 'Yu Gothic UI', sans-serif; }
+.pico-title .title-training-launch:hover { background: #252a28ef; border-color: var(--flight-gold); }
+.pico-title .title-secondary { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 4px; margin: 12px 0 0; }
+.pico-title .title-secondary button {
+  min-height: 40px; padding: 6px 2px; color: var(--flight-cyan); font: 11px var(--utility); letter-spacing: .03em;
+  text-shadow: 0 1px 8px #000; white-space: nowrap;
+}
+.pico-title .title-secondary button:first-child { color: #e7e9d7; }
+.pico-title .title-secondary button:hover, .pico-title .title-secondary button[aria-expanded="true"] { color: var(--flight-gold); }
+.pico-title .title-secondary > span { color: #638b8c; }
+.pico-title button:focus-visible { outline: 2px solid var(--flight-ivory); outline-offset: 4px; }
+.pico-title .title-info { position: absolute; inset: auto auto calc(100% + 12px) 0; width: 100%; margin: 0; font: 12px/1.7 'Yu Gothic UI', sans-serif; }
+.pico-title [data-title-panel] {
+  width: 100%; max-height: min(410px, calc(100svh - 250px)); overflow-y: auto; overscroll-behavior: contain; scroll-margin-block: 12px;
+  margin: 0; padding: 18px; border: 1px solid #93b1ad65; border-radius: 5px;
+  background: #08131ef5; box-shadow: 0 8px 38px #0007; color: #d1e1df;
+}
+.pico-title [data-title-panel][hidden] { display: none; }
+.pico-title .title-panel-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 12px; }
+.pico-title .title-panel-header h2 { margin: 0; color: var(--flight-gold); font: 12px var(--utility); letter-spacing: .1em; }
+.pico-title [data-title-close] { min-height: 36px; padding: 5px 10px; margin: 0; background: transparent; border: 1px solid #728f8b70; color: #d2e3df; font-size: 11px; }
+.pico-title [data-title-close] span { margin-left: 8px; font-size: 16px; }
+.pico-title .title-info p { margin: 0; padding: 0; background: none; border: 0; box-shadow: none; font-size: 12px; line-height: 1.8; }
+.pico-title .title-info .title-touch-help { font-size: 10px; color: #99b8b8; }
+.pico-title .title-controls-list { margin: 16px 0 12px; }
+.pico-title .title-controls-list > div { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 9px; margin: 10px 0; }
+.pico-title .title-controls-list dt { color: var(--flight-cyan); font: 10px var(--utility); }
+.pico-title .title-controls-list dd { margin: 0; font-size: 11px; }
+.pico-title .title-controls-list kbd { color: var(--flight-ivory); font-size: 10px; }
+.pico-title #title-training { width: 100%; min-height: 44px; background: #262d29; border: 1px solid #b39c6699; color: var(--flight-ivory); font-size: 11px; }
+.pico-title .settings-panel label { min-height: 44px; }
+.pico-title .settings-panel input { accent-color: var(--flight-gold); }
+.pico-title .setting-mute { border-color: #668c8170; }
+/* Preserve the whole illustration on short windows; two main buttons fit below its baked copy. */
+@media (max-height: 700px) and (min-aspect-ratio: 4/3) {
+  .pico-title .title-content { width: 36%; max-width: 400px; bottom: 5%; }
+  .pico-title .title-flight-actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pico-title .title-start { min-height: 48px; padding: 10px 12px; font-size: 12px; }
+  .pico-title .title-start .start-arrow, .pico-title .title-start kbd { display: none; }
+  .pico-title .title-training-launch { min-height: 48px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; padding: 8px 10px; }
+  .pico-title .title-training-launch strong { font-size: 11px; }
+  .pico-title .title-training-launch span { font-size: 9px; }
+  .pico-title .title-secondary { margin-top: 6px; }
+  .pico-title .title-secondary button { min-height: 36px; font-size: 9px; }
+  .pico-title [data-title-panel] { max-height: calc(100svh - 140px); padding: 12px; }
+}
+/* Portrait: no crop and no controls over Pico. Extra information can scroll below the menu. */
+@media (max-aspect-ratio: 4/3) {
+  .pico-title { display: block; overflow-y: auto; }
+  .pico-title .title-scene { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; width: 100%; height: auto; min-height: 100svh; padding: 36px 0; }
+  .pico-title #title-art { position: relative; inset: auto; flex: none; width: min(100%, calc((100svh - 300px) * 1.79020979)); height: auto; }
+  .pico-title .title-content { position: relative; inset: auto; width: calc(100% - 48px); max-width: 420px; flex: none; }
+  .pico-title .title-info { position: static; width: 100%; margin-top: 8px; }
+  .pico-title [data-title-panel] { max-height: min(400px, calc(100svh - 90px)); }
+}
+.pico-title.title-background-failed .title-heading { left: 6%; top: 20%; width: auto; height: auto; clip-path: none; font: 500 clamp(24px, 5vw, 70px) 'Yu Gothic UI', sans-serif; color: var(--flight-ivory); }
+@media (prefers-reduced-motion: reduce) { .pico-title *, .pico-title.is-leaving .title-content { animation: none !important; transition: none !important; } }

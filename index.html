@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="astra.css">
   <link rel="stylesheet" href="world-map.css">
-  <script defer src="title-art.js"></script>
   <script defer src="config.js"></script>
   <script defer src="simulation.js"></script>
   <script defer src="audio.js"></script>
@@ -23,39 +22,46 @@
   <script defer src="tutorial.js"></script>
   <script defer src="game.js"></script>
   <link rel="stylesheet" href="tutorial.css">
+  <link rel="stylesheet" href="title-pico.css">
+  <script defer src="title-screen.js"></script>
 </head>
 <body class="title-open">
-  <section id="title-screen" class="title-screen" aria-label="DEAD/LINE タイトル画面">
-    <span class="title-cut" aria-hidden="true"></span>
-    <div class="title-topline"><span><i class="brand-diamond" aria-hidden="true"></i> TIME-STOP ARCADE</span><span>10 WAVES / ONE CONTINUOUS LINE</span></div>
-    <canvas id="title-art" aria-hidden="true"></canvas>
+  <section id="title-screen" class="title-screen pico-title" aria-label="DEAD/LINE タイトル画面">
+    <div class="title-scene">
+    <img id="title-art" class="title-background" src="assets/title/pico-dead-circuit.jpg" width="1024" height="572" alt="黄金に光るPicoと、暗い電子都市をつなぐ光跡" fetchpriority="high" decoding="async">
+    <h1 class="title-heading" aria-label="DEAD/LINE">DEAD/LINE</h1>
     <div class="title-content">
-      <p class="title-eyebrow">時間を止めろ。結末を、描け。</p>
-      <h1 class="title-heading" aria-label="DEAD/LINE"><span>DEAD</span><span class="title-line">LINE<span class="title-slash" aria-hidden="true">/</span></span></h1>
-      <p class="title-tagline">FREEZE. DRAW. EXECUTE.</p>
+      <p class="title-accessible-copy">止まった回路に、もういちど ひかりを。</p>
       <div class="title-flight-actions">
         <button id="title-start" class="title-start" type="button"><span>START</span><span class="start-arrow" aria-hidden="true">↗</span><kbd>SPACE</kbd></button>
         <button id="title-training-launch" class="title-training-launch" type="button"><strong>TRAINING</strong><span>操作を練習する ↗</span></button>
       </div>
       <nav class="title-secondary" aria-label="タイトルメニュー">
-        <button type="button" data-title-info="settings" aria-controls="title-settings" aria-expanded="false">SETTINGS</button>
-        <span aria-hidden="true">/</span>
         <button type="button" data-title-info="how" aria-controls="title-how" aria-expanded="false">HOW TO PLAY</button>
-        <span aria-hidden="true">/</span>
+        <span aria-hidden="true">·</span>
+        <button type="button" data-title-info="settings" aria-controls="title-settings" aria-expanded="false">SETTINGS</button>
+        <span aria-hidden="true">·</span>
         <button type="button" data-title-info="credits" aria-controls="title-credits" aria-expanded="false">CREDITS</button>
       </nav>
       <div class="title-info" aria-live="polite">
         <section id="title-settings" class="settings-panel" data-title-panel="settings" aria-label="音量設定" hidden>
+          <header class="title-panel-header"><h2>SETTINGS</h2><button type="button" data-title-close="settings" aria-label="設定を閉じてタイトルへ戻る">戻る <span aria-hidden="true">×</span></button></header>
           <label for="master-volume"><span>MASTER</span><input id="master-volume" type="range" min="0" max="100" step="1"><output id="master-value" for="master-volume">80</output></label>
           <label for="sfx-volume"><span>SFX</span><input id="sfx-volume" type="range" min="0" max="100" step="1"><output id="sfx-value" for="sfx-volume">90</output></label>
           <label class="touch-setting" for="touch-sensitivity"><span>TOUCH</span><input id="touch-sensitivity" type="range" min="50" max="150" step="5" value="100"><output id="touch-sensitivity-value" for="touch-sensitivity">100%</output></label>
           <button id="setting-mute" class="setting-mute" type="button" aria-pressed="false"><span>MUTE</span><strong>OFF</strong></button>
         </section>
-        <section id="title-how" class="pico-how" data-title-panel="how" hidden><p>Picoの黄金のLINEで、シアンのTARGETをつなごう。<br>時間を止めて考え、危険を避けて、一気にEXECUTE。</p><button id="title-training" type="button">Picoと操作を練習する ↗</button></section>
-        <p id="title-credits" data-title-panel="credits" hidden>DEAD/LINE — HTML · CSS · JAVASCRIPT<br>GRAPHICS: CANVAS / SOUND: WEB AUDIO</p>
+        <section id="title-how" class="pico-how" data-title-panel="how" hidden>
+          <header class="title-panel-header"><h2>HOW TO PLAY</h2><button type="button" data-title-close="how" aria-label="操作説明を閉じてタイトルへ戻る">戻る <span aria-hidden="true">×</span></button></header>
+          <p>Picoの黄金のLINEで、シアンのTARGETをつなごう。</p>
+          <dl class="title-controls-list"><div><dt>MOVE</dt><dd>マウスでPicoを動かす</dd></div><div><dt>TIME STOP</dt><dd><kbd>SPACE</kbd> で時間を止める</dd></div><div><dt>LINE</dt><dd>ドラッグでTARGETをつなぐ</dd></div><div><dt>EXECUTE</dt><dd><kbd>SPACE</kbd> で光跡を走る</dd></div></dl>
+          <p class="title-touch-help">スマートフォンはMOVE PADと画面ボタンで操作。</p>
+          <button id="title-training" type="button">Picoと操作を練習する ↗</button>
+        </section>
+        <section id="title-credits" data-title-panel="credits" hidden><header class="title-panel-header"><h2>CREDITS</h2><button type="button" data-title-close="credits" aria-label="クレジットを閉じてタイトルへ戻る">戻る <span aria-hidden="true">×</span></button></header><p>DEAD/LINE — HTML · CSS · JAVASCRIPT<br>GRAPHICS: CANVAS / SOUND: WEB AUDIO</p></section>
       </div>
     </div>
-    <div class="title-bottomline"><span>止まった弾幕に、一本の導線を。<br><b>最後の一瞬で、すべてを貫く。</b></span><span class="title-input-note">MOUSE + SPACE<span class="device-touch"> / MOVE PAD</span><small>音あり推奨 · チュートリアル付き</small></span></div>
+    </div>
   </section>
   <section id="first-flight" class="first-flight" aria-labelledby="first-flight-title" role="dialog" aria-modal="true" hidden>
     <div class="first-flight-panel"><p class="flight-kicker">FIRST FLIGHT</p><img src="assets/characters/pico-final.png" width="160" height="150" alt="黄金色に光るPico"><h2 id="first-flight-title">Picoの飛び方を覚えよう。</h2><p>時間を止めて、光を描いて、一気に飛ぶ。</p><button id="first-training" type="button">TRAINING START <span aria-hidden="true">↗</span></button><button id="first-skip" type="button">SKIP → WORLD MAP</button></div>

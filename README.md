@@ -12,10 +12,12 @@ TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えまし�
 
 TASK F.1で、保存済みの初回選択に関係なく見つけられるよう、タイトルのSTART直下にTRAININGボタンを追加しました。E.1のチュートリアル本体とFの正式Picoは維持しています。[原因調査・修正・検証記録](TASK_F1.md)を参照してください。
 
+TASK Gでは、提供された正式Picoタイトル画像を無加工で使用し、左下へSTART・TRAININGと補助メニューを配置しました。背景内のロゴ・コピーを重複表示せず、狭い画面では画像全体とメニューを分けます。F.1の進行・練習は維持しています。[タイトル素材・実装・検証記録](TASK_G.md)を参照してください。
+
 ## プレイ
 
-- 開発中のTASK F.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1は未push・未反映）
+- 開発中のTASK G確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / Gは未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -84,7 +86,8 @@ python -m http.server 4186 --bind 127.0.0.1
 | `stage-art.js` | 正式背景の先読み・キャッシュ、Pico起点の柔らかな復旧マスクとホタルの応答 |
 | `styles.css` | レスポンシブ配置、状態別UI、短い画面演出 |
 | `astra.css` | 改装版の配色・文字組み・画面構成と状態別演出 |
-| `title-art.js` | ゲーム状態から独立したCanvasタイトル図。非表示時は描画を停止 |
+| `title-pico.css` / `title-screen.js` | 正式タイトル画像・メニュー配置・補助パネルの戻る操作。START / TRAININGの制御は既存の`game.js` |
+| `title-art.js` | 旧Canvasタイトル図の保存ファイル。TASK Gのページでは読み込まない |
 | `config.js` | Wave、弾幕、入力、描画、音響の調整値とWave定義 |
 | `simulation.js` | DOMに依存しないゲーム状態、TIME STOP、ルート・TARGET判定、EXECUTE、敵弾、衝突、Wave進行 |
 | `game.js` | マウス・キー・MOVE PAD入力、固定時間ゲームループ、DOM更新、シミュレーションイベントの振り分け |
@@ -98,8 +101,8 @@ python -m http.server 4186 --bind 127.0.0.1
 
 ## 素材・クレジット
 
-- 既存ロゴ: プロジェクト提供の透過PNGを保存。改装版のタイトル・ヘッダーはローカル書体の文字組み
-- タイトルの図: Vanilla JavaScript / Canvasによるオリジナルの経路・目盛り表現
+- 既存ロゴ: プロジェクト提供の透過PNGを保存。ゲームヘッダーは既存のローカル書体の文字組み
+- タイトル背景: ユーザー提供のGemini生成JPEGを無加工で使用。画像内のロゴ・コピーを使用し、メニューのみHTML/CSS。[素材記録](assets/title/README.md)
 - Picoと敵3種類: 提供素材の透過PNG。弾・エフェクトはCanvas描画
 - ステージ背景: ユーザー提供の完成JPEG10枚を無加工で導入。[一覧・ハッシュ](assets/stages/README.md)
 - 効果音: Web Audio APIによる実行時合成
@@ -122,6 +125,7 @@ python -m http.server 4186 --bind 127.0.0.1
 
 ```sh
 node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs tests/journey.test.cjs tests/tutorial.test.cjs
+node tests/title-routes-browser.cjs
 node tests/browser.cjs
 node tests/pico-tutorial-browser.cjs
 node tests/tutorial-touchpad-browser.cjs
@@ -130,6 +134,8 @@ node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
 ```
 
-確認済みviewportは1920×1080 / 1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_E1.md](TASK_E1.md)に記録しています。
+以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: TITLE → START → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。初回の任意選択、正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。通常のSTARTは選択保存済みで確認し、未保存時は従来のFIRST FLIGHTからSKIPして本編へ進めることを別に確認します。
+
+タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、今回の再検証は[TASK_G.md](TASK_G.md)に記録します。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。
