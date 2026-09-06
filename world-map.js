@@ -36,7 +36,8 @@
       </svg>${J.areas.map((area,i)=>`<button type="button" class="map-node" data-area="${i}" style="left:${area.x/10}%;top:${(area.y+67)/7.5}%" aria-label="AREA ${i+1} ${area.name} ${area.ja}"><span class="map-node-number">${String(i+1).padStart(2,'0')}</span><span><b>${area.name}</b><small>${area.ja}</small></span><em>LOCKED</em></button>`).join('')}`;
       this.buttons = [...container.querySelectorAll('[data-area]')];
       this.buttons.forEach((button,i)=>button.addEventListener('click',()=>onSelect(i)));
-      this.lastUnlock = -1;
+      this.cities = [...container.querySelectorAll('[data-city]')];
+      this.connections = [...container.querySelectorAll('[data-connection]')];
     }
     render(state) {
       this.buttons.forEach((button,i)=>{
@@ -55,45 +56,28 @@
       });
       const area = J.areas[Math.min(4,state.restored)], pico = this.container.querySelector('.world-pico');
       pico.setAttribute('transform',`translate(${area.x-116} ${area.y+29})`);
-      if (state.unlockFrom !== this.lastUnlock) {
-        this.lastUnlock = state.unlockFrom;
-        const wire = this.container.querySelector('.is-unlocking');
-        if (wire) { wire.classList.remove('is-unlocking'); void this.container.getBoundingClientRect(); wire.classList.add('is-unlocking'); }
-      }
+
+    }
+    animate(state,reduced=false) {
+      const animationKey=`${state.mode}/${state.elapsed}/${state.unlockFrom}/${reduced}`;
+      if(this.animationKey===animationKey)return;this.animationKey=animationKey;
+      const final=state.mode==='synchronizing'||state.mode==='ending';
+      const sequence=final?J.finaleFrame(state,reduced):null;
+      const t=state.elapsed;
+      // A small answer, a gentle dip, then a steady light. Other districts retain their state.
+      const awake=reduced?1:t<.7?.18+.48*J.smooth(t/.7):t<1.2?.66-.3*J.smooth((t-.7)/.5):.36+.64*J.smooth((t-1.2)/1.5);
+      this.cities.forEach((city,i)=>{
+        const amount=final?sequence.lights[i]:i===state.unlockFrom?awake:1;
+        city.style.setProperty('--city-breath',amount.toFixed(3));
+      });
+      this.connections.forEach((wire,i)=>{
+        const amount=final?sequence.wire:i===state.unlockFrom-1?awake:1;
+        wire.style.setProperty('--wire-light',amount.toFixed(3));
+        const soak=J.smooth((t-.25)/2.5);
+        wire.style.setProperty('--soak-offset',String(100*(1-soak)));
+        wire.style.setProperty('--soak-light',String(reduced||final?0:Math.sin(soak*Math.PI)*.35));
+      });
     }
   }
-  // Reuses the actual final LINE, then passes its light into decorative board traces and dormant leaves.
-  function drawRestoration(renderer, state, player, reduced) {
-    if (state?.mode !== 'restoring') return;
-    const g=renderer.ctx, progress=reduced?1:Math.min(1,state.elapsed/J.restoreSeconds(state)), gold='#f4c565';
-    const trace=(points,amount,color,width)=>{
-      const legs=points.slice(1).map((p,i)=>({a:points[i],b:p,length:Math.hypot(p.x-points[i].x,p.y-points[i].y)}));
-      let remain=legs.reduce((sum,p)=>sum+p.length,0)*Math.max(0,Math.min(1,amount));
-      if (!legs.length||remain<=0) return;
-      g.beginPath();g.moveTo(points[0].x,points[0].y);
-      for(const leg of legs){const k=leg.length?Math.min(1,remain/leg.length):1;g.lineTo(leg.a.x+(leg.b.x-leg.a.x)*k,leg.a.y+(leg.b.y-leg.a.y)*k);remain-=leg.length;if(remain<=0)break;}
-      g.strokeStyle=color;g.lineWidth=width;g.stroke();
-    };
-    g.save();g.lineCap='round';g.lineJoin='round';
-    trace(state.route,progress*3,'#f4c56522',12);trace(state.route,progress*3,'#ffe7a9',2);
-    const targets=[[151,128],[61,202],[39,382],[132,532],[335,574],[629,349],[745,523],[887,244],[733,98]];
-    const origin=state.route[state.route.length-1]||player;
-    targets.forEach(([x,y],i)=>{
-      const k=Math.max(0,Math.min(1,(progress-.22-i*.04)*3.1));
-      const points=[origin,{x:origin.x,y:y+40},{x:x+30,y:y+40},{x,y}];
-      trace(points,k,'#f4c56516',8);trace(points,k,'#c5ab697d',1);
-      if(k<.9)return;
-      const a=(k-.9)*10;
-      g.globalAlpha=a;g.strokeStyle='#76c5ad';g.fillStyle='#55b39b1c';g.lineWidth=.8;
-      for(let n=-1;n<=1;n++){g.beginPath();g.ellipse(x+n*8,y-12,7,16,n*.6,0,Math.PI*2);g.fill();g.stroke();}
-      const glow=g.createRadialGradient(x,y,1,x,y,20);glow.addColorStop(0,'#f4c56545');glow.addColorStop(1,'#f4c56500');g.fillStyle=glow;g.fillRect(x-20,y-20,40,40);
-      renderer.circle(x,y,1.8,null,'#fff1c6');g.globalAlpha=1;
-    });
-    const glow=g.createRadialGradient(player.x,player.y,2,player.x,player.y,54);
-    glow.addColorStop(0,`rgba(255,218,128,${.28+progress*.13})`);glow.addColorStop(1,'#f4c56500');g.fillStyle=glow;g.fillRect(player.x-54,player.y-54,108,108);
-    if(!reduced){g.strokeStyle=gold+'55';g.lineWidth=1;g.beginPath();g.arc(player.x,player.y,23+progress*40,0,Math.PI*2);g.stroke();}
-    g.restore();
-  }
   root.Deadline.WorldMapView=WorldMapView;
-  root.Deadline.drawRestoration=drawRestoration;
 })(globalThis);

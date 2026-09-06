@@ -1,0 +1,72 @@
+[
+  {
+    "file": "canal_after.jpeg",
+    "bytes": 2691425,
+    "width": 2750,
+    "height": 1536,
+    "sha256": "888b7daa203dda4c714a60f3aa8b9ea28fdf39da2fbdeeb03e8cda90774ce1a5"
+  },
+  {
+    "file": "canal_before.jpeg",
+    "bytes": 2561924,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "019c2a6c0316892fbad0143f24f1de1597212fca97a5fab4b0c1caaf1e5146e2"
+  },
+  {
+    "file": "core_after.jpeg",
+    "bytes": 2948987,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "58c0f63b657b3af090f41ca10cf92cb33b81e86ef09a7134d529336a6184925d"
+  },
+  {
+    "file": "core_before.jpeg",
+    "bytes": 2610838,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "fc0a3adaa77913d9563373bd498a85c63d3cb3886acaccdd9a1c6e9289ec8e92"
+  },
+  {
+    "file": "forge_after.jpeg",
+    "bytes": 2224922,
+    "width": 2750,
+    "height": 1536,
+    "sha256": "b9e07fd25401ba4fd1c6b70f6e035ba79371e9a95fc6ae0f987ab446528c34e4"
+  },
+  {
+    "file": "forge_before.jpeg",
+    "bytes": 2250360,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "15ff478e962c6f92786d434552fc17482ed5c9eefe52291f748782c0d9586044"
+  },
+  {
+    "file": "garden_after.jpeg",
+    "bytes": 2536834,
+    "width": 2750,
+    "height": 1536,
+    "sha256": "ba552d0abea29d5582bff59338e4b4d247b641c05ccb325521e023e1175efd3f"
+  },
+  {
+    "file": "garden_before.jpeg",
+    "bytes": 2818428,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "521e5540c68136e5cc93d31419d298c7f84eb81a3a49bea126fccca4d989f2e2"
+  },
+  {
+    "file": "skyline_after.jpeg",
+    "bytes": 2918153,
+    "width": 2750,
+    "height": 1536,
+    "sha256": "eda522a76f403b7b5e46c6499ee74ec24bd1080cf63901fd5b5259850f8cf0c8"
+  },
+  {
+    "file": "skyline_before.jpeg",
+    "bytes": 2607320,
+    "width": 2752,
+    "height": 1536,
+    "sha256": "38c59926981a304ae7375ca8d08a6c421300b91587446726130c25a1eb03d0ec"
+  }
+]

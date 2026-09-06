@@ -17,6 +17,7 @@
   <script defer src="character-assets.js"></script>
   <script defer src="battle-art.js"></script>
   <script defer src="journey.js"></script>
+  <script defer src="stage-art.js"></script>
   <script defer src="world-map.js"></script>
   <script defer src="renderer.js"></script>
   <script defer src="game.js"></script>
@@ -130,7 +131,14 @@
       <div class="map-intro"><p class="map-kicker">CIRCUIT ATLAS / 01—05</p><h1 id="world-map-heading">WORLD<br><span>MAP</span></h1><p class="map-copy">止まった回路に、<br>もういちど ひかりを。</p><div class="map-progress"><strong id="map-restored-count">0 <span>/ 5</span></strong><span>AREAS ONLINE</span><div id="map-progress-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div><p id="map-notice" class="map-notice" role="status" aria-live="polite">GARDENから旅をはじめよう。</p></div>
       <div id="map-board" class="map-board" role="group" aria-label="電子回路で繋がる5つのエリア"></div>
       <aside class="map-detail" aria-labelledby="map-area-name"><p id="map-area-number" class="map-kicker">AREA 01</p><h2 id="map-area-name">GARDEN</h2><p id="map-area-ja">蛍庭区</p><span id="map-area-status">DEAD CIRCUIT</span><p id="map-area-description">電子植物が眠る、はじまりの庭。</p><dl><div><dt>WAVE</dt><dd id="map-area-waves">01 — 02</dd></div><div><dt>SCORE</dt><dd id="map-score">0</dd></div></dl><button id="map-enter" type="button"><span>ENTER GARDEN</span><b aria-hidden="true">↗</b></button><button id="map-training" class="map-training" type="button">操作を練習する / TRAINING</button><p class="map-session-note">タイトルに戻ると旅を最初から始めます。</p></aside>
+      <aside id="journey-ending" class="journey-ending" aria-labelledby="ending-title" hidden>
+        <p class="map-kicker">5 / 5 AREAS ONLINE</p><h2 id="ending-title">DEAD<span>/</span>LINE</h2>
+        <p class="ending-copy">止まった回路に、<br>もういちど ひかりを。</p><p class="ending-english">LIGHT THE DEAD CIRCUIT.</p>
+        <p class="ending-small">SMALL LIGHT.<br>BIG CONNECTIONS.</p><p class="ending-score">SCORE <strong id="ending-score">0</strong></p>
+        <div class="ending-actions"><button id="ending-restart" type="button">RESTART ↗</button><button id="ending-title-button" type="button">TITLE</button></div>
+      </aside>
     </div>
+    <div id="world-sync" class="world-sync" role="status" aria-live="polite" hidden>SYNC</div>
     <footer class="map-footer"><span><i class="map-key-dead"></i> DEAD <i class="map-key-online"></i> ONLINE <i class="map-key-pico"></i> PICO</span><span>LIGHT THE DEAD CIRCUIT.</span></footer>
   </section>
   <main id="game-shell" class="shell" aria-hidden="true" inert>
@@ -150,7 +158,7 @@
         <canvas id="arena" width="960" height="600" tabindex="0" aria-label="PCではマウスで移動とルート描画。スマートフォンではMOVE PADで移動とルート描画を行い、ゲームフィールドへの直接タッチは使用しません。"></canvas>
         <div class="field-caption" aria-hidden="true"><span class="field-mode">DEAD CIRCUIT</span><span>FREEZE / DRAW / EXECUTE</span></div>
         <div id="execution-cue" class="execution-cue" aria-hidden="true">EXECUTE<span>導線、発火。</span></div>
-        <div id="area-transition" class="area-transition" role="status" aria-live="polite" hidden><span id="area-transition-kicker">AREA 01</span><strong id="area-transition-name">GARDEN</strong><span id="area-transition-ja">蛍庭区</span><small id="area-transition-note">WAVE 1 / 2</small></div>
+        <div id="area-transition" class="area-transition" role="status" aria-live="polite" hidden><span id="area-transition-kicker">AREA 01</span><strong id="area-transition-name">GARDEN</strong><span id="area-transition-ja">蛍庭区</span><small id="area-transition-note">WAVE 1 / 2</small><div id="stage-loading-actions" class="stage-loading-actions" hidden><button id="stage-retry" type="button" hidden>読み込みを再試行</button><button id="stage-title" type="button">TITLE</button></div></div>
         <div id="wave-banner" class="wave-banner" aria-live="polite">WAVE 01 / 10</div>
         <div id="tutorial-prompt" class="tutorial-prompt" aria-live="polite" hidden></div>
         <div id="lock-ready" class="lock-ready" hidden>ALL TARGETS LOCKED<small>SPACEで実行</small></div>

@@ -4,11 +4,12 @@
 
 DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世界に一筆書きの攻撃ルートを描く10 Waveのブラウザアクションゲームです。SPACEで実行すると、自機だけが描いた線を超高速で移動し、ロックした敵を順番に撃破します。
 
-現在のTASK C版は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。黄金色のLINEとシアンのTARGET、暗い電子都市の戦闘画面を維持し、2 WAVEごとにLIGHT RESTOREDとWORLD MAPを挟みます。[TASK Cの実装・検証・復元手順](TASK_C.md)を参照してください。以前のアストラ版の記録は[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)に保存しています。
+現在のTASK D版は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。提供された正式背景10枚を使い、暗いBEFORE世界から、Picoの光を起点にAFTER世界が柔らかく広がります。CORE後はWORLD MAPの同期発光とエンディングへ進みます。[TASK Dの実装・検証・復元手順](TASK_D.md)を参照してください。以前の[TASK C](TASK_C.md)、アストラ版の[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)は履歴として保存しています。
 
 ## プレイ
 
-- 公開URL: https://homura-stack.github.io/deadline/
+- 開発中のTASK D確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK Dは未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -29,7 +30,7 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 
 GARDENの開始前は「操作を練習する」から、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGと安全なPRACTICEも選べます。SKIP TUTORIAL、練習完了のどちらからもGARDENのWAVE 1へ進みます。リトライ時は説明を再表示しません。
 
-GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、光がLINEから回路へ広がり、マップ上に復旧状態が残ります。進行は今回のプレイ中だけ保持されます。R／「最初から」、タイトルへの帰還、リロードで新しい旅になります。CORE後は5地区がONLINEになったマップまでで、最終演出・エンディングは未実装です。
+GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、短い静けさの後、Picoの位置からホタルの光が世界へ広がります。LIGHT RESTOREDの後、マップに復旧状態が残ります。CORE後は5地区の光が応答・同期し、エンディングを表示。RESTARTまたはTITLEを選べます。進行は今回のプレイ中だけ保持されます。R／「最初から」、タイトルへの帰還、リロードで新しい旅になります。
 
 スマートフォンのMOVE PADは、通常時には自機、TIME STOP中には自機位置から始まる黄金色のDRAWカーソルを相対移動します。指を離してもルートとカーソル位置は維持され、再接触すると続きから描画できます。小さなドラッグは精密に、大きなドラッグは素早く反応し、DRAW時は通常移動の0.8倍の感度です。スマートフォンの戦闘入力はMOVE PAD＋画面ボタンだけで完結し、ゲームフィールドへの直接タップ・ドラッグ・長押しでは操作しません。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）はMOVEとDRAWの両方へ適用・保存されます。
 
@@ -73,7 +74,8 @@ python -m http.server 4186 --bind 127.0.0.1
 | --- | --- |
 | `index.html` | タイトル、WORLD MAP、チュートリアル、ゲームHUDの静的な画面構造 |
 | `journey.js` | 5エリアと既存WAVEの対応、選択・解禁・復旧表示の状態管理 |
-| `world-map.js` / `world-map.css` | SVGの回路都市マップ、地区シルエット、CanvasのLIGHT RESTORED |
+| `world-map.js` / `world-map.css` | SVGの回路都市マップ、地区の呼吸する発光、SYNC・エンディング表示 |
+| `stage-art.js` | 正式背景の先読み・キャッシュ、Pico起点の柔らかな復旧マスクとホタルの応答 |
 | `styles.css` | レスポンシブ配置、状態別UI、短い画面演出 |
 | `astra.css` | 改装版の配色・文字組み・画面構成と状態別演出 |
 | `title-art.js` | ゲーム状態から独立したCanvasタイトル図。非表示時は描画を停止 |
@@ -91,9 +93,10 @@ python -m http.server 4186 --bind 127.0.0.1
 
 - 既存ロゴ: プロジェクト提供の透過PNGを保存。改装版のタイトル・ヘッダーはローカル書体の文字組み
 - タイトルの図: Vanilla JavaScript / Canvasによるオリジナルの経路・目盛り表現
-- キャラクター、敵、弾、エフェクト: Canvasによる図形表現
+- Picoと敵3種類: 提供素材の透過PNG。弾・エフェクトはCanvas描画
+- ステージ背景: ユーザー提供の完成JPEG10枚を無加工で導入。[一覧・ハッシュ](assets/stages/README.md)
 - 効果音: Web Audio APIによる実行時合成
-- 外部画像・音声素材: なし
+- 外部サーバーからの画像・音声読み込み: なし
 
 本リポジトリにはライセンスファイルを含めていません。
 
@@ -105,14 +108,17 @@ python -m http.server 4186 --bind 127.0.0.1
 - `loop.test.cjs` — ゲージ、キャンセル、UNDO / CLEAR、リトライ、特殊射撃の状態遷移
 - `barrage.test.cjs` — 射撃パターン、弾数上限、寿命、画面外破棄
 - `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
+- `journey.test.cjs` — エリア解禁、画像準備待ち、復旧・同期発光の表示状態
 
 `*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
 
 ```sh
-node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs
+node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs tests/waves.test.cjs tests/journey.test.cjs
 node tests/browser.cjs
 node tests/tutorial-touchpad-browser.cjs
 node tests/astra-browser.cjs
+node tests/restoration-browser.cjs
+node tests/stage-performance-browser.cjs
 ```
 
 確認済みviewportは1280×720 / 768×800 / 430×860 / 390×844 / 360×800 / 320×800 / 844×390です。全検証の対象、コマンド、結果、物理端末で残る確認事項は[VERIFICATION.md](VERIFICATION.md)に記録しています。

@@ -211,10 +211,10 @@
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius + 5), 0, Math.PI * 2); g.stroke();
       g.restore();
     }
-    /** Cached dormant circuit city. Its state never changes with Wave progress or kills. */
-    backdrop(stopBlend) {
+    /** Official BEFORE art in combat; only the separate restoration mode can expose AFTER. */
+    backdrop(stopBlend, app) {
       const g = this.ctx;
-      g.drawImage(root.Deadline.battleArt.backdrop(this.scale * this.ratio), 0, 0, C.world.width, C.world.height);
+      if (!root.Deadline.stageArt?.draw(this,app)) g.drawImage(root.Deadline.battleArt.backdrop(this.scale * this.ratio), 0, 0, C.world.width, C.world.height);
       if (stopBlend > 0) { g.fillStyle = rgba('#000000', stopBlend * .38); g.fillRect(0, 0, C.world.width, C.world.height); }
       g.strokeStyle = mix('#354359', '#334a55', stopBlend); g.lineWidth = .8;
       g.strokeRect(24, 24, 912, 552);
@@ -294,8 +294,15 @@
         const strength = app.shake * (this.width < 650 ? C.feedback.mobileShakeScale : 1);
         g.translate((Math.random() - 0.5) * strength, (Math.random() - 0.5) * strength);
       }
-      this.backdrop(stopBlend); this.ignitionEcho(app); this.picoWake(app);
-      root.Deadline.drawRestoration?.(this, app.journey, w.player, app.reducedMotion);
+      const restoring=app.journey?.mode==='restoring';
+      this.backdrop(restoring?0:stopBlend,app);
+      if(restoring){
+        const f=root.Deadline.stageArt.fireflies(this,app.journey,app.reducedMotion),p=app.journey.origin;
+        g.save();g.globalAlpha=Math.min(1,.55+f.pico*.4);
+        if(!this.character('pico',p.x,p.y))this.circle(p.x,p.y,7,null,'#ffecc7');
+        g.restore();g.restore();return;
+      }
+      this.ignitionEcho(app); this.picoWake(app);
       for (const e of w.enemies) if (e.alive) this.enemy(e, enemyColors);
       if (w.route) this.route(app, stopBlend);
       if (w.phase === 'stopped' && C.waves.definitions[w.waveIndex].oneStopRequired) {

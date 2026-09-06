@@ -43,7 +43,7 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
    assert.ok(after.world.score>before.score);assert.equal(after.world.life,1);assert.ok(after.world.enemies.every(e=>!e.alive));
    report.flow.push({wave,kills:after.world.totalKills,score:after.world.score,journey:after.journey.mode});
    if(wave===1){assert.equal(after.journey.mode,'battle');assert.equal(after.journey.restored,0);}
-   else{assert.equal(after.journey.mode,'restoring');assert.equal(after.journey.restored,0);assert.ok(after.journey.route.length>1);await frozen(p);await p.waitForFunction(()=>Deadline.inspect().journey.elapsed>1.9);await p.screenshot({path:path.join(output,'garden-light-restored.png')});}
+   else{assert.equal(after.journey.mode,'restoring');assert.equal(after.journey.restored,0);assert.ok(after.journey.route.length>1);await frozen(p);await p.waitForFunction(()=>Deadline.journey.restorationFrame(Deadline.inspect().journey).complete);await p.waitForTimeout(400);await p.screenshot({path:path.join(output,'garden-light-restored.png')});}
   }
   await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map');const cleared=await frozen(p);
   assert.equal((await state(p)).journey.restored,1);assert.equal(cleared.wave,2);

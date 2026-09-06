@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const { config: C, sim: S, Renderer, Sound, journey: J, WorldMapView } = root.Deadline;
+  const { config: C, sim: S, Renderer, Sound, journey: J, WorldMapView, stageArt: Stage } = root.Deadline;
   const $ = id => document.getElementById(id);
   /**
    * Browser-only presentation state layered over the DOM-free simulation world.
@@ -28,7 +28,7 @@
   const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
     counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
   const renderer = new Renderer(ui.arena), sound = new Sound();
-  const mapUi = Object.fromEntries(['world-map','map-board','map-title','map-enter','map-training','map-notice','map-restored-count','map-progress-lights','map-area-number','map-area-name','map-area-ja','map-area-status','map-area-description','map-area-waves','map-score','area-caption','area-transition','area-transition-kicker','area-transition-name','area-transition-ja','area-transition-note'].map(id=>[id,$(id)]));
+  const mapUi = Object.fromEntries(['world-map','map-board','map-title','map-enter','map-training','map-notice','map-restored-count','map-progress-lights','map-area-number','map-area-name','map-area-ja','map-area-status','map-area-description','map-area-waves','map-score','area-caption','area-transition','area-transition-kicker','area-transition-name','area-transition-ja','area-transition-note','stage-loading-actions','stage-retry','stage-title','world-sync','journey-ending','ending-score','ending-restart','ending-title-button'].map(id=>[id,$(id)]));
   /** @type {RuntimeApp} */
   const app = { world: S.createWorld(), journey: J.create(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
     tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
@@ -66,7 +66,8 @@
     const total = Math.max(0, Math.floor(seconds)); return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
   }
   function syncJourneyUi() {
-    const j=app.journey, area=J.areas[j.active], onMap=j.mode==='map', entering=j.mode==='entering', restoring=j.mode==='restoring';
+    const j=app.journey, area=J.areas[j.active], onMap=J.onMap(j), entering=j.mode==='entering', restoring=j.mode==='restoring';
+    const restored=restoring&&J.restorationFrame(j,app.reducedMotion).complete, loading=Stage.status(j.active);
     document.body.classList.toggle('map-open',onMap);document.body.classList.toggle('restoring-area',restoring);
     mapUi['world-map'].hidden=!onMap;mapUi['world-map'].inert=!onMap;
     titleUi.shell.inert=onMap||app.titleActive||app.briefingActive;
@@ -75,11 +76,19 @@
     mapUi['area-caption'].textContent=`AREA ${String(j.active+1).padStart(2,'0')} · ${area.name} / ${area.ja} · WAVE ${Math.max(1,Math.min(2,app.world.wave-area.first+1))} / 2`;
     mapUi['area-transition'].hidden=!entering&&!restoring;
     mapUi['area-transition'].classList.toggle('is-restoring',restoring);
-    mapUi['area-transition-kicker'].textContent=restoring?`AREA ${String(j.active+1).padStart(2,'0')} / ${area.name}`:`AREA ${String(j.active+1).padStart(2,'0')}`;
-    mapUi['area-transition-name'].textContent=restoring?'LIGHT RESTORED':area.name;
-    mapUi['area-transition-ja'].textContent=area.ja;
-    mapUi['area-transition-note'].textContent=restoring?`${area.name} // ONLINE`:'WAVE 1 / 2';
-    if(restoring){ui.phase.textContent='LIGHT RESTORED';ui['status-action'].textContent='AREA COMPLETE';ui['time-stop-label'].textContent='WORLD MAP…';ui.hint.textContent='回路に光を戻しています。';}
+    mapUi['area-transition'].classList.toggle('is-revealed',restored);
+    mapUi['area-transition-kicker'].textContent=restoring?'':`AREA ${String(j.active+1).padStart(2,'0')}`;
+    mapUi['area-transition-name'].textContent=restoring?(restored?'LIGHT RESTORED':''):area.name;
+    mapUi['area-transition-ja'].textContent=restoring?(restored?`${area.name} / ${area.ja}`:''):area.ja;
+    mapUi['area-transition-note'].textContent=restoring?'':loading==='ready'?'WAVE 1 / 2':loading==='error'?'背景を読み込めませんでした。再試行できます。':'背景を読み込んでいます…';
+    mapUi['stage-loading-actions'].hidden=!entering||loading==='ready';mapUi['stage-retry'].hidden=loading!=='error';
+    mapUi['world-map'].classList.toggle('is-ending',j.mode==='ending');
+    mapUi['world-map'].classList.toggle('is-synchronizing',j.mode==='synchronizing');
+    mapUi['journey-ending'].hidden=j.mode!=='ending';mapUi['ending-score'].textContent=String(app.world.score);
+    document.querySelector('.map-detail').hidden=j.mode==='ending';
+    mapUi['world-sync'].hidden=j.mode!=='synchronizing'||!J.finaleFrame(j,app.reducedMotion).sync;
+    mapUi['map-board'].inert=j.mode==='synchronizing';
+    if(restoring){ui.phase.textContent=restored?'LIGHT RESTORED':'RESTORING';ui['status-action'].textContent=restored?'AREA COMPLETE':'PICO → WORLD';ui['time-stop-label'].textContent='WORLD MAP…';ui.hint.textContent='Picoの光が、世界へ広がっていきます。';}
     if(J.paused(j)){ui['time-stop'].disabled=true;ui['clear-route'].disabled=true;ui['undo-route'].disabled=true;ui['cancel-stop'].disabled=true;ui.restart.disabled=true;}
     if(!onMap)return;
     mapView.render(j);
@@ -96,23 +105,24 @@
     mapUi['map-training'].hidden=j.restored>0;
   }
   function showWorldMap() {
-    const j=app.journey;j.mode='map';
+    const j=app.journey;if(j.mode!=='synchronizing')j.mode='map';
     releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();sound.stopAll();
     app.particles=[];app.hits=[];app.shake=0;app.calloutLife=0;ui.callout.textContent='';
     accumulator=0;lastTime=0;
     mapUi['map-notice'].classList.remove('is-locked');
-    mapUi['map-notice'].textContent=j.restored===5?'5 / 5 AREAS ONLINE':j.restored?`AREA ${String(j.restored+1).padStart(2,'0')} — ${J.areas[j.restored].name} UNLOCKED`:'GARDENから旅をはじめよう。';
+    mapUi['map-notice'].textContent=j.restored===5?'小さな光が、応えあう。':j.restored?`AREA ${String(j.restored+1).padStart(2,'0')} — ${J.areas[j.restored].name} UNLOCKED`:'GARDENから旅をはじめよう。';
+    if(j.restored<5)Stage.prepare(j.restored);
     updateUi();(mapUi['map-enter'].disabled?mapUi['map-title']:mapUi['map-enter']).focus({preventScroll:true});
   }
   function selectMapArea(index) {
-    if(app.journey.mode!=='map')return;
+    if(!['map','ending'].includes(app.journey.mode))return;
     app.journey.selected=index;sound.unlock();sound.playUiConfirm();updateUi();
     const locked=J.status(app.journey,index)==='locked';mapUi['map-notice'].classList.toggle('is-locked',locked);
     mapUi['map-notice'].textContent=locked?`LOCKED — ${J.areas[index-1].name}を復旧すると解禁。`:J.status(app.journey,index)==='online'?`${J.areas[index].name} // ONLINE`:`${J.areas[index].name}へ進もう。`;
   }
   function enterArea(index) {
     if(!J.enter(app.journey,index))return;
-    sound.unlock();sound.playUiConfirm();releasePointer();releaseTouchPad();heldKeys.clear();resetArtFx();
+    sound.unlock();sound.playUiConfirm();releasePointer();releaseTouchPad();heldKeys.clear();resetArtFx();Stage.prepare(index);
     // Resume only the existing between-Wave transition. No combat step, retuning or recreated Wave.
     if(app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
     handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
@@ -381,6 +391,7 @@
     app.practice.active = false; app.tutorial.active = false; reset(false);app.journey.mode='map';enterArea(0);
   }
   function reset(showTutorial = false) {
+    Stage.prepare(0);
     resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = S.createWorld(); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.touchDraw.cursor = null;
@@ -501,8 +512,12 @@
         else if (event.kills > 0) { showCallout(event.kills, event.allClear, event.perfect); if (event.perfect) { app.combatFx.pendingCompletion = 'perfect'; app.shake = C.feedback.perfectShake; } }
       } else if (event.type === 'waveClear') {
         if(!event.perfect)app.combatFx.pendingCompletion='clear';
-        if(!app.practice.active&&J.cleared(app.journey,event.wave,app.artFx.echo)){
+        if(!app.practice.active&&J.cleared(app.journey,event.wave,app.artFx.echo,app.world.player)){
           releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();accumulator=0;
+          // The existing simulation has already removed defeated enemies and bullets. Clear only presentation residue.
+          sound.stopAll();resetArtFx();app.particles=[];app.hits=[];app.shake=0;app.pendingFinal=null;app.calloutLife=0;ui.callout.textContent='';
+          app.combatFx.releaseRemaining=0;app.combatFx.resumeRemaining=0;app.combatFx.releasePulse=0;app.combatFx.pendingCompletion=null;app.combatFx.completionRemaining=0;app.combatFx.trail=[];
+          app.timeFx.blend=0;app.timeFx.enterRemaining=0;app.timeFx.exitRemaining=0;
         }
       }
       else if (event.type === 'waveStart') {
@@ -671,6 +686,10 @@
   mapUi['map-enter'].addEventListener('click',()=>enterArea(app.journey.selected));
   mapUi['map-training'].addEventListener('click',openMapTraining);
   mapUi['map-title'].addEventListener('click',returnToTitle);
+  mapUi['stage-retry'].addEventListener('click',()=>{Stage.retry(app.journey.active);updateUi();});
+  mapUi['stage-title'].addEventListener('click',returnToTitle);
+  mapUi['ending-title-button'].addEventListener('click',returnToTitle);
+  mapUi['ending-restart'].addEventListener('click',restartJourney);
   briefingUi.begin.addEventListener('click', beginFromBriefing);
   briefingUi.back.addEventListener('click', () => changeBriefingPage(-1));
   briefingUi.skip.addEventListener('click', skipTutorial);
@@ -696,10 +715,11 @@
       } else if (['Escape', 'KeyX', 'ArrowLeft'].includes(event.code)) { event.preventDefault(); changeBriefingPage(-1); }
       return;
     }
-    if(app.journey.mode==='map') {
+    if(J.onMap(app.journey)) {
       if(event.code==='Escape'){event.preventDefault();returnToTitle();}
       return; // Native keyboard activation of map buttons; never leak SPACE into TIME STOP.
     }
+    if(app.journey.mode==='entering' && event.target.closest?.('#stage-loading-actions')) return;
     if(J.paused(app.journey)) { if(commandKeys.has(event.code))event.preventDefault();return; }
     if (!commandKeys.has(event.code) || event.isComposing || event.ctrlKey || event.metaKey || event.altKey ||
         /INPUT|TEXTAREA|SELECT|SUMMARY/.test(event.target.tagName) || event.target.isContentEditable) return;
@@ -738,9 +758,13 @@
   function frame(now) {
     const dt = lastTime ? Math.min(0.05, (now - lastTime) / 1000) : 0; lastTime = now;
     if (document.hidden) { requestAnimationFrame(frame); return; }
-    const journeyChange=J.tick(app.journey,dt,app.reducedMotion);
+    const journeyChange=J.tick(app.journey,dt,app.reducedMotion,Stage.status(app.journey.active)==='ready');
     if(journeyChange==='map')showWorldMap();
-    else if(journeyChange==='battle'){updateUi();ui.arena.focus({preventScroll:true});}
+    else if(journeyChange==='battle'){Stage.prepare(app.journey.active,true);updateUi();ui.arena.focus({preventScroll:true});}
+    else if(journeyChange==='ending'){updateUi();mapUi['map-notice'].textContent='5 / 5 AREAS ONLINE';mapUi['ending-restart'].focus({preventScroll:true});}
+    const presentationKey=[app.journey.mode,Stage.status(app.journey.active),J.restorationFrame(app.journey,app.reducedMotion).stage,J.finaleFrame(app.journey,app.reducedMotion).sync].join('/');
+    if(app.presentationKey!==presentationKey){app.presentationKey=presentationKey;syncJourneyUi();}
+    if(J.onMap(app.journey))mapView.animate(app.journey,app.reducedMotion);
     applyTouchPadInput();
     const releaseHold = app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0;
     const resumeHold = app.combatFx.resumeRemaining > 0;
@@ -812,7 +836,7 @@
       app.artFx.scores[i].life -= dt;
       if (app.artFx.scores[i].life <= 0) app.artFx.scores.splice(i, 1);
     }
-    renderer.draw(app);
+    if(!J.onMap(app.journey))renderer.draw(app);
     if (app.debugEnabled && now - debugClock > 200) {
       debugClock = now; const w = app.world;
       ui['debug-values'].textContent = `phase=${w.phase} world=${w.time.toFixed(3)} points=${w.route?.points.length || 0} bullets=${w.bullets.length} run=${w.execution?.elapsed.toFixed(3) || 0}s`;
@@ -821,7 +845,7 @@
   }
   touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
-    journey: app.journey,
+    journey: app.journey, stageArt: Stage.inspect(),
     particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, artFx: app.artFx, tutorial: app.tutorial, practice: app.practice,
     touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
     damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));

@@ -13,7 +13,7 @@ async function battleReady(page){
   await page.waitForFunction(()=>Deadline.inspect().journey.mode==='battle'&&!Deadline.inspect().briefingActive);
 }
 async function nextArea(page){
-  await page.waitForFunction(()=>Deadline.inspect().journey.mode==='map',{}, {timeout:5500});
+  await page.waitForFunction(()=>Deadline.inspect().journey.mode==='map',{}, {timeout:8000});
   await page.locator('#map-enter').click();await battleReady(page);
 }
 module.exports={training,battleReady,nextArea};
