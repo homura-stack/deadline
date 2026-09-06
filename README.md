@@ -8,10 +8,12 @@ TASK Dで実装した世界は、機械生命体のホタルPicoが5地区へ光
 
 現在のTASK E.1版では、Git履歴に残る4ページの説明と2 TARGETの短い練習を、Picoの姿で復元しています。初回STARTではTRAININGとSKIPを明確に選べます。[旧版との差分・検証・復元手順](TASK_E1.md)を参照してください。[TASK E](TASK_E.md)は変更前の記録です。
 
+TASK Fで、Picoをユーザー提供の正式な透過PNGへ差し替えました。旧素材は保持し、ゲームロジック・当たり判定・チュートリアル構造は変更していません。[素材・参照箇所・検証記録](TASK_F.md)を参照してください。
+
 ## プレイ
 
-- 開発中のTASK E.1確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK E.1は未push・未反映）
+- 開発中のTASK F確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK Fは未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 

@@ -1,4 +1,22 @@
-# TASK A — 確定キャラクター素材
+# キャラクター素材
+
+## TASK F — 現行の正式Pico
+
+ゲームで使用するPicoは、ユーザーがTASK Fで提供した **`pico-final.png`** です。参考画像ではなく正式素材として、添付PNGを再生成・切り抜き・リサイズ・色変更せず、そのまま追加しています。
+
+- 元添付: `codex-clipboard-4b1862cc-6963-4edd-aef4-44a68ef8d02d.png`
+- 寸法: **1295 × 1214 / RGBA**（透明alphaあり）
+- SHA-256: `df2d8295764d489b79b41bd079e5b554f7f601138bdbc4bd436923ae059d3faf`
+- 現行の戦闘表示幅: **48**、高さ約**45.0**（元画像の縦横比から算出）
+- anchor: **.56 / .47**。Picoの頭部をゲーム座標へ合わせる。設定値は差し替え前と同じ。
+- プレイヤー判定半径: **9のまま**。羽・触角へ判定を広げない。
+- 通常戦闘、実習、EXECUTE／被弾表示、LIGHT RESTOREDは共通の`character-assets.js`を使用。FIRST FLIGHT、説明図4ページ、WORLD MAPの画像参照も同じ正式PNGへ切り替え済み。
+
+旧素材 **`pico.png`** は比較・復元用に残しています。ゲームからは読み込みません。旧素材のSHA-256は `fb3e748eb3c9b8d8553af03b4bf0921f8f3a79f65ce6ad5bafabdc12d8b378ee` で変更していません。
+
+以下はTASK A導入時点の記録です。表内の当時のサイズやPico参照を現行値と混同しないでください。現在の値は`character-assets.js`、今回の検証は`../../TASK_F.md`を参照してください。
+
+## TASK A — 導入時の記録
 
 ユーザーが指定した集合画像を `approved-reference.png` としてそのまま保存しています。
 元画像のSHA-256：`3c3453770419c20dd90cd2afed8c3527dfeaf01689f1f25c416c8d48a9ba3c51`。
