@@ -4,7 +4,7 @@
 
 DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世界に一筆書きの攻撃ルートを描く10 Waveのブラウザアクションゲームです。SPACEで実行すると、自機だけが描いた線を超高速で移動し、ロックした敵を順番に撃破します。
 
-アストラ改装版は、時間を観測する計器をモチーフに、翡翠色の静かな導線が金白色の斬光へ変わるビジュアルへ全面改装しています。ゲームルールは元版のままです。[元版と改装版の切り替え手順](RESTORE.md)、[作品分析とアートディレクション](REDESIGN.md)、[今回の検証結果](ASTRA_VERIFICATION.md)を参照してください。
+現在のTASK C版は、機械生命体のホタルPicoが5地区へ光を戻す小さな旅です。黄金色のLINEとシアンのTARGET、暗い電子都市の戦闘画面を維持し、2 WAVEごとにLIGHT RESTOREDとWORLD MAPを挟みます。[TASK Cの実装・検証・復元手順](TASK_C.md)を参照してください。以前のアストラ版の記録は[作品分析](REDESIGN.md)と[検証結果](ASTRA_VERIFICATION.md)に保存しています。
 
 ## プレイ
 
@@ -25,9 +25,13 @@ DEAD/LINEは、敵弾を避けてTIME STOPゲージを溜め、停止した世�
 | EXECUTE | SPACE | EXECUTEボタン |
 | Waveリトライ | SPACE | RETRY WAVEボタン |
 
-タイトル画面のSTARTまたはSPACEで、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGへ進みます。本編と同じ自機・敵・弾・ルートに、マウス／MOVE PAD／キーの入力図を重ね、入力と結果を短い同期デモで示します。最後のBEGIN TRAINING後は、移動・時間停止・2体TARGET・EXECUTEを実際に試す安全なPRACTICEを経てWave 1を開始します。SKIP TUTORIALも選択でき、リトライ時はチュートリアルを再表示しません。
+タイトル画面のSTARTまたはSPACEでWORLD MAPへ進みます。最初はGARDENのみ開始できます。地区を選んでENTERを押すと、その地区の戦闘へ進みます。未解禁地区はLOCKEDと表示され、戦闘には入れません。
 
-スマートフォンのMOVE PADは、通常時には自機、TIME STOP中には自機位置から始まるシアンのDRAWカーソルを相対移動します。指を離してもルートとカーソル位置は維持され、再接触すると続きから描画できます。小さなドラッグは精密に、大きなドラッグは素早く反応し、DRAW時は通常移動の0.8倍の感度です。スマートフォンの戦闘入力はMOVE PAD＋画面ボタンだけで完結し、ゲームフィールドへの直接タップ・ドラッグ・長押しでは操作しません。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）はMOVEとDRAWの両方へ適用・保存されます。
+GARDENの開始前は「操作を練習する」から、EVADE / FREEZE / DRAW / EXECUTEの4ページBRIEFINGと安全なPRACTICEも選べます。SKIP TUTORIAL、練習完了のどちらからもGARDENのWAVE 1へ進みます。リトライ時は説明を再表示しません。
+
+GARDEN（WAVE 1–2）→FORGE（3–4）→CANAL（5–6）→SKYLINE（7–8）→CORE（9–10）の順で解禁します。各地区の2 WAVE目をクリアすると、光がLINEから回路へ広がり、マップ上に復旧状態が残ります。進行は今回のプレイ中だけ保持されます。R／「最初から」、タイトルへの帰還、リロードで新しい旅になります。CORE後は5地区がONLINEになったマップまでで、最終演出・エンディングは未実装です。
+
+スマートフォンのMOVE PADは、通常時には自機、TIME STOP中には自機位置から始まる黄金色のDRAWカーソルを相対移動します。指を離してもルートとカーソル位置は維持され、再接触すると続きから描画できます。小さなドラッグは精密に、大きなドラッグは素早く反応し、DRAW時は通常移動の0.8倍の感度です。スマートフォンの戦闘入力はMOVE PAD＋画面ボタンだけで完結し、ゲームフィールドへの直接タップ・ドラッグ・長押しでは操作しません。SETTINGSのTOUCH SENSITIVITY（50〜150%、初期100%）はMOVEとDRAWの両方へ適用・保存されます。
 
 ## ゲームルール
 
@@ -67,7 +71,9 @@ python -m http.server 4186 --bind 127.0.0.1
 
 | パス | 責務 |
 | --- | --- |
-| `index.html` | タイトル、チュートリアル、ゲームHUDの静的な画面構造 |
+| `index.html` | タイトル、WORLD MAP、チュートリアル、ゲームHUDの静的な画面構造 |
+| `journey.js` | 5エリアと既存WAVEの対応、選択・解禁・復旧表示の状態管理 |
+| `world-map.js` / `world-map.css` | SVGの回路都市マップ、地区シルエット、CanvasのLIGHT RESTORED |
 | `styles.css` | レスポンシブ配置、状態別UI、短い画面演出 |
 | `astra.css` | 改装版の配色・文字組み・画面構成と状態別演出 |
 | `title-art.js` | ゲーム状態から独立したCanvasタイトル図。非表示時は描画を停止 |

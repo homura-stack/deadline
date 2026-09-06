@@ -1,6 +1,6 @@
 (function (root) {
   'use strict';
-  const { config: C, sim: S, Renderer, Sound } = root.Deadline;
+  const { config: C, sim: S, Renderer, Sound, journey: J, WorldMapView } = root.Deadline;
   const $ = id => document.getElementById(id);
   /**
    * Browser-only presentation state layered over the DOM-free simulation world.
@@ -28,8 +28,9 @@
   const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
     counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
   const renderer = new Renderer(ui.arena), sound = new Sound();
+  const mapUi = Object.fromEntries(['world-map','map-board','map-title','map-enter','map-training','map-notice','map-restored-count','map-progress-lights','map-area-number','map-area-name','map-area-ja','map-area-status','map-area-description','map-area-waves','map-score','area-caption','area-transition','area-transition-kicker','area-transition-name','area-transition-ja','area-transition-note'].map(id=>[id,$(id)]));
   /** @type {RuntimeApp} */
-  const app = { world: S.createWorld(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
+  const app = { world: S.createWorld(), journey: J.create(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
     tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
     briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
     timeFx: { blend: 0, enterRemaining: 0, exitRemaining: 0, origin: { x: 0, y: 0 } },
@@ -40,6 +41,7 @@
     titleActive: true, titleLeaving: false, briefingActive: false,
     debugEnabled: C.debug.enabled || (C.debug.allowQueryFlag && new URLSearchParams(location.search).has('debug')),
     debugShapes: false, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches };
+  const mapView = new WorldMapView(mapUi['map-board'], selectMapArea);
   let gesture = null, lastTime = 0, accumulator = 0, lastDrawSound = 0, debugClock = 0;
   const coarsePointer = matchMedia('(pointer: coarse)').matches;
   let touchControls = coarsePointer;
@@ -62,6 +64,66 @@
   }, true);
   function formatTime(seconds) {
     const total = Math.max(0, Math.floor(seconds)); return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  }
+  function syncJourneyUi() {
+    const j=app.journey, area=J.areas[j.active], onMap=j.mode==='map', entering=j.mode==='entering', restoring=j.mode==='restoring';
+    document.body.classList.toggle('map-open',onMap);document.body.classList.toggle('restoring-area',restoring);
+    mapUi['world-map'].hidden=!onMap;mapUi['world-map'].inert=!onMap;
+    titleUi.shell.inert=onMap||app.titleActive||app.briefingActive;
+    titleUi.shell.setAttribute('aria-hidden',String(titleUi.shell.inert));
+    mapUi['area-caption'].hidden=app.practice.active;
+    mapUi['area-caption'].textContent=`AREA ${String(j.active+1).padStart(2,'0')} · ${area.name} / ${area.ja} · WAVE ${Math.max(1,Math.min(2,app.world.wave-area.first+1))} / 2`;
+    mapUi['area-transition'].hidden=!entering&&!restoring;
+    mapUi['area-transition'].classList.toggle('is-restoring',restoring);
+    mapUi['area-transition-kicker'].textContent=restoring?`AREA ${String(j.active+1).padStart(2,'0')} / ${area.name}`:`AREA ${String(j.active+1).padStart(2,'0')}`;
+    mapUi['area-transition-name'].textContent=restoring?'LIGHT RESTORED':area.name;
+    mapUi['area-transition-ja'].textContent=area.ja;
+    mapUi['area-transition-note'].textContent=restoring?`${area.name} // ONLINE`:'WAVE 1 / 2';
+    if(restoring){ui.phase.textContent='LIGHT RESTORED';ui['status-action'].textContent='AREA COMPLETE';ui['time-stop-label'].textContent='WORLD MAP…';ui.hint.textContent='回路に光を戻しています。';}
+    if(J.paused(j)){ui['time-stop'].disabled=true;ui['clear-route'].disabled=true;ui['undo-route'].disabled=true;ui['cancel-stop'].disabled=true;ui.restart.disabled=true;}
+    if(!onMap)return;
+    mapView.render(j);
+    const selected=J.areas[j.selected],status=J.status(j,j.selected);
+    mapUi['map-restored-count'].replaceChildren(document.createTextNode(String(j.restored)+' '),Object.assign(document.createElement('span'),{textContent:'/ 5'}));
+    [...mapUi['map-progress-lights'].children].forEach((light,i)=>light.classList.toggle('online',i<j.restored));
+    mapUi['map-area-number'].textContent=`AREA ${String(j.selected+1).padStart(2,'0')}`;
+    mapUi['map-area-name'].textContent=selected.name;mapUi['map-area-ja'].textContent=selected.ja;
+    mapUi['map-area-status'].textContent=status==='online'?'LIGHT RESTORED / ONLINE':status==='locked'?'LOCKED / DEAD CIRCUIT':'DEAD CIRCUIT / AVAILABLE';
+    mapUi['map-area-description'].textContent=selected.description;
+    mapUi['map-area-waves'].textContent=`${String(selected.first).padStart(2,'0')} — ${String(selected.last).padStart(2,'0')}`;
+    mapUi['map-score'].textContent=String(app.world.score);
+    mapUi['map-enter'].disabled=status!=='available';mapUi['map-enter'].querySelector('span').textContent=status==='available'?`ENTER ${selected.name}`:status==='online'?'LIGHT RESTORED':'LOCKED';
+    mapUi['map-training'].hidden=j.restored>0;
+  }
+  function showWorldMap() {
+    const j=app.journey;j.mode='map';
+    releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();sound.stopAll();
+    app.particles=[];app.hits=[];app.shake=0;app.calloutLife=0;ui.callout.textContent='';
+    accumulator=0;lastTime=0;
+    mapUi['map-notice'].classList.remove('is-locked');
+    mapUi['map-notice'].textContent=j.restored===5?'5 / 5 AREAS ONLINE':j.restored?`AREA ${String(j.restored+1).padStart(2,'0')} — ${J.areas[j.restored].name} UNLOCKED`:'GARDENから旅をはじめよう。';
+    updateUi();(mapUi['map-enter'].disabled?mapUi['map-title']:mapUi['map-enter']).focus({preventScroll:true});
+  }
+  function selectMapArea(index) {
+    if(app.journey.mode!=='map')return;
+    app.journey.selected=index;sound.unlock();sound.playUiConfirm();updateUi();
+    const locked=J.status(app.journey,index)==='locked';mapUi['map-notice'].classList.toggle('is-locked',locked);
+    mapUi['map-notice'].textContent=locked?`LOCKED — ${J.areas[index-1].name}を復旧すると解禁。`:J.status(app.journey,index)==='online'?`${J.areas[index].name} // ONLINE`:`${J.areas[index].name}へ進もう。`;
+  }
+  function enterArea(index) {
+    if(!J.enter(app.journey,index))return;
+    sound.unlock();sound.playUiConfirm();releasePointer();releaseTouchPad();heldKeys.clear();resetArtFx();
+    // Resume only the existing between-Wave transition. No combat step, retuning or recreated Wave.
+    if(app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
+    handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
+  }
+  function openMapTraining() {
+    if(app.journey.mode!=='map'||app.journey.restored>0)return;
+    app.journey.mode='battle';app.briefingActive=true;app.briefingPage=0;
+    document.body.classList.add('briefing-open');briefingUi.screen.hidden=false;updateBriefingPage();updateUi();briefingUi.begin.focus({preventScroll:true});
+  }
+  function restartJourney() {
+    app.journey=J.create();reset(false);showWorldMap();
   }
   function clampTouchSensitivity(value) {
     const numeric = Number(value);
@@ -206,7 +268,7 @@
       ui['lock-label'].textContent = 'TARGET'; ui['lock-count'].textContent = stopped ? `${locks} / ${targets}` : '—';
       ui['wave-banner'].hidden = true; ui.result.hidden = true; ui.complete.hidden = true;
     }
-    updateTutorial();
+    updateTutorial();syncJourneyUi();
   }
   function comboText(kills) { return ['', '1 KILL', 'DOUBLE', 'TRIPLE', 'QUAD'][kills] || `${kills} KILLS`; }
   function resetArtFx() {
@@ -267,6 +329,7 @@
    * @returns {void}
    */
   function applyTouchPadInput() {
+    if(J.paused(app.journey)){releaseTouchPad();return;}
     const phase = app.world.phase;
     if (touchPad.id === null || !['normal', 'stopped'].includes(phase) || !touchControls) { updateTouchPadVisual(); return; }
     if (phase === 'stopped' && !touchPad.drawing && touchPad.contactDistance < C.controls.touchDrawStartDistance) { updateTouchPadVisual(); return; }
@@ -315,7 +378,7 @@
     titleUi.shell.inert = false; titleUi.shell.removeAttribute('aria-hidden'); renderer.resize(); accumulator = 0; lastTime = 0; updateUi(); ui.arena.focus({ preventScroll: true });
   }
   function finishPractice() {
-    app.practice.active = false; app.tutorial.active = false; reset(false); ui.arena.focus({ preventScroll: true });
+    app.practice.active = false; app.tutorial.active = false; reset(false);app.journey.mode='map';enterArea(0);
   }
   function reset(showTutorial = false) {
     resetArtFx();
@@ -342,9 +405,8 @@
     if (!app.titleActive || app.titleLeaving) return;
     sound.unlock(); sound.playUiConfirm(); app.titleLeaving = true; titleUi.screen.classList.add('is-leaving');
     const finish = () => {
-      app.titleActive = false; app.titleLeaving = false; app.briefingActive = true; titleUi.screen.hidden = true;
-      document.body.classList.remove('title-open'); document.body.classList.add('briefing-open'); briefingUi.screen.hidden = false;
-      app.briefingPage = 0; updateBriefingPage(); briefingUi.begin.focus({ preventScroll: true });
+      app.titleActive = false; app.titleLeaving = false; app.briefingActive = false; titleUi.screen.hidden = true;
+      document.body.classList.remove('title-open');showWorldMap();
     };
     if (app.reducedMotion) finish(); else setTimeout(finish, 340);
   }
@@ -356,9 +418,10 @@
   function skipTutorial() {
     if (!app.briefingActive) return;
     sound.unlock(); sound.playUiConfirm(); app.briefingActive = false; briefingUi.screen.hidden = true; document.body.classList.remove('briefing-open');
-    titleUi.shell.inert = false; titleUi.shell.removeAttribute('aria-hidden'); renderer.resize(); reset(false); ui.arena.focus({ preventScroll: true });
+    reset(false);app.journey.mode='map';enterArea(0);
   }
   function returnToTitle() {
+    app.journey=J.create();
     releasePointer(); releaseTouchPad(); sound.stopTimeClock(); sound.stopAll(); reset(false);
     app.titleActive = true; app.titleLeaving = false; app.briefingActive = false;
     briefingUi.screen.hidden = true; titleUi.shell.inert = true; titleUi.shell.setAttribute('aria-hidden', 'true');
@@ -436,7 +499,12 @@
         app.combatFx.releaseRemaining = 0; app.combatFx.resumeRemaining = C.feedback.executeVisual.resumeAfterglowSeconds;
         if (event.finalWave) { ui.callout.textContent = ''; app.calloutLife = 0; app.pendingFinal = { ...event, wait: C.feedback.finalSilence }; }
         else if (event.kills > 0) { showCallout(event.kills, event.allClear, event.perfect); if (event.perfect) { app.combatFx.pendingCompletion = 'perfect'; app.shake = C.feedback.perfectShake; } }
-      } else if (event.type === 'waveClear' && !event.perfect) app.combatFx.pendingCompletion = 'clear';
+      } else if (event.type === 'waveClear') {
+        if(!event.perfect)app.combatFx.pendingCompletion='clear';
+        if(!app.practice.active&&J.cleared(app.journey,event.wave,app.artFx.echo)){
+          releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();accumulator=0;
+        }
+      }
       else if (event.type === 'waveStart') {
         ui['wave-banner'].classList.remove('wave-enter'); void ui['wave-banner'].offsetWidth; ui['wave-banner'].classList.add('wave-enter');
       }
@@ -457,6 +525,7 @@
   }
   /** Routes the shared TIME STOP / EXECUTE command without duplicating phase rules in input handlers. */
   function toggleTime() {
+    if(J.paused(app.journey))return;
     sound.unlock();
     if (app.world.phase === 'normal') S.stopTime(app.world);
     else if (app.world.phase === 'stopped') {
@@ -476,6 +545,7 @@
    * @returns {void}
    */
   function pointerMove(event) {
+    if(J.paused(app.journey))return;
     const w = app.world, p = renderer.position(event);
     if (w.phase === 'normal') {
       if (insideField(p) && document.elementFromPoint(event.clientX, event.clientY) === ui.arena) S.movePlayer(w, p);
@@ -491,6 +561,7 @@
       p.y >= C.world.margin && p.y <= C.world.height - C.world.margin;
   }
   ui.arena.addEventListener('pointerdown', event => {
+    if(J.paused(app.journey))return;
     if (event.button !== 0 || gesture || !['normal', 'stopped'].includes(app.world.phase)) return;
     if (event.pointerType === 'touch') return;
     const p = renderer.position(event); if (!renderer.contains(p)) return;
@@ -517,6 +588,7 @@
   ui.arena.addEventListener('pointercancel', () => { releasePointer(); updateUi(); });
   ui.arena.addEventListener('lostpointercapture', () => { gesture = null; app.routeFx.drawing = false; updateUi(); });
   ui['move-pad'].addEventListener('pointerdown', event => {
+    if(J.paused(app.journey))return;
     if (event.button !== 0 || touchPad.id !== null || !touchControls || !['normal', 'stopped'].includes(app.world.phase)) return;
     sound.unlock(); touchPad.id = event.pointerId; touchPad.lastX = touchPad.startX = touchPad.x = event.clientX; touchPad.lastY = touchPad.startY = touchPad.y = event.clientY;
     touchPad.dx = 0; touchPad.dy = 0; touchPad.contactDistance = 0; touchPad.drawing = false; touchPad.visualDirty = true; ui['move-pad'].classList.add('is-active'); ui['move-pad'].setPointerCapture(event.pointerId); event.preventDefault();
@@ -580,9 +652,9 @@
   bindTouchSafeCommand(ui['clear-route'], clear);
   bindTouchSafeCommand(ui['undo-route'], undo);
   bindTouchSafeCommand(ui['cancel-stop'], cancel);
-  ui.restart.addEventListener('click', () => reset());
+  ui.restart.addEventListener('click', restartJourney);
   ui.retry.addEventListener('click', () => retryWave());
-  ui['play-again'].addEventListener('click', () => { reset(); ui.arena.focus({ preventScroll: true }); });
+  ui['play-again'].addEventListener('click', restartJourney);
   ui['game-over-title'].addEventListener('click', returnToTitle);
   ui['game-clear-title'].addEventListener('click', returnToTitle);
   ui['one-stop-preview-next'].addEventListener('click', showRuleIntro);
@@ -596,6 +668,9 @@
     sound.setMuted(!sound.muted); syncSoundUi(); if (!sound.muted) sound.playUiConfirm();
   });
   titleUi.start.addEventListener('click', startFromTitle);
+  mapUi['map-enter'].addEventListener('click',()=>enterArea(app.journey.selected));
+  mapUi['map-training'].addEventListener('click',openMapTraining);
+  mapUi['map-title'].addEventListener('click',returnToTitle);
   briefingUi.begin.addEventListener('click', beginFromBriefing);
   briefingUi.back.addEventListener('click', () => changeBriefingPage(-1));
   briefingUi.skip.addEventListener('click', skipTutorial);
@@ -621,6 +696,11 @@
       } else if (['Escape', 'KeyX', 'ArrowLeft'].includes(event.code)) { event.preventDefault(); changeBriefingPage(-1); }
       return;
     }
+    if(app.journey.mode==='map') {
+      if(event.code==='Escape'){event.preventDefault();returnToTitle();}
+      return; // Native keyboard activation of map buttons; never leak SPACE into TIME STOP.
+    }
+    if(J.paused(app.journey)) { if(commandKeys.has(event.code))event.preventDefault();return; }
     if (!commandKeys.has(event.code) || event.isComposing || event.ctrlKey || event.metaKey || event.altKey ||
         /INPUT|TEXTAREA|SELECT|SUMMARY/.test(event.target.tagName) || event.target.isContentEditable) return;
     event.preventDefault(); // Also suppress default scroll/button activation on repeated SPACE.
@@ -628,7 +708,7 @@
     heldKeys.add(event.code); setTouchControls(false);
     if (event.code === 'Space') {
       if (app.world.failed || app.world.phase === 'one-stop-failed') retryWave();
-      else if (app.world.phase === 'complete') reset();
+      else if (app.world.phase === 'complete') restartJourney();
       else if (app.world.phase === 'rule-preview') showRuleIntro();
       else if (app.world.phase === 'rule-intro') startOneStop();
       else toggleTime();
@@ -638,7 +718,7 @@
     else if (event.code === 'KeyZ') undo();
     else if (event.code === 'KeyX') clear();
     else if (event.code === 'KeyC' || event.code === 'Escape') cancel();
-    else if (event.code === 'KeyR' && app.world.phase !== 'executing') { reset(); ui.arena.focus({ preventScroll: true }); }
+    else if (event.code === 'KeyR' && app.world.phase !== 'executing') restartJourney();
     else if (app.world.failed && event.code === 'Enter') retryWave();
   });
   document.addEventListener('keyup', event => {
@@ -658,6 +738,9 @@
   function frame(now) {
     const dt = lastTime ? Math.min(0.05, (now - lastTime) / 1000) : 0; lastTime = now;
     if (document.hidden) { requestAnimationFrame(frame); return; }
+    const journeyChange=J.tick(app.journey,dt,app.reducedMotion);
+    if(journeyChange==='map')showWorldMap();
+    else if(journeyChange==='battle'){updateUi();ui.arena.focus({preventScroll:true});}
     applyTouchPadInput();
     const releaseHold = app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0;
     const resumeHold = app.combatFx.resumeRemaining > 0;
@@ -672,11 +755,11 @@
         if (app.combatFx.pendingCompletion) { app.combatFx.completionRemaining = 0.08; }
       }
     }
-    if (app.titleActive || app.briefingActive || releaseHold || resumeHold) accumulator = 0;
+    if (app.titleActive || app.briefingActive || J.paused(app.journey) || releaseHold || resumeHold) accumulator = 0;
     else {
       accumulator += dt;
       while (accumulator >= C.world.fixedStep) {
-        if ((app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0) || app.combatFx.resumeRemaining > 0) { accumulator = 0; break; }
+        if (J.paused(app.journey) || (app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0) || app.combatFx.resumeRemaining > 0) { accumulator = 0; break; }
         S.step(app.world); accumulator -= C.world.fixedStep; handleEvents();
       }
     }
@@ -738,6 +821,7 @@
   }
   touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
+    journey: app.journey,
     particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, artFx: app.artFx, tutorial: app.tutorial, practice: app.practice,
     touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
     damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));

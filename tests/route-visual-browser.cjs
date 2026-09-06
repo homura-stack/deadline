@@ -1,5 +1,6 @@
 /* Focused Chrome interaction for the time-stop route presentation. */
 'use strict';
+const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
@@ -19,8 +20,8 @@ async function move(page, point, steps = 1) { const at = await coords(page, poin
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     page.on('pageerror', error => errors.push(String(error)));
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-    await page.goto(base + '?debug'); await page.waitForLoadState('networkidle'); await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('title-screen').hidden); await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);
-    await page.evaluate(() => { Deadline.config.gauge.initial = 100; Deadline.config.waves.definitions[0].timeStopSeconds = 8; document.getElementById('restart').click(); });
+    await page.goto(base + '?debug'); await page.waitForLoadState('networkidle'); await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page); await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(page);
+    await page.evaluate(() => { Deadline.config.gauge.initial = 100; Deadline.config.waves.definitions[0].timeStopSeconds = 8; document.getElementById('restart').click(); });await nextArea(page);
     await page.keyboard.press('Space');
     await page.waitForFunction(() => Deadline.inspect().world.phase === 'stopped' && Deadline.inspect().timeFx.blend === 1);
     const opening = (await state(page)).world;
@@ -51,8 +52,8 @@ async function move(page, point, steps = 1) { const at = await coords(page, poin
     const reduced = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
     reduced.on('pageerror', error => errors.push(String(error)));
     reduced.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-    await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle'); await reduced.keyboard.press('Space'); await reduced.waitForFunction(() => document.getElementById('title-screen').hidden); await reduced.locator('#briefing-skip').click(); await reduced.waitForFunction(() => document.getElementById('briefing-screen').hidden);
-    await reduced.evaluate(() => { Deadline.config.gauge.initial = 100; document.getElementById('restart').click(); }); await reduced.keyboard.press('Space');
+    await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle'); await reduced.keyboard.press('Space'); await reduced.waitForFunction(() => document.getElementById('title-screen').hidden);await training(reduced); await reduced.locator('#briefing-skip').click(); await reduced.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(reduced);
+    await reduced.evaluate(() => { Deadline.config.gauge.initial = 100; document.getElementById('restart').click(); });await nextArea(reduced); await reduced.keyboard.press('Space');
     await reduced.waitForFunction(() => Deadline.inspect().world.phase === 'stopped' && Deadline.inspect().timeFx.blend === 1);
     const reducedOpening = (await state(reduced)).world; await move(reduced, reducedOpening.player); await reduced.mouse.down(); await move(reduced, reducedOpening.enemies[0], 12); await reduced.mouse.up(); await reduced.waitForTimeout(260);
     assert.equal((await state(reduced)).reducedMotion, true); assert.equal((await state(reduced)).world.route.locks.length, 1);

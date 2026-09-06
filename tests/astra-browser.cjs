@@ -1,5 +1,6 @@
 /* Chrome acceptance for the redesign. Real input runs and isolated render checks are reported separately. */
 'use strict';
+const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
@@ -34,7 +35,7 @@ async function recordFrames(page) {
 }
 async function trainingRun(page, index) {
   await page.keyboard.press('Space');
-  await page.waitForFunction(() => Deadline.inspect().briefingActive);
+  await training(page);await page.waitForFunction(() => Deadline.inspect().briefingActive);
   for (let i = 0; i < 4; i++) await page.locator('#briefing-begin').click();
   await page.waitForFunction(() => Deadline.inspect().practice.active);
   await move(page, { x: 240, y: 470 }, 8);
@@ -57,7 +58,7 @@ async function trainingRun(page, index) {
   if (index === 1) await page.screenshot({ path: path.join(artifacts, 'reward-1920.png') });
   await page.waitForTimeout(780);
   const rested = await state(page); assert.equal(rested.artFx.echo, null); assert.equal(rested.artFx.scores.length, 0);
-  await page.waitForFunction(() => !Deadline.inspect().practice.active);
+  await page.waitForFunction(() => !Deadline.inspect().practice.active);await battleReady(page);
   await page.waitForFunction(() => Deadline.inspect().world.waveGraceRemaining <= 0);
   await move(page, (await state(page)).world.enemies[0]);
   await page.waitForFunction(() => Deadline.inspect().world.failed);
@@ -90,11 +91,11 @@ async function trainingRun(page, index) {
     // Resize the same active application, then reload with its settings intact.
     await page.locator('[data-title-info="settings"]').click(); await page.locator('#master-volume').fill('42');
     await page.locator('[data-title-info="settings"]').click(); await page.locator('#title-start').click();
-    await page.waitForFunction(() => Deadline.inspect().briefingActive); await page.locator('#briefing-skip').click();
+    await training(page);await page.waitForFunction(() => Deadline.inspect().briefingActive); await page.locator('#briefing-skip').click();await battleReady(page);
     for (const viewport of [{ width:1920,height:1080 }, { width:1600,height:900 }, { width:1366,height:768 }, { width:1280,height:720 }, { width:960,height:720 }]) {
-      await page.setViewportSize(viewport); await page.locator('#restart').click(); await page.waitForTimeout(90);
+      await page.setViewportSize(viewport); await page.locator('#restart').click();await nextArea(page); await page.waitForTimeout(90);
       const layout = await page.evaluate(() => ({ overflowX: document.documentElement.scrollWidth > innerWidth,
-        footerBottom: document.querySelector('footer').getBoundingClientRect().bottom, controlBottom: document.querySelector('.controls').getBoundingClientRect().bottom,
+        footerBottom: document.querySelector('#game-shell footer').getBoundingClientRect().bottom, controlBottom: document.querySelector('.controls').getBoundingClientRect().bottom,
         arenaWidth: document.getElementById('arena').width, arenaHeight: document.getElementById('arena').height }));
       assert.equal(layout.overflowX, false); assert.ok(layout.footerBottom <= viewport.height); assert.ok(layout.controlBottom <= viewport.height);
       await move(page, { x: 60, y: 550 });

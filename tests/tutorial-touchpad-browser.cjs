@@ -1,5 +1,6 @@
 /* Chrome interaction checks for the visual tutorial, practice flow and relative mobile touch pad. */
 'use strict';
+const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
 const C = require('../config.js');
@@ -49,7 +50,7 @@ async function within(inner, outer, label) {
     await page.locator('[data-title-info="settings"]').tap(); assert.equal(await page.locator('#touch-sensitivity').isVisible(), true);
     await page.locator('#touch-sensitivity').fill('135'); await page.reload(); await page.waitForLoadState('networkidle');
     await page.locator('[data-title-info="settings"]').tap(); assert.equal(await page.locator('#touch-sensitivity').inputValue(), '135');
-    await page.locator('#title-start').tap(); await page.waitForFunction(() => document.getElementById('title-screen').hidden);
+    await page.locator('#title-start').tap(); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page);
     const headings = ['01 / EVADE', '02 / FREEZE', '03 / DRAW', '04 / EXECUTE'];
     for (let index = 0; index < headings.length; index++) {
       assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(), headings[index]);
@@ -129,12 +130,12 @@ async function within(inner, outer, label) {
     const mobileViews = [{ width: 320, height: 800 }, { width: 360, height: 800 }, { width: 390, height: 844 }, { width: 430, height: 860 }, { width: 844, height: 390 }, { width: 768, height: 800 }];
     for (const viewport of mobileViews) {
       const mobile = await browser.newContext({ viewport, isMobile: true, hasTouch: true }); const p = await mobile.newPage(); hook(p, errors);
-      await p.goto(base + '?debug'); await p.waitForLoadState('networkidle'); await p.locator('#title-start').tap(); await p.waitForFunction(() => document.getElementById('title-screen').hidden);
+      await p.goto(base + '?debug'); await p.waitForLoadState('networkidle'); await p.locator('#title-start').tap(); await p.waitForFunction(() => document.getElementById('title-screen').hidden);await training(p);
       assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       const visiblePage = await p.locator('.briefing-page:visible').boundingBox(), next = await p.locator('#briefing-begin').boundingBox();
       assert.ok(visiblePage.y >= 0 && next.y + next.height <= viewport.height, `${viewport.width}x${viewport.height} briefing overflow`);
       await within(await p.locator('.briefing-page:visible .demo-input-touch').boundingBox(), await p.locator('.briefing-page:visible svg').boundingBox(), `${viewport.width}x${viewport.height} touch input`);
-      await p.locator('#briefing-skip').tap(); await p.waitForFunction(() => document.getElementById('briefing-screen').hidden);
+      await p.locator('#briefing-skip').tap(); await p.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(p);
       const field = await p.locator('#arena').boundingBox(), movePad = await p.locator('#move-pad').boundingBox(), action = await p.locator('#time-stop').boundingBox();
       assert.ok(field.width >= (viewport.width > viewport.height ? viewport.width * .52 : viewport.width - 60), `${viewport.width}x${viewport.height} field width ${field.width}`);
       assert.ok(movePad.width > 85 && movePad.height >= 88); assert.ok(action.height >= 44);
@@ -145,7 +146,7 @@ async function within(inner, outer, label) {
 
     const landscapeContext = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
     const landscape = await landscapeContext.newPage(); hook(landscape, errors); const landscapeCdp = await landscapeContext.newCDPSession(landscape);
-    await landscape.goto(base + '?debug'); await landscape.waitForLoadState('networkidle'); await landscape.locator('#title-start').tap();
+    await landscape.goto(base + '?debug'); await landscape.waitForLoadState('networkidle'); await landscape.locator('#title-start').tap();await training(landscape);
     for (let i = 0; i < 4; i++) await landscape.locator('#briefing-begin').tap();
     await landscape.waitForFunction(() => Deadline.inspect().practice.active);
     let landscapePad = await landscape.locator('#move-pad').boundingBox(), landscapeCenter = { x: landscapePad.width / 2, y: landscapePad.height / 2 };
@@ -171,7 +172,7 @@ async function within(inner, outer, label) {
     await landscapeContext.close();
 
     const visual = await browser.newPage({ viewport: { width: 1280, height: 720 } }); hook(visual, errors);
-    await visual.goto(base + '?debug'); await visual.waitForLoadState('networkidle'); await visual.keyboard.press('Space'); await visual.waitForFunction(() => document.getElementById('title-screen').hidden);
+    await visual.goto(base + '?debug'); await visual.waitForLoadState('networkidle'); await visual.keyboard.press('Space'); await visual.waitForFunction(() => document.getElementById('title-screen').hidden);await training(visual);
     await visual.addStyleTag({ content: '.briefing-copy,.briefing-header,.briefing-demo text{visibility:hidden}' });
     await setDemoTime(visual, 1500);
     const evadePlayer = await visual.locator('.briefing-page:visible .demo-player').boundingBox(), evadeBullet = await visual.locator('.briefing-page:visible .demo-bullet').boundingBox();
@@ -206,7 +207,7 @@ async function within(inner, outer, label) {
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-04-execute.png'), fullPage: true }); await visual.close();
 
     const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
-    const reduced = await reducedContext.newPage(); hook(reduced, errors); await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle'); await reduced.locator('#title-start').tap();
+    const reduced = await reducedContext.newPage(); hook(reduced, errors); await reduced.goto(base + '?debug'); await reduced.waitForLoadState('networkidle'); await reduced.locator('#title-start').tap();await training(reduced);
     for (let index = 0; index < headings.length; index++) {
       assert.equal(await reduced.locator('.briefing-page:visible .briefing-demo').evaluate(demo => demo.getAnimations({ subtree: true }).length), 0, `reduced motion STEP ${index + 1}`);
       if (index < headings.length - 1) await reduced.locator('#briefing-begin').tap();
@@ -215,7 +216,7 @@ async function within(inner, outer, label) {
     await reducedContext.close();
 
     const desktop = await browser.newPage({ viewport: { width: 1280, height: 720 } }); hook(desktop, errors);
-    await desktop.goto(base + '?debug'); await desktop.waitForLoadState('networkidle'); await desktop.keyboard.press('Space'); await desktop.waitForFunction(() => document.getElementById('title-screen').hidden);
+    await desktop.goto(base + '?debug'); await desktop.waitForLoadState('networkidle'); await desktop.keyboard.press('Space'); await desktop.waitForFunction(() => document.getElementById('title-screen').hidden);await training(desktop);
     for (let i = 0; i < 4; i++) await desktop.locator('#briefing-begin').click();
     await desktop.waitForFunction(() => Deadline.inspect().practice.active);
     assert.equal(await desktop.locator('#move-pad').isVisible(), false); assert.equal(await desktop.locator('.tutorial-prompt .guide-mouse').isVisible(), true);

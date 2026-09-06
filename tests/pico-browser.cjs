@@ -1,5 +1,6 @@
 /* TASK A asset acceptance. Development-only Playwright; never loaded by the game. */
 'use strict';
+const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -13,7 +14,7 @@ function hook(page) {
 }
 async function enter(page) {
   await page.locator('#title-start').click();
-  await page.waitForFunction(() => Deadline.inspect().briefingActive);
+  await training(page);await page.waitForFunction(() => Deadline.inspect().briefingActive);
   await page.locator('#briefing-skip').click();
   await page.waitForFunction(() => Deadline.inspect().world.time > 0);
 }

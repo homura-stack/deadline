@@ -295,6 +295,7 @@
         g.translate((Math.random() - 0.5) * strength, (Math.random() - 0.5) * strength);
       }
       this.backdrop(stopBlend); this.ignitionEcho(app); this.picoWake(app);
+      root.Deadline.drawRestoration?.(this, app.journey, w.player, app.reducedMotion);
       for (const e of w.enemies) if (e.alive) this.enemy(e, enemyColors);
       if (w.route) this.route(app, stopBlend);
       if (w.phase === 'stopped' && C.waves.definitions[w.waveIndex].oneStopRequired) {

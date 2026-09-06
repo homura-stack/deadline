@@ -3,10 +3,10 @@
   // Presentation metadata only: widths use the same logical units as the 960 × 600 arena.
   // Anchors locate Pico's head / each enemy's luminous core, not the image's bounding-box center.
   const definitions = {
-    pico: { file: 'pico.png', width: 38, anchorX: .56, anchorY: .47 },
-    enemy01: { file: 'enemy-01.png', width: 44, anchorX: .499, anchorY: .478 },
-    enemy02: { file: 'enemy-02.png', width: 44, anchorX: .5, anchorY: .555 },
-    enemy03: { file: 'enemy-03.png', width: 42, anchorX: .504, anchorY: .482 }
+    pico: { file: 'pico.png', width: 48, anchorX: .56, anchorY: .47 },
+    enemy01: { file: 'enemy-01.png', width: 52, anchorX: .499, anchorY: .478 },
+    enemy02: { file: 'enemy-02.png', width: 52, anchorX: .5, anchorY: .555 },
+    enemy03: { file: 'enemy-03.png', width: 50, anchorX: .504, anchorY: .482 }
   };
   const enemyTypes = Object.freeze({ aim: 'enemy02', fan: 'enemy02', burst: 'enemy01', rotate: 'enemy03', delay: 'enemy03' });
   const entries = {};
