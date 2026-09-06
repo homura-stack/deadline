@@ -18,10 +18,12 @@ TASK G.1で、タイトルを新たに指定された2752×1536の元JPEGへ再�
 
 TASK G.2では、受講済みでもSTARTから毎回TRAININGへ入るよう遷移だけを修正しました。`69521cf`型の現行チュートリアル本体・タイトル・正式Picoは変更していません。[変更範囲・テスト・復元手順](TASK_G2.md)を参照してください。
 
+TASK Hでは、正式WORLD MAPのBEFORE / AFTER画像を無加工で導入しました。地区を復旧すると、その地区と接続回路だけにAFTERが柔らかく広がり、CORE後のSYNCで全景が点灯します。画像上の地区に操作ノードを合わせ、既存のTRAINING・戦闘・進行を維持しています。[素材・座標・復旧表示・検証記録](TASK_H.md)を参照してください。
+
 ## プレイ
 
-- 開発中のTASK G.2確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
-- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / G / G.1 / G.2は未push・未反映）
+- 開発中のTASK H確認: `http://127.0.0.1:4186/`（ローカルサーバー起動時）
+- 公開URL: https://homura-stack.github.io/deadline/ （TASK F / F.1 / G / G.1 / G.2 / Hは未push・未反映）
 - 対応環境: PC版Google Chrome / スマートフォン版Google Chrome
 - ビルド・インストール: 不要
 
@@ -124,6 +126,7 @@ python -m http.server 4186 --bind 127.0.0.1
 - `waves.test.cjs` — 10 Wave、ONE STOP、スコア復元、任意の時間制限倍率
 - `journey.test.cjs` — エリア解禁、画像準備待ち、復旧・同期発光の表示状態
 - `tutorial.test.cjs` — Git由来の旧実装との一致、2 TARGET実習、正常完了だけの保存・旧保存状態・保存拒否時の動作
+- `world-map-art.test.cjs` — 地区別露出の保持、進行状態の非変更、ホタル発光の連続性、SYNC後の全面AFTER
 
 `*-browser.cjs`と`browser.cjs`は、Playwrightを検証用ドライバーとしてローカルのGoogle Chromeを操作し、PC・タッチ相当の入力、レスポンシブ表示、Canvasの実ピクセル、Web Audio、180弾負荷、コンソールエラーを確認します。Playwrightはゲーム本体の実行依存ではなく、配信ページから読み込まれません。
 
@@ -137,10 +140,12 @@ node tests/tutorial-touchpad-browser.cjs
 node tests/astra-browser.cjs
 node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
+node --test tests/world-map-art.test.cjs
+node tests/world-map-art-browser.cjs
 ```
 
 以降の**毎TASKで`title-routes-browser.cjs`を必須回帰テストとして実行**します。A: TITLE → TRAINING → 実習完了 → MAP → GARDEN、B: 受講済みTITLE → START → TRAINING → 実習完了 → MAP → GARDEN、C/D/E: HOW TO PLAY / SETTINGS / CREDITSを開いてTITLEへ戻る、を実操作で確認します。正式Pico、常設TRAINING、Console / 画像ロードエラー、背景と操作の重なりも検証します。未保存時と完了済みのどちらもSTARTでTRAININGへ入り、実際に練習完了してから本編へ進むことを確認します。`title-quality-training-browser.cjs`は再読込・途中退出・旧保存状態と元JPEGのハッシュ・表示サイズも検証します。本編専用のテストは受講済みの隔離ブラウザを使い、TRAININGへ入った後に既存の手動退出ボタンでMAPへ移ります。STARTの受け入れテストでは実習を操作して完了します。
 
-タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、画質調査は[TASK_G1.md](TASK_G1.md)、今回の再検証は[TASK_G2.md](TASK_G2.md)に記録します。
+タイトルの確認対象は1920×1080 / 2560×1440 / 1366×768 / 1280×720 / 2560×1080 / 1024×768 / 768×800 / 390×844 / 320×800 / 844×390と連続リサイズです。3840×2160の原寸上限も確認します。従来の検証記録は[VERIFICATION.md](VERIFICATION.md)、画質調査は[TASK_G1.md](TASK_G1.md)、START遷移の検証は[TASK_G2.md](TASK_G2.md)、今回のWORLD MAPと回帰テストは[TASK_H.md](TASK_H.md)に記録します。
 
 物理スマートフォンでの性能・操作・端末スピーカーの聴感、およびコンテスト主催者の最新規約本文との照合は別途確認が必要です。

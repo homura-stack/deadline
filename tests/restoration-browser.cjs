@@ -72,6 +72,12 @@ async function start(p){await p.locator('#title-start').click();await initialMap
     await p.waitForTimeout(400);await p.screenshot({path:path.join(out,`${id}-after.png`),fullPage:true});assert.deepEqual((await state(p)).world,frozen);
     await p.waitForFunction(()=>Deadline.journey.onMap(Deadline.inspect().journey));
     const map=await state(p);assert.equal(map.journey.restored,area+1);assert.equal(await p.locator('[data-city][data-status="online"]').count(),area+1);assert.deepEqual(map.world,frozen);
+    // TASK H: real Wave clears must retain every earlier photographic region and no future region.
+    await p.waitForFunction(i=>Number(document.querySelector(`[data-reveal="${i}"]`).getAttribute('opacity'))>.99,area);
+    const mask=await p.locator('[data-reveal]').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('opacity'))));
+    mask.forEach((amount,i)=>assert.ok(i<=area?amount>.99:amount===0,`map region ${i} after ${id}`));
+    assert.equal(await p.locator('.world-full-reveal').getAttribute('opacity'),'0.0000','CORE restoration still waits for SYNC to reveal all artwork');
+    if(area<4){assert.equal(await p.locator(`[data-area="${area+1}"]`).getAttribute('data-status'),'available');assert.equal(await p.locator('#map-enter').isEnabled(),true);}
     await p.screenshot({path:path.join(out,`${id}-map-answer.png`),fullPage:true});
    }
    report.flow.push({wave,score:cleared.world.score,kills:cleared.world.totalKills,life:cleared.world.life,area:id});console.log('PASS real Wave',wave,id);
@@ -79,6 +85,9 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   assert.equal((await state(p)).journey.mode,'synchronizing');
   await p.waitForFunction(()=>Deadline.journey.finaleFrame(Deadline.inspect().journey).sync);assert.equal(await p.locator('#world-sync').isVisible(),true);
   await p.screenshot({path:path.join(out,'world-sync.png')});
+  await p.waitForFunction(()=>document.querySelector('#map-board').dataset.fullAfter==='true');
+  assert.equal((await state(p)).journey.mode,'synchronizing','full AFTER has a viewing beat before ENDING');
+  await p.screenshot({path:path.join(out,'world-full-after.png')});
   await p.waitForFunction(()=>Deadline.inspect().journey.mode==='ending');await p.waitForTimeout(1250);
   assert.equal(await p.locator('#journey-ending').isVisible(),true);assert.match(await p.locator('#journey-ending').innerText(),/止まった回路に、[\s\S]*もういちど ひかりを。/);
   const ending=await state(p);assert.equal(ending.world.score,18400);assert.equal(ending.world.totalKills,57);assert.equal(ending.world.hitsTaken,0);assert.equal(ending.world.life,1);
