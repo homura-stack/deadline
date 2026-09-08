@@ -29,7 +29,7 @@
 <body class="title-open">
   <section id="title-screen" class="title-screen pico-title" aria-label="DEAD/LINE タイトル画面">
     <div class="title-scene">
-    <img id="title-art" class="title-background" src="assets/title/pico-dead-circuit-original.jpeg" width="2752" height="1536" alt="黄金に光るPicoと、暗い電子都市をつなぐ光跡" fetchpriority="high" decoding="async">
+    <img id="title-art" class="title-background" src="assets/title/title.png" width="1678" height="937" alt="DEAD/LINE正式ロゴと日本語サブタイトル、黄金に光るPicoと電子都市" fetchpriority="high" decoding="async">
     <h1 class="title-heading" aria-label="DEAD/LINE">DEAD/LINE</h1>
     <div class="title-content">
       <p class="title-accessible-copy">止まった回路に、もういちど ひかりを。</p>
@@ -54,7 +54,7 @@
         </section>
         <section id="title-how" class="pico-how" data-title-panel="how" hidden>
           <header class="title-panel-header"><h2>HOW TO PLAY</h2><button type="button" data-title-close="how" aria-label="操作説明を閉じてタイトルへ戻る">戻る <span aria-hidden="true">×</span></button></header>
-          <p>Picoの黄金のLINEで、シアンのTARGETをつなごう。</p>
+          <p>Picoの黄金のLINEで、シアンのTARGETをつなごう。敵弾の近くをかわすとTIME STOPが大きく充電されます。</p>
           <dl class="title-controls-list"><div><dt>MOVE</dt><dd>マウスでPicoを動かす</dd></div><div><dt>TIME STOP</dt><dd><kbd>SPACE</kbd> で時間を止める</dd></div><div><dt>LINE</dt><dd>ドラッグでTARGETをつなぐ</dd></div><div><dt>EXECUTE</dt><dd><kbd>SPACE</kbd> で光跡を走る</dd></div></dl>
           <p class="title-touch-help">スマートフォンはMOVE PADと画面ボタンで操作。</p>
           <button id="title-training" type="button">Picoと操作を練習する ↗</button>
@@ -66,11 +66,11 @@
   </section>
   <section id="briefing-screen" class="briefing-screen" aria-label="初回操作説明" aria-modal="true" role="dialog" hidden>
     <div class="briefing-panel">
-      <header class="briefing-header"><span id="briefing-counter">BRIEFING / 01 OF 04</span><strong>PICO / FIRST FLIGHT</strong></header>
+      <header class="briefing-header"><span id="briefing-counter">BRIEFING / 01 OF 05</span><strong>PICO / FIRST FLIGHT</strong></header>
       <div class="briefing-pages">
         <article class="briefing-page" data-briefing-page="0">
-          <div class="briefing-copy"><span class="briefing-number">01 / EVADE</span><h2>MOVE AND AVOID<br>ENEMY FIRE.</h2><p>黄金色に光るPicoを動かして<br>敵の攻撃を避けよう。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
-          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="マウスまたはMOVE PADでPicoを動かし、敵弾を大きく避ける図">
+          <div class="briefing-copy"><span class="briefing-number">01 / EVADE</span><h2>MOVE AND AVOID<br>ENEMY FIRE.</h2><p>Picoを動かして弾幕をかわそう。<br>敵や敵弾に当たらないように進む。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
+          <svg class="briefing-demo demo-evade" viewBox="0 0 480 240" role="img" aria-label="マウスまたはMOVE PADでPicoを動かし、敵弾をかわす図">
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
             <g class="demo-enemy" transform="translate(400 150)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
             <g class="demo-bullet demo-bullet-evade"><circle r="6"/><path d="M8 0H24"/></g>
@@ -82,7 +82,21 @@
           </svg>
         </article>
         <article class="briefing-page" data-briefing-page="1" hidden>
-          <div class="briefing-copy"><span class="briefing-number">02 / FREEZE</span><h2>STOP THE<br>ENTIRE WORLD.</h2><p>TIME STOPすると敵と弾丸が停止。<br>止まった弾幕の中で攻撃ルートを考えられる。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">TIME STOP BUTTON</span></div></div>
+          <div class="briefing-copy"><span class="briefing-number">02 / NEAR MISS</span><h2>RISK MORE.<br>STOP SOONER.</h2><p>敵弾のすぐ近くをかわすとTIME STOPゲージが大きく増える。<br>危険へ踏み込むほど早く時間を止められる。</p><div class="briefing-input"><span class="device-pc">MOUSE / POINTER</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
+          <svg class="briefing-demo demo-near-miss" viewBox="0 0 480 240" role="img" aria-label="Picoが敵弾のすぐ近くをかわし、TIME STOPゲージを大きく増やす図。この後の実践で体験します。">
+            <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
+            <g class="demo-enemy" transform="translate(400 88)"><image class="demo-enemy-sprite" href="assets/characters/enemy-02.png" x="-24" y="-27" width="48" height="48" preserveAspectRatio="xMidYMid meet"/></g>
+            <path class="demo-motion-lane" d="M130 128H290"/><path class="demo-near-trace" d="M320 88H185"/>
+            <g class="demo-player" transform="translate(185 128)"><image class="demo-pico-sprite" href="assets/characters/pico-final.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
+            <g class="demo-bullet" transform="translate(185 88)"><circle r="6"/><path d="M8 0H24"/></g>
+            <path class="demo-near-reward" d="M210 118Q265 130 265 185"/>
+            <rect class="demo-near-gauge" x="145" y="195" width="245" height="14" rx="2"/><rect class="demo-near-charge" x="148" y="198" width="239" height="8"/>
+            <text x="18" y="25">NEAR MISS → CHARGE</text><text x="280" y="175">TIME STOP +</text>
+            <text class="demo-input-pc" x="18" y="225">MOUSE MOVE</text><text class="demo-input-touch" x="18" y="225">MOVE PAD</text>
+          </svg>
+        </article>
+        <article class="briefing-page" data-briefing-page="2" hidden>
+          <div class="briefing-copy"><span class="briefing-number">03 / FREEZE</span><h2>STOP THE<br>ENTIRE WORLD.</h2><p>TIME STOPすると敵と弾丸が停止。<br>止まった弾幕の中で攻撃ルートを考えられる。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">TIME STOP BUTTON</span></div></div>
           <svg class="briefing-demo demo-freeze" viewBox="0 0 480 240" role="img" aria-label="SPACEまたはボタン入力で敵と敵弾が同時に静止する図">
             <rect class="demo-stop-wash" width="480" height="240"/>
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
@@ -97,8 +111,8 @@
             <text class="demo-normal-label" x="18" y="25">RUNNING</text><text class="demo-stop-label" x="18" y="25">FROZEN</text>
           </svg>
         </article>
-        <article class="briefing-page" data-briefing-page="2" hidden>
-          <div class="briefing-copy"><span class="briefing-number">03 / DRAW</span><h2>DRAW THROUGH<br>THE ENEMIES.</h2><p>Picoの黄金の光跡を一筆書き。<br>シアンの輪を通るとTARGETをロック。</p><div class="briefing-input"><span class="device-pc">MOUSE DRAG</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
+        <article class="briefing-page" data-briefing-page="3" hidden>
+          <div class="briefing-copy"><span class="briefing-number">04 / DRAW</span><h2>DRAW THROUGH<br>THE ENEMIES.</h2><p>Picoの黄金の光跡を一筆書き。<br>シアンの輪を通るとTARGETをロック。</p><div class="briefing-input"><span class="device-pc">MOUSE DRAG</span><span class="device-touch">MOVE PAD / DRAG</span></div></div>
           <svg class="briefing-demo demo-draw" viewBox="0 0 480 240" role="img" aria-label="Picoを押したまま2体の敵を順に通る一筆書き操作の図">
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
             <g class="demo-player" transform="translate(70 175)"><image class="demo-pico-sprite" href="assets/characters/pico-final.png" x="-28" y="-24" width="50" height="49" preserveAspectRatio="xMidYMid meet"/></g>
@@ -113,8 +127,8 @@
             <text x="18" y="25">PRESS · HOLD · DRAW</text>
           </svg>
         </article>
-        <article class="briefing-page" data-briefing-page="3" hidden>
-          <div class="briefing-copy"><span class="briefing-number">04 / EXECUTE</span><h2>EXECUTE THE<br>DRAWN ROUTE.</h2><p>時間切れになる前に実行。<br>Picoが線上を高速移動しTARGETを連続撃破する。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">EXECUTE BUTTON</span></div></div>
+        <article class="briefing-page" data-briefing-page="4" hidden>
+          <div class="briefing-copy"><span class="briefing-number">05 / EXECUTE</span><h2>EXECUTE THE<br>DRAWN ROUTE.</h2><p>時間切れになる前に実行。<br>Picoが線上を高速移動しTARGETを連続撃破する。</p><div class="briefing-input"><kbd class="device-pc">SPACE</kbd><span class="device-touch">EXECUTE BUTTON</span></div></div>
           <svg class="briefing-demo demo-execute" viewBox="0 0 480 240" role="img" aria-label="実行入力後にPicoがルートを走り、通過した瞬間に敵を連続撃破する図">
             <rect class="demo-execute-wash" width="480" height="240"/>
             <path class="demo-grid" d="M0 60H480M0 120H480M0 180H480M120 0V240M240 0V240M360 0V240"/>
@@ -133,7 +147,7 @@
           </svg>
         </article>
       </div>
-      <div class="briefing-progress" aria-hidden="true"><i class="is-active"></i><i></i><i></i><i></i></div>
+      <div class="briefing-progress" aria-hidden="true"><i class="is-active"></i><i></i><i></i><i></i><i></i></div>
       <div class="briefing-actions"><button id="briefing-back" class="briefing-back" type="button" disabled>BACK</button><button id="briefing-skip" class="briefing-skip" type="button">WORLD MAPへ</button><button id="briefing-begin" class="briefing-begin" type="button"><kbd>SPACE</kbd><span>NEXT</span></button></div>
     </div>
   </section>
@@ -142,12 +156,12 @@
     <div class="map-layout">
       <div class="map-intro"><p class="map-kicker">CIRCUIT ATLAS / 01—05</p><h1 id="world-map-heading">WORLD<br><span>MAP</span></h1><p class="map-copy">止まった回路に、<br>もういちど ひかりを。</p><div class="map-progress"><strong id="map-restored-count">0 <span>/ 5</span></strong><span>AREAS ONLINE</span><div id="map-progress-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div><p id="map-notice" class="map-notice" role="status" aria-live="polite">GARDENから旅をはじめよう。</p></div>
       <div id="map-board" class="map-board" role="group" aria-label="電子回路で繋がる5つのエリア"></div>
-      <aside class="map-detail" aria-labelledby="map-area-name"><p id="map-area-number" class="map-kicker">AREA 01</p><h2 id="map-area-name">GARDEN</h2><p id="map-area-ja">蛍庭区</p><span id="map-area-status">DEAD CIRCUIT</span><p id="map-area-description">電子植物が眠る、はじまりの庭。</p><dl><div><dt>WAVE</dt><dd id="map-area-waves">01 — 02</dd></div><div><dt>SCORE</dt><dd id="map-score">0</dd></div></dl><button id="map-enter" type="button"><span>ENTER GARDEN</span><b aria-hidden="true">↗</b></button><button id="map-training" class="map-training" type="button"><strong>TRAINING</strong><span>操作を練習する ↗</span></button><p class="map-session-note">タイトルに戻ると旅を最初から始めます。</p></aside>
+      <aside class="map-detail" aria-labelledby="map-area-name"><p id="map-area-number" class="map-kicker">AREA 01</p><h2 id="map-area-name">GARDEN</h2><p id="map-area-ja">蛍庭区</p><span id="map-area-status">DEAD CIRCUIT</span><p id="map-area-description">電子植物が眠る、はじまりの庭。</p><dl><div><dt>WAVE</dt><dd id="map-area-waves">01 — 02</dd></div><div><dt>SCORE</dt><dd id="map-score">0</dd></div></dl><button id="map-enter" type="button"><span>ENTER GARDEN</span><b aria-hidden="true">↗</b></button><button id="map-training" class="map-training" type="button"><strong>TRAINING</strong><span>操作を練習する ↗</span></button><p class="map-session-note">AREA攻略時に自動保存。STARTで続きから再開します。</p></aside>
       <aside id="journey-ending" class="journey-ending" aria-labelledby="ending-title" hidden>
         <p class="map-kicker">5 / 5 AREAS ONLINE</p><h2 id="ending-title">DEAD<span>/</span>LINE</h2>
         <p class="ending-copy">止まった回路に、<br>もういちど ひかりを。</p><p class="ending-english">LIGHT THE DEAD CIRCUIT.</p>
         <p class="ending-small">SMALL LIGHT.<br>BIG CONNECTIONS.</p><p class="ending-score">SCORE <strong id="ending-score">0</strong></p>
-        <div class="ending-actions"><button id="ending-restart" type="button">RESTART ↗</button><button id="ending-title-button" type="button">TITLE</button></div>
+        <div class="ending-actions"><button id="ending-restart" type="button">WORLD MAP ↗</button><button id="ending-title-button" type="button">TITLE</button></div>
       </aside>
     </div>
     <div id="world-sync" class="world-sync" role="status" aria-live="polite" hidden>SYNC</div>
@@ -173,6 +187,7 @@
         <div id="area-transition" class="area-transition" role="status" aria-live="polite" hidden><span id="area-transition-kicker">AREA 01</span><strong id="area-transition-name">GARDEN</strong><span id="area-transition-ja">蛍庭区</span><small id="area-transition-note">WAVE 1 / 2</small><div id="stage-loading-actions" class="stage-loading-actions" hidden><button id="stage-retry" type="button" hidden>読み込みを再試行</button><button id="stage-title" type="button">TITLE</button></div></div>
         <div id="wave-banner" class="wave-banner" aria-live="polite">WAVE 01 / 10</div>
         <div id="tutorial-prompt" class="tutorial-prompt" aria-live="polite" hidden></div>
+        <div id="near-miss-feedback" class="near-miss-feedback" role="status" aria-live="polite" hidden></div>
         <div id="lock-ready" class="lock-ready" hidden>ALL TARGETS LOCKED<small>SPACEで実行</small></div>
         <div id="callout" class="callout" aria-live="polite"></div>
         <div id="result" class="result formal-result game-over" hidden><span>RUN TERMINATED</span><strong>GAME OVER</strong><dl><div><dt>WAVE</dt><dd id="game-over-wave">01 / 10</dd></div><div><dt>SCORE</dt><dd id="game-over-score">0</dd></div><div><dt>KILLS</dt><dd id="result-kills">0</dd></div></dl><div class="result-actions"><button id="retry"><kbd>SPACE</kbd> RETRY WAVE <span id="retry-wave-number">1</span></button><button id="game-over-title" class="secondary-action">TITLE</button></div><div id="retry-assist" class="assist-choices" hidden><p>TIME STOPの制限時間を選べます</p><button id="retry-assist-15"><kbd>1</kbd> TIME LIMIT ×1.5</button><button id="retry-assist-20"><kbd>2</kbd> TIME LIMIT ×2.0</button></div></div>

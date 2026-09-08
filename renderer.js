@@ -54,16 +54,25 @@
       if (closed) g.closePath();
     }
     /** Draw a cached transparent sprite about its collision-center anchor. Never changes world state. */
-    character(key, x, y, flash = 0) {
+    character(key, x, y, flash = 0, whiteFlash = false) {
       const asset = root.Deadline.characters?.entries[key];
       if (asset?.status !== 'ready') return false;
       const g = this.ctx, left = x - asset.width * asset.anchorX, top = y - asset.height * asset.anchorY;
       g.drawImage(asset.stamp, left, top, asset.width, asset.height);
       if (flash > 0) {
         g.save(); g.globalAlpha *= Math.min(1, flash);
-        g.drawImage(asset.flash, left, top, asset.width, asset.height); g.restore();
+        g.drawImage(whiteFlash ? asset.deathFlash || asset.flash : asset.flash, left, top, asset.width, asset.height); g.restore();
       }
       return true;
+    }
+    patternMark(enemy,color){
+      const g=this.ctx,x=enemy.x,y=enemy.y-27;g.save();g.translate(x,y);g.strokeStyle=color;g.fillStyle=color;g.lineWidth=1.35;g.globalAlpha*=.92;
+      if(enemy.pattern==='aim'){this.circle(0,0,3.5,color,null,1.2);g.beginPath();g.moveTo(-7,0);g.lineTo(-4,0);g.moveTo(4,0);g.lineTo(7,0);g.stroke();}
+      else if(enemy.pattern==='fan'){g.beginPath();for(const a of [-.55,0,.55]){g.moveTo(0,4);g.lineTo(Math.sin(a)*7,-Math.cos(a)*7+4);}g.stroke();}
+      else if(enemy.pattern==='burst'){this.circle(0,0,2,null,color);this.circle(0,0,6,color,null,1.2);}
+      else if(enemy.pattern==='rotate'){g.beginPath();g.arc(0,0,5,-2.6,2.15);g.stroke();g.beginPath();g.moveTo(-5,-3);g.lineTo(-8,-1);g.lineTo(-5,1);g.fill();}
+      else if(enemy.pattern==='delay'){g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.stroke();}
+      g.restore();
     }
     enemy(enemy, colors, alpha = 1, hitFlash = false) {
       const g = this.ctx, r = C.enemy.radius - 2;
@@ -105,6 +114,7 @@
         g.lineTo(enemy.x + Math.cos(enemy.delayAngle) * 30, enemy.y + Math.sin(enemy.delayAngle) * 30); g.stroke();
       }
       if (!hasSprite) this.circle(enemy.x, enemy.y, 3, null, colors.core);
+      if(!hitFlash)this.patternMark(enemy,hasSprite?'#ffd4dc':colors.stroke);
       g.restore();
     }
     bullet(bullet, stopBlend) {
@@ -164,6 +174,12 @@
         g.beginPath(); g.moveTo(w.player.x + 17, w.player.y - 10); g.lineTo(x - 13, y + 5); g.stroke(); g.setLineDash([]);
         this.circle(w.player.x + 72, w.player.y - 43, 7, rgba(gold,.62), rgba(gold,.08), 1.2);
         g.restore(); this.inputCue(x, y, false, false); return;
+      }
+      if(app.practice.step==='near-miss'&&app.practice.nearMissTarget){
+        const target=app.practice.nearMissTarget,bullet=w.bullets[0];if(!bullet)return;
+        g.save();g.setLineDash([7,7]);g.strokeStyle=rgba(gold,.7);g.lineWidth=1.8;g.beginPath();g.moveTo(w.player.x,w.player.y);g.lineTo(target.x,target.y);g.stroke();g.setLineDash([]);
+        this.circle(bullet.x,bullet.y,C.gauge.nearMissRadius,rgba(light.middle,.5),rgba(light.middle,.035),1.2);this.circle(bullet.x,bullet.y,C.player.radius+C.shooting.bulletRadius,rgba('#ff6971',.38),null,1);
+        g.restore();if(!touch)this.inputCue(target.x,target.y+19,false,false);return;
       }
       if (app.practice.step !== 'draw' || app.practice.drawStarted || w.phase !== 'stopped') return;
       const enemies = w.enemies.filter(enemy => enemy.alive), points = [{ ...w.player }, ...enemies.map(enemy => ({ x: enemy.x, y: enemy.y }))];
@@ -290,7 +306,7 @@
       g.setTransform(this.ratio, 0, 0, this.ratio, 0, 0); g.fillStyle = mix('#10162a', stopVisual.background, stopBlend); g.fillRect(0, 0, this.width, this.height);
       g.save(); g.translate(this.offsetX, this.offsetY); g.scale(this.scale, this.scale);
       g.beginPath(); g.rect(0, 0, C.world.width, C.world.height); g.clip();
-      if (app.shake > 0 && !app.reducedMotion) {
+      if (app.shake > 0 && !app.reducedMotion && !(w.failed && app.deathFx?.hitStopRemaining > 0)) {
         const strength = app.shake * (this.width < 650 ? C.feedback.mobileShakeScale : 1);
         g.translate((Math.random() - 0.5) * strength, (Math.random() - 0.5) * strength);
       }
@@ -349,24 +365,26 @@
       }
       for (const bullet of w.bullets) this.bullet(bullet, stopBlend);
       const player = w.player;
+      if(app.nearMissFx?.ringRemaining>0){const k=app.nearMissFx.ringRemaining/C.feedback.nearMiss.ringSeconds;g.save();g.globalCompositeOperation='screen';this.circle(player.x,player.y,15+(1-k)*28,rgba('#fff0a8',k*.8),rgba(light.middle,k*.06),1.6*k);g.restore();}
       if (app.combatFx?.releasePulse > 0 && !app.reducedMotion) {
         const k = app.combatFx.releasePulse / C.feedback.executeVisual.releasePulseSeconds;
         this.circle(player.x, player.y, 14 + (1 - k) * 44, rgba(gold, k * 0.7), null, 1.8 * k);
       }
       if (w.safetyRemaining > 0) this.circle(player.x, player.y, C.player.radius + 8, light.core, null, 1.5);
       this.picoHalo(player, stopBlend, w.phase === 'executing', w.failed);
-      const damage = app.damageFx?.remaining > 0 ? app.damageFx.remaining / app.damageFx.max : 0;
+      const death=app.deathFx||{},damage = app.damageFx?.remaining > 0 && !(w.failed&&death.hitStopRemaining>0) ? app.damageFx.remaining / app.damageFx.max : 0,deathFlash=death.flashRemaining>0?death.flashRemaining/C.feedback.death.playerFlashSeconds:0,deathReaction=death.reactionRemaining>0?death.reactionRemaining/C.feedback.death.reactionSeconds:0;
       g.save(); g.translate(player.x + (damage && !app.reducedMotion ? Math.sin(damage * 35) * 2 : 0), player.y);
-      if (w.failed) g.globalAlpha = .55;
-      const pico = this.character('pico', 0, 0, w.phase === 'executing' ? .32 : damage * .7);
+      if(w.failed){const scale=app.reducedMotion?1:.68+.32*deathReaction;g.scale(scale,scale);g.globalAlpha=deathFlash>0?1:.38+.42*deathReaction;}
+      const pico = this.character('pico', 0, 0, deathFlash>0?1:w.phase === 'executing' ? .32 : damage * .7, deathFlash>0);
       if (!pico) {
         g.rotate(Math.PI / 4);
         if (stopBlend > 0) { g.shadowColor = gold; g.shadowBlur = 6 + stopBlend * 12; }
-        g.fillStyle = w.failed ? '#af4a60' : '#ffecc7'; g.strokeStyle = '#fff5dc'; g.lineWidth = 1.5;
+        g.fillStyle = deathFlash>0 ? '#ffffff' : w.failed ? '#af4a60' : '#ffecc7'; g.strokeStyle = '#fff5dc'; g.lineWidth = 1.5;
         const r = C.player.radius * 0.75 * (damage ? 0.82 + (1 - damage) * 0.18 : 1); g.fillRect(-r, -r, r * 2, r * 2); g.strokeRect(-r, -r, r * 2, r * 2);
-        g.fillStyle = '#493b2d'; g.fillRect(-1.8, -1.8, 3.6, 3.6);
+        g.fillStyle = deathFlash>0 ? '#ffffff' : '#493b2d'; g.fillRect(-1.8, -1.8, 3.6, 3.6);
       }
       g.restore();
+      if(w.failed&&death.hitStopRemaining<=0&&death.reactionRemaining>0){const k=death.reactionRemaining/C.feedback.death.reactionSeconds,expand=app.reducedMotion?0:1-k;g.save();g.globalCompositeOperation='screen';this.circle(player.x,player.y,18+expand*52,rgba('#ffffff',Math.min(1,k*1.4)),null,2*k);this.circle(player.x,player.y,25+expand*70,rgba('#ff6971',k*.55),null,1.5*k);g.restore();}
       if (!w.failed) {
         g.save(); g.strokeStyle = rgba(gold, .6); g.lineWidth = .8;
         g.beginPath(); g.moveTo(player.x - 17, player.y - 4); g.lineTo(player.x - 17, player.y + 4);

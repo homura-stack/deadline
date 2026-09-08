@@ -10,7 +10,7 @@
 - 保護branch: `backup/deadline-before-pico-final-20260906`
 - origin: `https://github.com/homura-stack/deadline.git`。merge / pushは行わない。
 
-変更前に既存の復元用bundle `D:/Desktop/AIWorkSpace/backups/deadline-task-e1-complete-20260906-3621a5e/deadline-e1.bundle` を検証した。完全な履歴とE.1のHEADを含むことを確認済み。TASK E／E.1のbranchは保持し、保護branchを作成してから作業branchへ切り替えた。未保存の作品変更はなく、開始時点を復元できる。
+変更前に既存の復元用bundle `<local-backup-path>/deadline-task-e1-complete-20260906-3621a5e/deadline-e1.bundle` を検証した。完全な履歴とE.1のHEADを含むことを確認済み。TASK E／E.1のbranchは保持し、保護branchを作成してから作業branchへ切り替えた。未保存の作品変更はなく、開始時点を復元できる。
 
 ## 正式素材
 
@@ -69,7 +69,7 @@
 ## Windowsでの起動・復元
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

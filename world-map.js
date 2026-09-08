@@ -1,6 +1,8 @@
 (function (root) {
   'use strict';
   const J = root.Deadline.journey;
+  // Presentation only: selection/replay never moves the campaign's current location.
+  const currentArea = state => Math.min(J.areas.length - 1, state.restored);
   // Coordinates are measured against the supplied photographs, not the retired SVG islands.
   // Both originals share this normalized viewport; their two-pixel width difference is 0.073%.
   const art = Object.freeze({ width: 1000, height: 558.139535, maxWidth: 2750,
@@ -57,9 +59,9 @@
           <rect class="world-breath-dim" width="1000" height="${h}" fill="#030915" opacity="0"/>
           <g class="world-connections">${paths.map((d,i)=>`<g data-connection="${i}"><path class="connection-core" d="${d}"/><path class="connection-current" d="${d}" pathLength="100"/></g>`).join('')}</g>
           ${districts.map((d,i)=>`<g class="world-city" data-city="${i}" transform="translate(${d.x} ${d.y})"><circle class="city-aura" r="18"/><circle class="city-ring" r="7"/><path class="city-node" d="M0 -5Q1 -1 5 0Q1 1 0 5Q-1 1 -5 0Q-1 -1 0 -5Z"/></g>`).join('')}
-          <g class="world-pico"><path d="M-18 4Q-33 15 -49 10"/><image href="assets/characters/pico-final.png" x="-18" y="-22" width="36" height="36"/></g>
         </svg>
         ${districts.map((d,i)=>`<button type="button" class="map-node" data-area="${i}" style="left:${d.x/10}%;top:${d.y/h*100}%" aria-label="AREA ${i+1} ${J.areas[i].name}"><span class="map-node-beacon" aria-hidden="true"></span><span class="map-node-label"><b><span class="map-node-number">${String(i+1).padStart(2,'0')}</span> ${J.areas[i].name}</b><small>${J.areas[i].ja}</small><em>LOCKED</em></span></button>`).join('')}
+        <div class="world-pico" role="img" aria-label="Picoの現在地"><span class="world-pico-hover"><img src="assets/characters/pico-final.png" width="1295" height="1214" alt="" decoding="async"><span class="world-pico-fallback" hidden>PICO</span></span></div>
         <div class="map-art-message" role="status"><span>WORLD MAPを読み込んでいます…</span><button type="button" hidden>背景を再読み込み</button></div>`;
       this.buttons=[...container.querySelectorAll('[data-area]')];
       this.buttons.forEach((button,i)=>button.addEventListener('click',()=>onSelect(i)));
@@ -69,6 +71,9 @@
       this.wires=[...container.querySelectorAll('[data-wire-reveal]')];
       this.full=container.querySelector('.world-full-reveal');this.dim=container.querySelector('.world-breath-dim');
       this.pico=container.querySelector('.world-pico');
+      const picoImage=this.pico.querySelector('img'),picoFallback=this.pico.querySelector('.world-pico-fallback');
+      const picoState=()=>{const failed=picoImage.complete&&!picoImage.naturalWidth;picoImage.hidden=failed;picoFallback.hidden=!failed;};
+      picoImage.addEventListener('load',picoState);picoImage.addEventListener('error',picoState);picoState();
       this.sources=[container.querySelector('.world-before'),container.querySelector('.world-after-source')];
       const message=container.querySelector('.map-art-message'), retry=message.querySelector('button');
       this.sources.forEach(image=>{
@@ -90,21 +95,26 @@
       if(this.sources[1].dataset.loaded==='ready')this.container.querySelector('.world-after').setAttribute('href',art.after);
     }
     render(state) {
+      const location=currentArea(state);
       this.buttons.forEach((button,i)=>{
         const status=J.status(state,i), label=status==='online'?'RESTORED':status==='available'?'UNLOCKED':'LOCKED';
         button.dataset.status=this.cities[i].dataset.status=status;
-        button.setAttribute('aria-current',i===Math.min(4,state.restored)?'location':'false');
+        button.setAttribute('aria-current',i===location?'location':'false');
         button.setAttribute('aria-label',`AREA ${i+1} ${J.areas[i].name} ${J.areas[i].ja} ${label}`);
-        button.setAttribute('aria-pressed',String(state.selected===i));button.querySelector('em').textContent=(i===Math.min(4,state.restored)?'CURRENT · ':'')+label;
+        button.setAttribute('aria-pressed',String(state.selected===i));button.querySelector('em').textContent=(i===location?'CURRENT · ':'')+label;
         this.cities[i].classList.toggle('is-selected',state.selected===i);
       });
       this.connections.forEach((wire,i)=>wire.dataset.powered=String(i<4?state.restored>i+1:state.restored===5));
-      const current=districts[Math.min(4,state.restored)];this.pico.setAttribute('transform',`translate(${current.x-26} ${current.y-17})`);
+      const current=districts[location];this.pico.dataset.location=String(location);
+      this.pico.style.left=`${current.x/10}%`;this.pico.style.top=`${current.y/art.height*100}%`;
+      this.pico.style.setProperty('--pico-side',location===1?'56px':location===3?'64px':'-56px');
+      this.pico.setAttribute('aria-label',`Picoの現在地: AREA ${location+1} ${J.areas[location].name}`);
       this.animationKey=null;
     }
     animate(state,reduced=false) {
       const key=`${state.mode}/${state.restored}/${state.elapsed}/${state.unlockFrom}/${reduced}`;
       if(this.animationKey===key)return;this.animationKey=key;
+      this.container.dataset.reducedMotion=String(reduced);
       const f=frame(state,reduced);
       this.regions.forEach((region,i)=>{
         const amount=f.reveal[i], d=districts[i], scale=.14+.86*amount;
@@ -123,7 +133,7 @@
       this.container.dataset.fullAfter=String(f.full===1);
     }
   }
-  WorldMapView.art=art;WorldMapView.districts=districts;WorldMapView.frame=frame;
+  WorldMapView.art=art;WorldMapView.districts=districts;WorldMapView.frame=frame;WorldMapView.currentArea=currentArea;
   root.Deadline.WorldMapView=WorldMapView;
-  if(typeof module!=='undefined')module.exports={art,districts,frame};
+  if(typeof module!=='undefined')module.exports={art,districts,frame,currentArea};
 })(globalThis);

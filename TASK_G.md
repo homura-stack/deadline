@@ -9,7 +9,7 @@
 - 作業branch: `codex/deadline-title-pico`
 - origin: `https://github.com/homura-stack/deadline.git`。merge / pushは行わない。
 
-変更前に全22参照と完全な履歴を含む `D:/Desktop/AIWorkSpace/backups/deadline-pre-task-g-20260906/deadline-f1.bundle` を作成し、`git bundle verify`に成功した。F.1のbranchは動かさず、専用branchで作業する。既存ファイル・素材の削除や履歴書換えはない。
+変更前に全22参照と完全な履歴を含む `<local-backup-path>/deadline-pre-task-g-20260906/deadline-f1.bundle` を作成し、`git bundle verify`に成功した。F.1のbranchは動かさず、専用branchで作業する。既存ファイル・素材の削除や履歴書換えはない。
 
 ## 正式素材と配置
 
@@ -80,7 +80,7 @@ PCでは画像の比率を維持して全構図を画面内に収め、暗い左
 サーバー起動中ならChromeで `http://127.0.0.1:4186/` をCtrl+F5で再読み込みする。未起動ならPowerShellで以下を実行し、ウィンドウを開いたままにする。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

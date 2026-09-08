@@ -25,7 +25,7 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
       await page.waitForFunction(()=>Deadline.inspect().briefingActive);
       assert.equal((await state(page)).briefingPage,0,'native activation opens page 1 without leaking into NEXT');
       assert.equal(await page.locator('#briefing-screen').isVisible(),true);
-      assert.deepEqual(await page.locator('.demo-pico-sprite').evaluateAll(xs=>xs.map(x=>x.getAttribute('href'))),Array(4).fill('assets/characters/pico-final.png'));
+      assert.deepEqual(await page.locator('.demo-pico-sprite').evaluateAll(xs=>xs.map(x=>x.getAttribute('href'))),Array(5).fill('assets/characters/pico-final.png'));
       if(saved==='completed'){
         await page.screenshot({path:path.join(out,'recovered-training.png')});
         await begin(page);await plan(page);await page.screenshot({path:path.join(out,'recovered-practice.png')});
@@ -37,9 +37,9 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
         await page.screenshot({path:path.join(out,'garden.png')});
       }else{await page.locator('#briefing-skip').click();assert.equal((await state(page)).titleActive,true);}
       await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();await page.waitForFunction(()=>!Deadline.inspect().titleActive);
-      assert.equal((await state(page)).briefingActive,true,'START always enters training');
-      assert.equal((await state(page)).briefingPage,0);assert.equal(await page.locator('#world-map').isVisible(),false);
-      report.preferences.push({saved,directTraining:true,normalStart:'TRAINING'});await page.close();
+      const completed=saved==='completed';assert.equal((await state(page)).briefingActive,!completed,'only completed START bypasses training');
+      if(completed){await map(page);assert.equal(await page.locator('#world-map').isVisible(),true);}else{assert.equal((await state(page)).briefingPage,0);assert.equal(await page.locator('#world-map').isVisible(),false);}
+      report.preferences.push({saved,directTraining:true,normalStart:completed?'WORLD MAP':'TRAINING'});await page.close();
     }
     for(const viewport of [{width:1920,height:1080},{width:1280,height:720},{width:768,height:800},{width:390,height:844},{width:320,height:800},{width:844,height:390}]){
       const page=await open('completed',viewport);
@@ -52,6 +52,6 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
     }
     assert.equal(requests.some(url=>url.endsWith('/assets/characters/pico.png')),false);assert.deepEqual(errors,[]);
     report.errors=errors;fs.writeFileSync(path.join(out,'entry-regression.json'),JSON.stringify(report,null,2));
-    console.log('PASS F.1: visible TITLE -> TRAINING for all saved states; legacy practice -> MAP -> Garden; normal START preserved; final Pico unchanged; six layouts; errors 0');
+    console.log('PASS F.1: permanent TRAINING for all saves; completed START -> MAP; incomplete/legacy START -> TRAINING; final Pico unchanged; six layouts; errors 0');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

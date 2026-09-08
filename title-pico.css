@@ -8,11 +8,11 @@
 .pico-title::before, .pico-title::after { display: none; }
 .pico-title .title-scene {
   /* Fit the original aspect ratio and stop at its native resolution on larger displays. */
-  position: relative; flex: none; width: min(100vw, 179.166667svh, 2752px); height: min(100svh, 55.813953vw, 1536px);
+  position: relative; flex: none; width: min(100vw, 179.082177svh, 1678px); height: min(100svh, 55.840286vw, 937px);
 }
 .pico-title #title-art {
   position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; max-width: none;
-  object-fit: contain; object-position: center; aspect-ratio: 2752 / 1536;
+  object-fit: contain; object-position: center; aspect-ratio: 1678 / 937;
   transform: none; opacity: 1; pointer-events: none; transition: none;
 }
 /* Accessible text only; the supplied image already contains the visible title and copy. */
@@ -94,7 +94,7 @@
 @media (max-aspect-ratio: 4/3) {
   .pico-title { display: block; overflow-y: auto; }
   .pico-title .title-scene { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; width: 100%; height: auto; min-height: 100svh; padding: 36px 0; }
-  .pico-title #title-art { position: relative; inset: auto; flex: none; width: min(100%, calc((100svh - 300px) * 1.791666667), 2752px); height: auto; }
+  .pico-title #title-art { position: relative; inset: auto; flex: none; width: min(100%, calc((100svh - 300px) * 1.790821772), 1678px); height: auto; }
   .pico-title .title-content { position: relative; inset: auto; width: calc(100% - 48px); max-width: 420px; flex: none; }
   .pico-title .title-info { position: static; width: 100%; margin-top: 8px; }
   .pico-title [data-title-panel] { max-height: min(400px, calc(100svh - 90px)); }

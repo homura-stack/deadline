@@ -6,7 +6,7 @@
 
 | 確認項目 | 結果 |
 | --- | --- |
-| リポジトリ | `D:\Desktop\AIWorkSpace\01_projects\web\deadline`、独立したGitリポジトリ |
+| リポジトリ | `.`、独立したGitリポジトリ |
 | 開始branch / HEAD | `main` / `c9276a0f97a2b0d000c2c0f3ad20b20ffcaffda6` |
 | staged / unstaged / 未追跡 | すべてなし |
 | ignore対象 | `tests/artifacts/` の既存検証画像・JSON。作品実行に必要なファイルはすべて追跡済み |

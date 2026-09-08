@@ -45,7 +45,7 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   await fixture.close();
   const p=await browser.newPage({viewport:{width:1920,height:1080}});hook(p);
   await p.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});
-  await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await start(p);
+  await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await p.evaluate(()=>{Deadline.config.gauge.recoveryPerSecond=100000;});await start(p);
   await p.evaluate(()=>{
    const original=Deadline.Renderer.prototype.draw;window.__restoration={frames:0,mutations:0,residueFrames:0,stages:{}};
    Deadline.Renderer.prototype.draw=function(app){const j=app.journey,check=j.mode==='restoring',before=check?JSON.stringify(app.world):null;original.call(this,app);if(check){const audit=window.__restoration,f=Deadline.journey.restorationFrame(j,app.reducedMotion);audit.frames++;if(app.shake||app.pendingFinal||app.hits.length||app.particles.length||app.artFx.flash||app.combatFx.releasePulse)audit.residueFrames++;if(JSON.stringify(app.world)!==before)audit.mutations++;audit.stages[`${j.active}-${f.stage}`]=true;}};
@@ -91,15 +91,16 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   await p.waitForFunction(()=>Deadline.inspect().journey.mode==='ending');await p.waitForTimeout(1250);
   assert.equal(await p.locator('#journey-ending').isVisible(),true);assert.match(await p.locator('#journey-ending').innerText(),/止まった回路に、[\s\S]*もういちど ひかりを。/);
   const ending=await state(p);assert.equal(ending.world.score,18400);assert.equal(ending.world.totalKills,57);assert.equal(ending.world.hitsTaken,0);assert.equal(ending.world.life,1);
+  const endingSave=await p.evaluate(()=>JSON.parse(localStorage.getItem('deadline.progress.v1')));assert.equal(endingSave.restored,5);assert.equal(endingSave.run.score,ending.world.score);
   const audit=await p.evaluate(()=>window.__restoration);assert.equal(audit.mutations,0);assert.equal(audit.residueFrames,0);for(let i=0;i<5;i++)for(const stage of ['quiet','breathing','spreading','restored'])assert.equal(audit.stages[`${i}-${stage}`],true);report.audit=audit;
   await p.screenshot({path:path.join(out,'ending-1920.png')});
   for(const size of [{width:1366,height:768},{width:960,height:720},{width:390,height:844},{width:844,height:390}]){
    await p.setViewportSize(size);const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);report.layouts.push({...size,overflow});
    assert.equal(await p.locator('#ending-restart').isEnabled(),true);if(size.width===390)await p.screenshot({path:path.join(out,'ending-390.png'),fullPage:true});
   }
-  await p.setViewportSize({width:1920,height:1080});await p.locator('#ending-restart').click();assert.equal((await state(p)).journey.restored,0);assert.equal((await state(p)).journey.mode,'map');assert.equal((await state(p)).world.score,0);
-  await p.locator('#map-enter').click();await battleReady(p);assert.equal((await state(p)).world.wave,1);assert.equal((await state(p)).stageArt.images.find(e=>e.id==='garden_before').status,'ready');
-  await p.reload();await p.waitForLoadState('networkidle');assert.equal((await state(p)).titleActive,true);await p.close();
+  await p.setViewportSize({width:1920,height:1080});await p.locator('#ending-restart').click();assert.equal((await state(p)).journey.restored,5);assert.equal((await state(p)).journey.mode,'map');assert.equal((await state(p)).world.score,ending.world.score);
+  await p.locator('[data-area="0"]').click();await p.locator('#map-enter').click();await battleReady(p);assert.equal((await state(p)).world.wave,1);assert.equal((await state(p)).stageArt.images.find(e=>e.id==='garden_before').status,'ready');
+  await p.reload();await p.waitForLoadState('networkidle');assert.equal((await state(p)).titleActive,true);await p.locator('#title-start').click();await initialMap(p);assert.equal((await state(p)).journey.restored,5);assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'4');assert.equal(await p.locator('[data-area][data-status="online"]').count(),5);assert.equal((await state(p)).world.score,ending.world.score);await p.close();
   }
   // Delayed / failed file loads are explicit fixtures, separate from the no-error normal run above.
   const delayed=await browser.newPage();const delayedErrors=[];delayed.on('pageerror',e=>delayedErrors.push(String(e)));

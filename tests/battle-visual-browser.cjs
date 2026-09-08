@@ -39,7 +39,7 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
         const canvas=document.createElement('canvas');canvas.id='battle-fixture';
         canvas.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;z-index:9999';document.body.append(canvas);
         const renderer=new Renderer(canvas),w=S.createWorld(),e=w.enemies[0];
-        w.enemies=[{...e,id:1,x:400,y:230,pattern:'burst'}, {...e,id:2,x:600,y:230,pattern:'aim'}, {...e,id:3,x:800,y:230,pattern:'rotate',rotateAngle:0}];
+        w.enemies=[{...e,id:1,x:300,y:230,pattern:'burst'}, {...e,id:2,x:450,y:230,pattern:'aim'}, {...e,id:3,x:600,y:230,pattern:'fan'}, {...e,id:4,x:740,y:230,pattern:'rotate',rotateAngle:0}, {...e,id:5,x:850,y:230,pattern:'delay',delayRemaining:null}];
         w.player={x:160,y:430};w.gauge=100;
         w.bullets=['aim','fan','burst','rotate','delay'].map((pattern,i)=>({x:260+i*130,y:340,vx:1,vy:0,pattern}));
         if(mode!=='normal') {
@@ -51,7 +51,8 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
           w.bullets=Array.from({length:180},(_,i)=>({x:60+(i%20)*43,y:60+Math.floor(i/20)*56,vx:1,vy:0,pattern:['aim','fan','burst','rotate','delay'][i%5]}));
           w.route=S.compileRoute(w.route.points,w);
         }
-        const app={world:w,particles:[],hits:[],shake:0,timeFx:{blend:mode==='normal'?0:1},reducedMotion:mode==='reduced',routeFx:{drawing:mode==='plan',lockFlashes:[]}};
+        const app={world:w,particles:[],hits:[],shake:0,timeFx:{blend:mode==='normal'?0:1},reducedMotion:mode==='reduced',routeFx:{drawing:mode==='plan',lockFlashes:[]}},patternMarks=[];
+        const drawPatternMark=renderer.patternMark.bind(renderer);renderer.patternMark=(enemy,color)=>{patternMarks.push(enemy.pattern);drawPatternMark(enemy,color);};
         const worldBefore=JSON.stringify(w);renderer.draw(app);
         const pixel=(x,y)=>Array.from(renderer.ctx.getImageData(Math.round((renderer.offsetX+x*renderer.scale)*renderer.ratio),Math.round((renderer.offsetY+y*renderer.scale)*renderer.ratio),1,1).data).slice(0,3);
         const region=(cx,cy,radius,predicate)=>{
@@ -65,7 +66,7 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
         const metrics={mode,phase:w.phase,current:current?pixel(current.x,current.y):null,
           worldUnchanged:worldBefore===JSON.stringify(w),routePoints:w.route?.points.length||0,
           line:pixel(230,430),tip:pixel(860,440),picoWarm:region(w.player.x,w.player.y,20,warm),
-          targetCyan:mode==='normal'?0:region(600,230,23,cyan),enemyCyan:region(600,230,15,cyan),enemyDanger:region(600,230,15,redPurple),
+          targetCyan:mode==='normal'?0:region(450,230,23,cyan),enemyCyan:region(450,230,15,cyan),enemyDanger:region(450,230,15,redPurple),patternMarks,
           bullets:mode==='dense'?[]:w.bullets.map(b=>({pattern:b.pattern,pixel:pixel(b.x+2,b.y)})),image:canvas.toDataURL()};
         // A generated visual never changes after a kill/Wave transition; no recovery is encoded in the background.
         const original=Deadline.battleArt.backdrop(renderer.scale*renderer.ratio).toDataURL();
@@ -78,6 +79,7 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
       assert.equal(result.phase,mode==='normal'?'normal':mode==='execute'?'executing':'stopped');
       if(mode==='execute')assert.ok(result.current[0]>result.current[1]&&result.current[1]>result.current[2]+20,'EXECUTE current stays warm');
       assert.ok(result.picoWarm>10,mode+' Pico');assert.ok(result.enemyDanger>10,mode+' enemy');
+      assert.deepEqual([...new Set(result.patternMarks)].sort(),['aim','burst','delay','fan','rotate']);
       if(mode==='normal')assert.equal(result.enemyCyan,0);
       if(mode==='plan'||mode==='reduced') {
         assert.ok(result.line[0]>result.line[1]&&result.line[1]>result.line[2]+20,mode+' gold line');

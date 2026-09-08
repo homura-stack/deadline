@@ -8,13 +8,13 @@ function foe(pattern='aim',x=500,y=300){return{id:1,x,y,vx:0,vy:0,alive:true,pat
 const shot=(x,y,vx=0,vy=0)=>({id:1,enemyId:1,x,y,vx,vy,life:7,grazed:false});
 function funded(w){w.gauge=C.gauge.max;S.stopTime(w);return w;}
 function run(w){S.executeRoute(w);while(w.phase==='executing')S.step(w);return w;}
-test('opening gauge blocks STOP via the simulation API, and passive recovery takes four normal seconds',()=>{
+test('opening gauge blocks STOP via the simulation API, and passive recovery takes 5.33 normal seconds',()=>{
  const w=world();assert.equal(w.gauge,20);S.stopTime(w);assert.equal(w.phase,'normal');assert.equal(w.route,null);
- w.enemies=[foe()];w.enemies[0].shotRemaining=100;for(let i=0;i<479;i++)S.step(w);assert.equal(S.canStop(w),false);S.step(w);assert.equal(S.canStop(w),true);close(w.gauge,100);
+ w.enemies=[foe()];w.enemies[0].shotRemaining=100;for(let i=0;i<639;i++)S.step(w);assert.equal(S.canStop(w),false);S.step(w);assert.equal(S.canStop(w),true);close(w.gauge,100);
 });
 test('only normal time recovers gauge, and successful activation spends it once',()=>{
  const w=funded(world());close(w.gauge,0);S.stopTime(w);S.step(w,1);close(w.gauge,0);S.addRoutePoint(w,p(130,100));S.executeRoute(w);S.step(w);close(w.gauge,0);
- while(w.phase==='executing')S.step(w);S.stopTime(w);assert.equal(w.phase,'normal');S.step(w);close(w.gauge,20/120);
+ while(w.phase==='executing')S.step(w);S.stopTime(w);assert.equal(w.phase,'normal');S.step(w);close(w.gauge,15/120);
  w.failed=true;w.phase='failed';const amount=w.gauge;S.step(w,10);close(w.gauge,amount);
 });
 test('cancel charges its net fee once, removes the route and cannot grant safety or a free second stop',()=>{
@@ -26,13 +26,17 @@ test('cancel and activation costs remain separately tunable',()=>{
  const w=world();assert.equal(w.gauge,50);funded(w);assert.equal(w.gauge,50);S.cancelStop(w);assert.equal(w.gauge,130);
  }finally{Object.assign(C.gauge,original);}
 });
-test('a player near miss awards eight once per bullet and no extra points for retracing',()=>{
- const w=world();w.bullets=[shot(200,120)];S.movePlayer(w,p(300,100));close(w.gauge,28);assert.equal(w.failed,false);assert.equal(w.bullets[0].grazed,true);
- S.movePlayer(w,p(100,100));close(w.gauge,28);
+test('a player near miss awards sixteen once per bullet, emits its actual gain and cannot retrigger',()=>{
+ const w=world();w.events.length=0;w.bullets=[shot(200,120)];S.movePlayer(w,p(300,100));close(w.gauge,36);assert.equal(w.failed,false);assert.equal(w.bullets[0].grazed,true);
+ assert.deepEqual(w.events,[{type:'nearMiss',x:200,y:120,gain:16}]);w.events.length=0;S.movePlayer(w,p(100,100));close(w.gauge,36);assert.deepEqual(w.events,[]);
 });
 test('moving bullet near misses reuse the same one-time flag and direct hits do not award charge',()=>{
- const w=world();w.bullets=[shot(70,120,600)];S.step(w,.1);close(w.gauge,30);assert.equal(w.failed,false);S.movePlayer(w,p(150,100));close(w.gauge,30);
- const hit=world();hit.bullets=[shot(50,100,1000)];S.step(hit,.1);assert.equal(hit.failed,true);close(hit.gauge,22);assert.equal(hit.bullets[0].grazed,false);
+ const w=world();w.events.length=0;w.bullets=[shot(70,120,600)];S.step(w,.1);close(w.gauge,37.5);assert.equal(w.failed,false);assert.equal(w.events.filter(e=>e.type==='nearMiss').length,1);S.movePlayer(w,p(150,100));close(w.gauge,37.5);
+ const hit=world();hit.bullets=[shot(50,100,1000)];S.step(hit,.1);assert.equal(hit.failed,true);close(hit.gauge,21.5);assert.equal(hit.bullets[0].grazed,false);
+});
+test('near miss reports only the real capped gain and awards nothing at full charge',()=>{
+ const w=world();w.events.length=0;w.gauge=95;w.bullets=[shot(200,120)];S.movePlayer(w,p(300,100));close(w.gauge,100);assert.equal(w.events.find(e=>e.type==='nearMiss').gain,5);assert.equal(w.events.at(-1).type,'gaugeReady');
+ const full=world();full.events.length=0;full.gauge=100;full.bullets=[shot(200,120)];S.movePlayer(full,p(300,100));assert.equal(full.bullets[0].grazed,false);assert.deepEqual(full.events,[]);
 });
 test('safety and stopped/execute phases cannot farm near-miss bonuses',()=>{
  const w=world();w.safetyRemaining=.5;w.bullets=[shot(200,120)];S.movePlayer(w,p(300,100));close(w.gauge,20);assert.equal(w.bullets[0].grazed,false);

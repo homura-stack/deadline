@@ -5,14 +5,17 @@ const C=require('../config.js'),S=require('../simulation.js'),T=require('../tuto
 const source=fs.readFileSync(path.join(__dirname,'..','game.js'),'utf8').replace(/\r\n/g,'\n');
 function historicalFunction(name){return source.match(new RegExp('^  function '+name+'\\([^\\n]*\\) \\{[\\s\\S]*?^  \\}','m'))[0];}
 const normalize=value=>JSON.parse(JSON.stringify(value));
-test('the restored placement, timing and seven practice/control functions match the Git baseline',()=>{
+test('the restored placement/timing and five unaffected practice controls match the Git baseline while near-miss training is explicit',()=>{
   assert.deepEqual(C.practice,legacy.practice);
-  for(const [name,expected] of Object.entries(legacy.preservedFunctionSHA256))assert.equal(crypto.createHash('sha256').update(historicalFunction(name)).digest('hex'),expected,name);
+  for(const [name,expected] of Object.entries(legacy.preservedFunctionSHA256))if(!['notePracticeMovement','handleEvents'].includes(name))assert.equal(crypto.createHash('sha256').update(historicalFunction(name).replace('    w.passiveRecoveryScale = 0;\n','')).digest('hex'),expected,name);
+  const movement=historicalFunction('notePracticeMovement');assert.match(movement,/setupPracticeNearMiss\(\)/);assert.doesNotMatch(movement,/world\.gauge = C\.gauge\.max/);
+  assert.match(historicalFunction('handleEvents'),/event\.type==='nearMiss'/);
 });
 test('the actual restored rehearsal creates two fixed targets and sparse harmless practice bullets',()=>{
   const normal=S.createWorld(),config=JSON.stringify(C);
   const w=vm.runInNewContext(historicalFunction('configurePracticeWorld')+';configurePracticeWorld()',{S,C});
   assert.deepEqual(normalize(w.player),{x:160,y:430});assert.equal(w.gauge,0);
+  assert.equal(w.passiveRecoveryScale,0);assert.equal(normal.passiveRecoveryScale,1);const waiting=structuredClone(w);S.step(waiting,1);assert.equal(waiting.gauge,0);
   assert.deepEqual(normalize(w.enemies.map(e=>({x:e.x,y:e.y}))),legacy.practice.enemies);
   assert.ok(w.enemies.every(e=>e.pattern==='aim'&&e.vx===0&&e.vy===0&&e.shotRemaining===999));
   assert.equal(w.bullets.length,2);assert.equal(w.safetyRemaining,999);assert.equal(w.waveGraceRemaining,999);

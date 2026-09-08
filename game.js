@@ -21,20 +21,24 @@
    * @property {number} contactDistance Distance since the current touch began.
    * @property {boolean} drawing Whether this contact has crossed the DRAW threshold.
    */
-  const ui = Object.fromEntries(['arena', 'phase', 'status-action', 'wave', 'wave-current', 'wave-total', 'score', 'stop-time', 'stop-gauge-label', 'lock-label', 'lock-count', 'life', 'time-stop', 'time-stop-label', 'clear-route', 'undo-route', 'cancel-stop', 'stop-gauge', 'gauge-value', 'hint', 'sound', 'restart', 'result', 'retry', 'retry-wave-number', 'result-kills', 'game-over-wave', 'game-over-score', 'game-over-title', 'retry-assist', 'retry-assist-15', 'retry-assist-20', 'complete', 'play-again', 'game-clear-title', 'final-score', 'final-time', 'final-kills', 'final-chain', 'final-perfect', 'final-hits', 'wave-banner', 'tutorial-prompt', 'lock-ready', 'one-stop-preview', 'one-stop-preview-next', 'preview-perfect', 'one-stop-intro', 'one-stop-start', 'rule-target-example', 'rule-target-count', 'one-stop-result', 'incomplete-title', 'incomplete-count', 'incomplete-reason', 'retry-wave', 'retry-one-stop-number', 'one-stop-assist', 'one-stop-assist-15', 'one-stop-assist-20', 'callout', 'move-pad', 'move-pad-label', 'move-pad-state', 'debug', 'debug-shapes', 'debug-values'].map(id => [id, $(id)]));
+  const ui = Object.fromEntries(['arena', 'phase', 'status-action', 'wave', 'wave-current', 'wave-total', 'score', 'stop-time', 'stop-gauge-label', 'lock-label', 'lock-count', 'life', 'time-stop', 'time-stop-label', 'clear-route', 'undo-route', 'cancel-stop', 'stop-gauge', 'gauge-value', 'hint', 'sound', 'restart', 'result', 'retry', 'retry-wave-number', 'result-kills', 'game-over-wave', 'game-over-score', 'game-over-title', 'retry-assist', 'retry-assist-15', 'retry-assist-20', 'complete', 'play-again', 'game-clear-title', 'final-score', 'final-time', 'final-kills', 'final-chain', 'final-perfect', 'final-hits', 'wave-banner', 'tutorial-prompt', 'near-miss-feedback', 'lock-ready', 'one-stop-preview', 'one-stop-preview-next', 'preview-perfect', 'one-stop-intro', 'one-stop-start', 'rule-target-example', 'rule-target-count', 'one-stop-result', 'incomplete-title', 'incomplete-count', 'incomplete-reason', 'retry-wave', 'retry-one-stop-number', 'one-stop-assist', 'one-stop-assist-15', 'one-stop-assist-20', 'callout', 'move-pad', 'move-pad-label', 'move-pad-state', 'debug', 'debug-shapes', 'debug-values'].map(id => [id, $(id)]));
   const titleUi = { screen: $('title-screen'), shell: $('game-shell'), start: $('title-start'), infoButtons: [...document.querySelectorAll('[data-title-info]')], panels: [...document.querySelectorAll('[data-title-panel]')],
     master: $('master-volume'), masterValue: $('master-value'), sfx: $('sfx-volume'), sfxValue: $('sfx-value'), mute: $('setting-mute'),
     touchSensitivity: $('touch-sensitivity'), touchSensitivityValue: $('touch-sensitivity-value') };
   const briefingUi = { screen: $('briefing-screen'), begin: $('briefing-begin'), back: $('briefing-back'), skip: $('briefing-skip'),
     counter: $('briefing-counter'), pages: [...document.querySelectorAll('[data-briefing-page]')], progress: [...document.querySelectorAll('.briefing-progress i')] };
   const trainingPreference = root.Deadline.training.createPreferences(() => localStorage);
-  let trainingReturn = null;
+  const progressStore = J.createProgressStore(() => localStorage);
+  let trainingReturn = null, areaReplayReturn = null;
   const renderer = new Renderer(ui.arena), sound = new Sound();
   const mapUi = Object.fromEntries(['world-map','map-board','map-title','map-enter','map-training','map-notice','map-restored-count','map-progress-lights','map-area-number','map-area-name','map-area-ja','map-area-status','map-area-description','map-area-waves','map-score','area-caption','area-transition','area-transition-kicker','area-transition-name','area-transition-ja','area-transition-note','stage-loading-actions','stage-retry','stage-title','world-sync','journey-ending','ending-score','ending-restart','ending-title-button'].map(id=>[id,$(id)]));
   /** @type {RuntimeApp} */
   const app = { world: S.createWorld(), journey: J.create(), particles: [], hits: [], shake: 0, calloutLife: 0, pendingFinal: null,
-    tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, completeRemaining: 0, drawStarted: false },
+    tutorial: { active: false, step: 'move' }, practice: { active: false, step: 'move', origin: null, nearMissTarget: null, completeRemaining: 0, drawStarted: false },
     briefingPage: 0, damageFx: { remaining: 0, max: C.feedback.damageFlashSeconds },
+    nearMissFx: { remaining: 0, ringRemaining: 0, chainRemaining: 0, chain: 0, gain: 0, x: 0, y: 0 },
+    readyFx: { flashRemaining: 0, waveRemaining: 0, activations: 0 },
+    deathFx: { hitStopRemaining: 0, resultDelayRemaining: 0, resultVisible: false, flashRemaining: 0, reactionRemaining: 0, retryQueued: null },
     timeFx: { blend: 0, enterRemaining: 0, exitRemaining: 0, origin: { x: 0, y: 0 } },
     routeFx: { drawing: false, lockFlashes: [] },
     touchDraw: { cursor: null },
@@ -103,11 +107,13 @@
     mapUi['map-area-description'].textContent=selected.description;
     mapUi['map-area-waves'].textContent=`${String(selected.first).padStart(2,'0')} — ${String(selected.last).padStart(2,'0')}`;
     mapUi['map-score'].textContent=String(app.world.score);
-    mapUi['map-enter'].disabled=status!=='available';mapUi['map-enter'].querySelector('span').textContent=status==='available'?`ENTER ${selected.name}`:status==='online'?'LIGHT RESTORED':'LOCKED';
+    mapUi['map-enter'].disabled=status==='locked';mapUi['map-enter'].querySelector('span').textContent=status==='available'?`ENTER ${selected.name}`:status==='online'?`REPLAY ${selected.name}`:'LOCKED';
     mapUi['map-training'].hidden=false;
   }
   function showWorldMap() {
+    clearReadyFeedback();
     const j=app.journey;if(j.mode!=='synchronizing')j.mode='map';
+    saveProgress();
     releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();sound.stopAll();
     app.particles=[];app.hits=[];app.shake=0;app.calloutLife=0;ui.callout.textContent='';
     accumulator=0;lastTime=0;
@@ -120,14 +126,25 @@
     if(!['map','ending'].includes(app.journey.mode))return;
     app.journey.selected=index;sound.unlock();sound.playUiConfirm();updateUi();
     const locked=J.status(app.journey,index)==='locked';mapUi['map-notice'].classList.toggle('is-locked',locked);
-    mapUi['map-notice'].textContent=locked?`LOCKED — ${J.areas[index-1].name}を復旧すると解禁。`:J.status(app.journey,index)==='online'?`${J.areas[index].name} // ONLINE`:`${J.areas[index].name}へ進もう。`;
+    mapUi['map-notice'].textContent=locked?`LOCKED — ${J.areas[index-1].name}を復旧すると解禁。`:J.status(app.journey,index)==='online'?`${J.areas[index].name} // ONLINE · REPLAY AVAILABLE`:`${J.areas[index].name}へ進もう。`;
   }
   function enterArea(index) {
-    if(!J.enter(app.journey,index))return;
+    const replay=J.status(app.journey,index)==='online';
+    if(replay){
+      const replayJourney=structuredClone(app.journey);
+      if(!J.enter(replayJourney,index,true))return;
+      areaReplayReturn={world:app.world,journey:app.journey};app.journey=replayJourney;app.world=S.createWorld(J.areas[index].first-1);
+    }else if(!J.enter(app.journey,index))return;
     sound.unlock();sound.playUiConfirm();releasePointer();releaseTouchPad();heldKeys.clear();resetArtFx();Stage.prepare(index);
     // Resume only the existing between-Wave transition. No combat step, retuning or recreated Wave.
-    if(app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
+    if(!replay&&app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
     handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
+  }
+  function finishAreaReplay() {
+    if(!areaReplayReturn)return;
+    const saved=areaReplayReturn;areaReplayReturn=null;app.world=saved.world;app.journey=saved.journey;
+    resetArtFx();app.particles=[];app.hits=[];app.shake=0;app.pendingFinal=null;resetTransientFeedback();showWorldMap();
+    mapUi['map-notice'].textContent='REPLAY COMPLETE · 本編の進行状態は維持されました。';
   }
   function openTraining() {
     if (app.titleLeaving || app.practice.active || app.briefingActive || (!app.titleActive && app.journey.mode !== 'map')) return;
@@ -151,7 +168,21 @@
     trainingReturn = null; showWorldMap();
   }
   function restartJourney() {
-    app.journey=J.create();reset(false);showWorldMap();
+    if(areaReplayReturn){finishAreaReplay();return;}
+    app.journey=J.create();reset(false);restoreCheckpoint();showWorldMap();
+  }
+  function saveProgress() {
+    if(trainingReturn || areaReplayReturn || app.practice.active || app.briefingActive)return;
+    progressStore.save(app.journey,app.world);
+  }
+  function restoreCheckpoint() {
+    const saved=progressStore.load(),current=Math.min(J.areas.length-1,saved.restored);
+    Object.assign(app.journey,{restored:saved.restored,selected:current,active:current});
+    // Rebuild the closed AREA boundary, then use the existing next-Wave transition on ENTER.
+    // This also preserves the Wave 6 -> 7 ONE STOP acknowledgement without saving battle objects.
+    app.world=S.createWorld(saved.restored?J.areas[saved.restored-1].last-1:0);
+    Object.assign(app.world,saved.run);Object.assign(app.world.waveStartSnapshot,saved.run);
+    if(saved.restored){app.world.phase='wave-clear';app.world.transitionRemaining=0;app.world.enemies=[];app.world.events=[];}
   }
   function clampTouchSensitivity(value) {
     const numeric = Number(value);
@@ -202,9 +233,10 @@
       if (!touchControls) { const mouse = document.createElement('i'); mouse.className = 'guide-mouse'; mouse.setAttribute('aria-hidden', 'true'); ui['tutorial-prompt'].append(mouse); }
       ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'MOVE PAD · SWIPE' : 'MOVE · EVADE'));
     }
+    else if(app.practice.step==='near-miss') ui['tutorial-prompt'].textContent=touchControls?'MOVE PAD · 弾のすぐそばをかわす':'NEAR MISS · 弾のすぐそばをかわす';
     else if (app.practice.step === 'freeze') {
       if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
-      ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'TIME STOPをタップ / FREEZE' : 'FREEZE TIME'));
+      ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'TIME STOPをタップ' : ' — TIME STOP'));
     } else if (app.practice.step === 'draw') ui['tutorial-prompt'].textContent = touchControls ? (app.practice.drawStarted ? 'MOVE PAD · DRAW THROUGH TARGETS' : 'MOVE PAD · DRAW ROUTE') : (app.practice.drawStarted ? 'DRAW THROUGH BOTH TARGETS' : 'PRESS · HOLD · DRAW');
     else if (app.practice.step === 'execute') {
       if (!touchControls) { const key = document.createElement('kbd'); key.textContent = 'SPACE'; ui['tutorial-prompt'].append(key); }
@@ -227,7 +259,7 @@
     ui.life.classList.toggle('is-empty', w.life === 0);
     const targetComplete = resting || complete || (stopped && targets > 0 && locks === targets);
     $('target-note').textContent = targetComplete ? '✓ COMPLETE' : oneStop ? '全TARGETを通過' : 'ルートで通過';
-    $('phase-label').textContent = app.practice.active ? `TRAINING ${Math.min(4, ['move','freeze','draw','execute','complete'].indexOf(app.practice.step) + 1)} / 4` : 'PHASE / 状態';
+    $('phase-label').textContent = app.practice.active ? `TRAINING ${Math.min(5, ['move','near-miss','freeze','draw','execute','complete'].indexOf(app.practice.step) + 1)} / 5` : 'PHASE / 状態';
     ui['wave-current'].textContent = String(w.wave); ui['wave-total'].textContent = String(C.waves.definitions.length);
     ui.wave.setAttribute('aria-label', `Wave ${w.wave} of ${C.waves.definitions.length}`); ui.score.textContent = String(w.score);
     const ready = S.canStop(w);
@@ -244,8 +276,14 @@
       ui['stop-gauge'].setAttribute('aria-valuetext', ready ? 'ready' : `${Math.floor(w.gauge / C.gauge.max * 100)} percent`);
     }
     document.body.classList.toggle('ready', ready);
+    // A silent, weaker reminder of availability, independent of the one-shot READY event.
+    document.body.classList.toggle('gauge-ready-idle', ready && !app.titleActive && !app.briefingActive && !J.paused(app.journey) && !document.hidden);
+    document.body.style.setProperty('--ready-idle-period', `${C.feedback.ready.idlePeriodSeconds}s`);
+    document.body.style.setProperty('--ready-idle-expand', `${C.feedback.ready.idleWaveExpand}px`);
+    document.body.style.setProperty('--ready-idle-opacity', C.feedback.ready.idleWaveOpacity);
     document.body.classList.toggle('stopped', stopped); document.body.classList.toggle('executing', executing); document.body.classList.toggle('failed', w.failed);
-    document.body.classList.toggle('modal-result', w.failed || complete || preview || intro || incomplete);
+    const showDeathResult=w.failed&&app.deathFx.resultVisible;
+    document.body.classList.toggle('modal-result', showDeathResult || complete || preview || intro || incomplete);
     document.body.classList.toggle('route-drawing', drawing); document.body.classList.toggle('route-ready', routeReady);
     const stopFx = C.feedback.timeStopVisual;
     document.body.classList.toggle('stop-warning', stopped && w.stopRemaining <= stopFx.warningSeconds);
@@ -253,11 +291,11 @@
     document.body.classList.toggle('stop-final', stopped && w.stopRemaining <= stopFx.finalSeconds);
     const limitSuffix = w.timeLimitMultiplier > 1 ? ` · TIME ×${w.timeLimitMultiplier.toFixed(1)}` : '';
     ui.phase.textContent = stopped ? `${oneStop ? 'ONE STOP' : 'TIME STOP'}${limitSuffix}` : executing ? 'EXECUTING' : resting ? 'WAVE CLEAR' : preview ? 'NEXT WAVE' : intro ? 'NEW RULE' : incomplete ? 'INCOMPLETE' : complete ? 'COMPLETE' : w.failed ? 'MISS' : 'NORMAL';
-    ui['status-action'].textContent = drawing ? 'DRAW ROUTE' : routeReady ? 'READY TO EXECUTE' : stopped ? 'ROUTE INPUT' : executing ? 'AUTO RUN' : resting ? 'WAVE TRANSITION' : preview || intro ? 'RULE UPDATE' : incomplete || w.failed ? 'RETRY AVAILABLE' : complete ? 'MISSION COMPLETE' : ready ? 'TIME STOP READY' : 'MOVE / EVADE';
+    ui['status-action'].textContent = drawing ? 'DRAW ROUTE' : routeReady ? 'READY TO EXECUTE' : stopped ? 'ROUTE INPUT' : executing ? 'AUTO RUN' : resting ? 'WAVE TRANSITION' : preview || intro ? 'RULE UPDATE' : incomplete ? 'RETRY AVAILABLE' : w.failed ? (showDeathResult?'RETRY AVAILABLE':'IMPACT') : complete ? 'MISSION COMPLETE' : ready ? 'TIME STOP READY' : 'MOVE / EVADE';
     document.body.classList.toggle('touch-controls', touchControls);
     document.body.classList.toggle('touch-draw-pad', touchControls && stopped);
     app.touchControls = touchControls;
-    for (const step of ['move', 'freeze', 'draw', 'execute']) document.body.classList.toggle(`practice-${step}`, app.practice.active && app.practice.step === step);
+    for (const step of ['move','near-miss','freeze','draw','execute']) document.body.classList.toggle(`practice-${step}`, app.practice.active && app.practice.step === step);
     ui['time-stop-label'].textContent = stopped ? touchControls ? 'EXECUTE / 実行' : 'EXECUTE' : executing ? 'EXECUTING…' : resting ? 'NEXT WAVE…' : preview ? 'NEXT WAVE' : intro ? 'NEW RULE' : incomplete || w.failed ? `RETRY WAVE ${w.wave}` : complete ? 'RETRY' : ready ? 'TIME STOP' : 'TIME STOP · CHARGING';
     ui['time-stop'].disabled = stopped ? !touchCapable : !ready; ui.restart.disabled = executing;
     ui['time-stop'].classList.toggle('execute-ready', routeReady); ui['time-stop'].classList.toggle('execute-waiting', stopped && !routeReady);
@@ -265,7 +303,7 @@
     ui['undo-route'].disabled = ui['clear-route'].disabled;
     ui['cancel-stop'].disabled = !stopped;
     ui['cancel-stop'].title = `実行せず終了 / ゲージ${C.gauge.cancelCost}消費 / C`;
-    ui.result.hidden = !w.failed; ui['result-kills'].textContent = String(w.totalKills); ui['game-over-wave'].textContent = `${String(w.wave).padStart(2, '0')} / ${String(C.waves.definitions.length).padStart(2, '0')}`;
+    ui.result.hidden = !showDeathResult; ui['result-kills'].textContent = String(w.totalKills); ui['game-over-wave'].textContent = `${String(w.wave).padStart(2, '0')} / ${String(C.waves.definitions.length).padStart(2, '0')}`;
     ui['game-over-score'].textContent = String(w.score); ui['retry-wave-number'].textContent = String(w.wave); ui['retry-one-stop-number'].textContent = String(w.wave);
     ui.complete.hidden = !complete; ui['one-stop-preview'].hidden = !preview; ui['one-stop-intro'].hidden = !intro; ui['one-stop-result'].hidden = !incomplete;
     ui['preview-perfect'].hidden = !(preview && w.lastWavePerfect);
@@ -296,8 +334,8 @@
     if (app.practice.active) {
       ui['wave-current'].textContent = 'P'; ui['wave-total'].textContent = '—'; ui.wave.setAttribute('aria-label', 'Practice');
       ui.phase.textContent = app.practice.step === 'complete' ? 'COMPLETE' : stopped ? 'TIME STOP' : executing ? 'EXECUTING' : 'PRACTICE';
-      ui['status-action'].textContent = app.practice.step === 'move' ? 'MOVE / EVADE' : app.practice.step === 'freeze' ? 'TIME STOP READY' : app.practice.step === 'draw' ? 'ROUTE INPUT' : app.practice.step === 'execute' ? 'READY TO EXECUTE' : 'TRAINING COMPLETE';
-      ui.hint.textContent = app.practice.step === 'move' ? (touchControls ? 'MOVE PADで自機を少し動かす' : 'マウスで自機を少し動かす') : app.practice.step === 'freeze' ? (touchControls ? 'TIME STOPボタンで世界を止める' : 'SPACEで世界を止める') : app.practice.step === 'draw' ? (touchControls ? 'MOVE PADで2体を通るルートを描く' : '停止中の2体を線で通過してTARGETにする') : app.practice.step === 'execute' ? (touchControls ? 'EXECUTEボタンでルートを実行' : 'SPACEでルートを実行') : 'WORLD MAPへ戻ります';
+      ui['status-action'].textContent = app.practice.step === 'move' ? 'MOVE / EVADE' : app.practice.step==='near-miss'?'NEAR MISS' : app.practice.step === 'freeze' ? 'TIME STOP READY' : app.practice.step === 'draw' ? 'ROUTE INPUT' : app.practice.step === 'execute' ? 'READY TO EXECUTE' : 'TRAINING COMPLETE';
+      ui.hint.textContent = app.practice.step === 'move' ? (touchControls ? 'MOVE PADで自機を少し動かす' : 'マウスで自機を少し動かす') : app.practice.step==='near-miss'?'弾の近くをかわすとTIME STOPが大きく増える' : app.practice.step === 'freeze' ? (touchControls ? 'TIME STOPボタンで世界を止める' : 'SPACEで世界を止める') : app.practice.step === 'draw' ? (touchControls ? 'MOVE PADで2体を通るルートを描く' : '停止中の2体を線で通過してTARGETにする') : app.practice.step === 'execute' ? (touchControls ? 'EXECUTEボタンでルートを実行' : 'SPACEでルートを実行') : 'WORLD MAPへ戻ります';
       ui['lock-label'].textContent = 'TARGET'; ui['lock-count'].textContent = stopped ? `${locks} / ${targets}` : '—';
       ui['wave-banner'].hidden = true; ui.result.hidden = true; ui.complete.hidden = true;
     }
@@ -307,6 +345,17 @@
   function comboText(kills) { return ['', '1 KILL', 'DOUBLE', 'TRIPLE', 'QUAD'][kills] || `${kills} KILLS`; }
   function resetArtFx() {
     Object.assign(app.artFx, { pendingRoute: null, echo: null, life: 0, flash: 0, scores: [] });
+  }
+  function clearReadyFeedback() {
+    app.readyFx.flashRemaining = 0; app.readyFx.waveRemaining = 0;
+    document.body.classList.remove('gauge-ready-flash', 'gauge-ready-wave', 'gauge-ready-idle');
+    sound.stopGroup('ready');
+  }
+  function resetTransientFeedback() {
+    clearReadyFeedback();
+    Object.assign(app.nearMissFx,{remaining:0,ringRemaining:0,chainRemaining:0,chain:0,gain:0,x:0,y:0});
+    Object.assign(app.deathFx,{hitStopRemaining:0,resultDelayRemaining:0,resultVisible:false,flashRemaining:0,reactionRemaining:0,retryQueued:null});
+    ui['near-miss-feedback'].hidden=true;ui['near-miss-feedback'].textContent='';document.body.classList.remove('near-miss');
   }
   function showCallout(kills, allClear, perfect = false, finalWave = false) {
     ui.callout.replaceChildren(document.createTextNode(perfect ? 'PERFECT EXECUTION' : comboText(kills)));
@@ -340,10 +389,18 @@
     ui['move-pad'].style.setProperty('--pad-x', `${x}%`); ui['move-pad'].style.setProperty('--pad-y', `${y}%`);
     ui['move-pad'].style.setProperty('--pad-length', `${Math.hypot(dx, dy)}px`); ui['move-pad'].style.setProperty('--pad-angle', `${Math.atan2(dy, dx)}rad`);
   }
+  function setupPracticeNearMiss() {
+    const player=app.world.player,direction=player.x>C.world.width-180?-1:1;
+    clearReadyFeedback();
+    app.practice.step='near-miss';app.tutorial.step='near-miss';app.world.gauge=Math.max(0,C.gauge.max-C.gauge.nearMissGain);app.world.waveGraceRemaining=0;app.world.safetyRemaining=0;
+    app.practice.nearMissTarget={x:player.x+direction*130,y:player.y};
+    app.world.bullets=[{id:app.world.nextBulletId++,enemyId:0,x:player.x+direction*65,y:player.y+26,vx:0,vy:0,life:999,grazed:false,pattern:'aim'}];
+  }
   function notePracticeMovement() {
     if (!app.practice.active || app.practice.step !== 'move' || !app.practice.origin) return;
     if (S.distance(app.practice.origin, app.world.player) < C.practice.moveDistance) return;
-    app.practice.step = 'freeze'; app.tutorial.step = 'freeze'; app.world.gauge = C.gauge.max; sound.playUiConfirm(); updateUi();
+    setupPracticeNearMiss();
+    sound.playUiConfirm();updateUi();
   }
   /**
    * Converts screen-space PAD motion into world-space motion with precision near the origin.
@@ -395,6 +452,7 @@
   }
   function configurePracticeWorld() {
     const w = S.createWorld();
+    w.passiveRecoveryScale = 0;
     w.phase = 'normal'; w.gauge = 0; w.waveBannerRemaining = 0; w.waveGraceRemaining = 999; w.safetyRemaining = 999;
     w.score = 0; w.totalKills = 0; w.events.length = 0;
     w.enemies = w.enemies.slice(0, C.practice.enemies.length).map((enemy, index) => ({ ...enemy,
@@ -406,8 +464,8 @@
     resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = configurePracticeWorld(); app.practice.active = true; app.practice.step = 'move';
     app.touchDraw.cursor = null;
-    app.practice.origin = { ...app.world.player }; app.practice.completeRemaining = 0; app.practice.drawStarted = false; app.tutorial.active = true; app.tutorial.step = 'move';
-    app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null; app.damageFx.remaining = 0;
+    app.practice.origin = { ...app.world.player }; app.practice.nearMissTarget=null; app.practice.completeRemaining = 0; app.practice.drawStarted = false; app.tutorial.active = true; app.tutorial.step = 'move';
+    app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null; app.damageFx.remaining = 0;resetTransientFeedback();
     app.briefingActive = false; briefingUi.screen.hidden = true; document.body.classList.remove('briefing-open');
     titleUi.shell.inert = false; titleUi.shell.removeAttribute('aria-hidden'); renderer.resize(); accumulator = 0; lastTime = 0; updateUi(); ui.arena.focus({ preventScroll: true });
   }
@@ -419,10 +477,10 @@
     resetArtFx();
     releasePointer(); releaseTouchPad(); app.world = S.createWorld(); app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
     app.touchDraw.cursor = null;
-    app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.completeRemaining = 0; app.practice.drawStarted = false;
+    app.practice.active = false; app.practice.step = 'move'; app.practice.origin = null; app.practice.nearMissTarget=null; app.practice.completeRemaining = 0; app.practice.drawStarted = false;
     app.tutorial.active = showTutorial; app.tutorial.step = 'move'; app.damageFx.remaining = 0;
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
-    app.routeFx.lockFlashes = []; sound.stopTimeClock(); sound.stopAll();
+    app.routeFx.lockFlashes = []; sound.stopTimeClock(); sound.stopAll();resetTransientFeedback();
     Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
     accumulator = 0; lastTime = 0; lastDrawSound = 0; ui.callout.textContent = ''; updateUi();
   }
@@ -441,7 +499,11 @@
     sound.unlock(); sound.playUiConfirm(); app.titleLeaving = true; titleUi.screen.classList.add('is-leaving');
     const finish = () => {
       app.titleLeaving = false;
-      openTraining();
+      if(trainingPreference.shouldOffer())openTraining();
+      else{
+        app.titleActive=false;titleUi.screen.hidden=true;titleUi.screen.classList.remove('is-leaving');document.body.classList.remove('title-open');
+        restartJourney();
+      }
     };
     if (app.reducedMotion) finish(); else setTimeout(finish, 340);
   }
@@ -455,9 +517,9 @@
     sound.unlock(); sound.playUiConfirm(); returnFromTraining();
   }
   function returnToTitle() {
-    trainingReturn = null;
+    trainingReturn = null;areaReplayReturn=null;
     app.journey=J.create();
-    releasePointer(); releaseTouchPad(); sound.stopTimeClock(); sound.stopAll(); reset(false);
+    releasePointer(); releaseTouchPad(); sound.stopTimeClock(); sound.stopAll(); reset(false);restoreCheckpoint();
     app.titleActive = true; app.titleLeaving = false; app.briefingActive = false;
     briefingUi.screen.hidden = true; titleUi.shell.inert = true; titleUi.shell.setAttribute('aria-hidden', 'true');
     titleUi.screen.classList.remove('is-leaving'); titleUi.screen.hidden = false;
@@ -478,8 +540,10 @@
    * @returns {void}
    */
   function handleEvents() {
+    const failedThisUpdate = app.world.failed || app.world.events.some(event => event.type === 'fail');
     for (const event of app.world.events) {
       if (event.type === 'stop') {
+        clearReadyFeedback();
         resetArtFx();
         if (app.practice.active) { app.practice.step = 'draw'; app.practice.drawStarted = false; app.tutorial.step = 'draw'; }
         releasePointer(); releaseTouchPad(); sound.play('stop'); app.shake = 0; ui.callout.textContent = ''; app.calloutLife = 0;
@@ -502,6 +566,25 @@
         app.routeFx.lockFlashes = app.routeFx.lockFlashes.filter(flash => flash.enemyId !== event.enemyId);
         app.routeFx.lockFlashes.push({ enemyId: event.enemyId, order: event.order, life: C.feedback.routeVisual.lockFlashSeconds });
         sound.playTargetLock(event.order); ui['lock-count'].classList.remove('lock-pulse'); void ui['lock-count'].offsetWidth; ui['lock-count'].classList.add('lock-pulse');
+      }
+      else if(event.type==='nearMiss') {
+        const fx=app.nearMissFx,continued=fx.chainRemaining>0;
+        Object.assign(fx,{remaining:C.feedback.nearMiss.displaySeconds,ringRemaining:C.feedback.nearMiss.ringSeconds,chainRemaining:C.feedback.nearMiss.chainWindowSeconds,chain:continued?Math.min(9,fx.chain+1):1,gain:event.gain,x:event.x,y:event.y});
+        ui['near-miss-feedback'].replaceChildren(document.createTextNode(`NEAR MISS +${event.gain}`));
+        if(fx.chain>1){const chain=document.createElement('small');chain.textContent=`×${fx.chain}`;ui['near-miss-feedback'].append(chain);}
+        ui['near-miss-feedback'].hidden=false;document.body.classList.remove('near-miss');void ui['stop-gauge'].offsetWidth;document.body.classList.add('near-miss');sound.playNearMiss(fx.chain);
+        if(!failedThisUpdate&&app.practice.active&&app.practice.step==='near-miss'&&S.canStop(app.world)){
+          app.practice.step='freeze';app.tutorial.step='freeze';app.practice.nearMissTarget=null;app.world.bullets.length=0;app.world.waveGraceRemaining=999;app.world.safetyRemaining=999;
+        }
+      }
+      else if (event.type === 'gaugeReady') {
+        if (failedThisUpdate || !S.canStop(app.world) || app.titleActive || app.briefingActive || J.paused(app.journey) || document.hidden) continue;
+        const fx = C.feedback.ready;
+        app.readyFx.flashRemaining = fx.flashSeconds; app.readyFx.waveRemaining = fx.waveSeconds; app.readyFx.activations++;
+        document.body.style.setProperty('--ready-wave-seconds', `${fx.waveSeconds}s`);
+        document.body.style.setProperty('--ready-wave-expand', `${fx.waveExpand}px`);
+        document.body.classList.remove('gauge-ready-wave'); void ui['stop-gauge'].offsetWidth;
+        document.body.classList.add('gauge-ready-flash', 'gauge-ready-wave'); sound.playReady();
       }
       else if (event.type === 'execute') {
         app.artFx.pendingRoute = app.world.route?.points.map(point => ({ ...point })) || null;
@@ -536,7 +619,9 @@
         else if (event.kills > 0) { showCallout(event.kills, event.allClear, event.perfect); if (event.perfect) { app.combatFx.pendingCompletion = 'perfect'; app.shake = C.feedback.perfectShake; } }
       } else if (event.type === 'waveClear') {
         if(!event.perfect)app.combatFx.pendingCompletion='clear';
+        if(areaReplayReturn&&app.journey.replay&&event.wave===J.areas[app.journey.active].last)app.finishReplayAfterEvents=true;
         if(!app.practice.active&&J.cleared(app.journey,event.wave,app.artFx.echo,app.world.player)){
+          saveProgress();
           releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();accumulator=0;
           // The existing simulation has already removed defeated enemies and bullets. Clear only presentation residue.
           sound.stopAll();resetArtFx();app.particles=[];app.hits=[];app.shake=0;app.pendingFinal=null;app.calloutLife=0;ui.callout.textContent='';
@@ -550,17 +635,21 @@
       else if (event.type === 'rulePreview') { releasePointer(); sound.stopTimeClock(); ui.callout.textContent = ''; app.calloutLife = 0; }
       else if (event.type === 'oneStopFail') { app.tutorial.active = false; releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; sound.stopTimeClock(); app.combatFx.pendingCompletion = 'incomplete'; }
       else if (event.type === 'fail') {
+        resetTransientFeedback();
         resetArtFx();
-        if (app.practice.active) { app.world.failed = false; app.world.life = 1; app.world.phase = 'normal'; app.world.safetyRemaining = 999; app.world.waveGraceRemaining = 999; app.world.gauge = app.practice.step === 'move' ? 0 : C.gauge.max; }
+        if (app.practice.active) { app.world.failed = false; app.world.life = 1; app.world.phase = 'normal'; if(app.practice.step==='near-miss')setupPracticeNearMiss();else{app.world.safetyRemaining = 999; app.world.waveGraceRemaining = 999; app.world.gauge = app.practice.step === 'move' ? 0 : C.gauge.max;} }
         else app.tutorial.active = false;
         sound.stopTimeClock(); sound.playDamage(); particle(event.x, event.y, '#ff6971', 12); app.shake = C.feedback.damageShake;
         app.damageFx.remaining = app.damageFx.max; ui.life.classList.remove('life-hit'); void ui.life.offsetWidth; ui.life.classList.add('life-hit');
+        if(!app.practice.active)Object.assign(app.deathFx,{hitStopRemaining:C.feedback.death.hitStopSeconds,resultDelayRemaining:C.feedback.death.resultDelaySeconds,resultVisible:false,flashRemaining:C.feedback.death.playerFlashSeconds,reactionRemaining:C.feedback.death.reactionSeconds,retryQueued:null});
         Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
         app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = C.feedback.timeStopVisual.exitSeconds;
         releasePointer(); releaseTouchPad(); app.touchDraw.cursor = null; ui.callout.textContent = ''; app.calloutLife = 0;
       }
     }
-    app.world.events.length = 0; updateUi();
+    app.world.events.length = 0;
+    if(app.finishReplayAfterEvents){app.finishReplayAfterEvents=false;finishAreaReplay();return;}
+    updateUi();
   }
   /** Routes the shared TIME STOP / EXECUTE command without duplicating phase rules in input handlers. */
   function toggleTime() {
@@ -655,11 +744,15 @@
   function retryWave(multiplier = C.waves.timeLimitAssist.standard) {
     resetArtFx();
     releasePointer(); releaseTouchPad(); S.retryWave(app.world, multiplier); app.touchDraw.cursor = null; app.particles = []; app.hits = []; app.shake = 0; app.calloutLife = 0; app.pendingFinal = null;
-    app.tutorial.active = false; app.damageFx.remaining = 0;
+    app.tutorial.active = false; app.damageFx.remaining = 0;resetTransientFeedback();
     app.timeFx.blend = 0; app.timeFx.enterRemaining = 0; app.timeFx.exitRemaining = 0;
     app.routeFx.lockFlashes = []; sound.stopTimeClock(); sound.stopAll();
     Object.assign(app.combatFx, { releaseRemaining: 0, resumeRemaining: 0, releasePulse: 0, trail: [], lastTrail: null, pendingCompletion: null, completionRemaining: 0 });
     accumulator = 0; lastTime = 0; lastDrawSound = 0; ui.callout.textContent = ''; handleEvents(); ui.arena.focus({ preventScroll: true });
+  }
+  function requestRetry(multiplier=C.waves.timeLimitAssist.standard){
+    if(app.world.failed&&!app.deathFx.resultVisible){app.deathFx.retryQueued=multiplier;return;}
+    retryWave(multiplier);
   }
   ui.arena.addEventListener('contextmenu', event => {
     event.preventDefault();
@@ -692,16 +785,16 @@
   bindTouchSafeCommand(ui['undo-route'], undo);
   bindTouchSafeCommand(ui['cancel-stop'], cancel);
   ui.restart.addEventListener('click', () => app.practice.active ? startPractice() : restartJourney());
-  ui.retry.addEventListener('click', () => retryWave());
+  ui.retry.addEventListener('click', () => requestRetry());
   ui['play-again'].addEventListener('click', restartJourney);
   ui['game-over-title'].addEventListener('click', returnToTitle);
   ui['game-clear-title'].addEventListener('click', returnToTitle);
   ui['one-stop-preview-next'].addEventListener('click', showRuleIntro);
   ui['one-stop-start'].addEventListener('click', startOneStop);
   ui['retry-wave'].addEventListener('click', () => retryWave());
-  ui['retry-assist-15'].addEventListener('click', () => retryWave(C.waves.timeLimitAssist.first));
+  ui['retry-assist-15'].addEventListener('click', () => requestRetry(C.waves.timeLimitAssist.first));
   ui['one-stop-assist-15'].addEventListener('click', () => retryWave(C.waves.timeLimitAssist.first));
-  ui['retry-assist-20'].addEventListener('click', () => retryWave(C.waves.timeLimitAssist.second));
+  ui['retry-assist-20'].addEventListener('click', () => requestRetry(C.waves.timeLimitAssist.second));
   ui['one-stop-assist-20'].addEventListener('click', () => retryWave(C.waves.timeLimitAssist.second));
   ui.sound.addEventListener('click', () => {
     sound.setMuted(!sound.muted); syncSoundUi(); if (!sound.muted) sound.playUiConfirm();
@@ -756,19 +849,22 @@
     if (event.repeat || heldKeys.has(event.code)) return;
     heldKeys.add(event.code); setTouchControls(false);
     if (event.code === 'Space') {
-      if (app.world.failed || app.world.phase === 'one-stop-failed') retryWave();
+      if (app.world.failed)requestRetry();
+      else if(app.world.phase === 'one-stop-failed') retryWave();
       else if (app.world.phase === 'complete') restartJourney();
       else if (app.world.phase === 'rule-preview') showRuleIntro();
       else if (app.world.phase === 'rule-intro') startOneStop();
       else toggleTime();
     }
-    else if (['Digit1', 'Numpad1'].includes(event.code) && (app.world.failed || app.world.phase === 'one-stop-failed')) retryWave(C.waves.timeLimitAssist.first);
-    else if (['Digit2', 'Numpad2'].includes(event.code) && (app.world.failed || app.world.phase === 'one-stop-failed')) retryWave(C.waves.timeLimitAssist.second);
+    else if (['Digit1', 'Numpad1'].includes(event.code) && app.world.failed) requestRetry(C.waves.timeLimitAssist.first);
+    else if (['Digit1', 'Numpad1'].includes(event.code) && app.world.phase === 'one-stop-failed') retryWave(C.waves.timeLimitAssist.first);
+    else if (['Digit2', 'Numpad2'].includes(event.code) && app.world.failed) requestRetry(C.waves.timeLimitAssist.second);
+    else if (['Digit2', 'Numpad2'].includes(event.code) && app.world.phase === 'one-stop-failed') retryWave(C.waves.timeLimitAssist.second);
     else if (event.code === 'KeyZ') undo();
     else if (event.code === 'KeyX') clear();
     else if (event.code === 'KeyC' || event.code === 'Escape') cancel();
     else if (event.code === 'KeyR' && app.world.phase !== 'executing') { if (app.practice.active) startPractice(); else restartJourney(); }
-    else if (app.world.failed && event.code === 'Enter') retryWave();
+    else if (app.world.failed && event.code === 'Enter') requestRetry();
   });
   document.addEventListener('keyup', event => {
     if (heldKeys.delete(event.code)) event.preventDefault();
@@ -776,8 +872,8 @@
   ui.debug.hidden = !app.debugEnabled;
   ui['debug-shapes'].addEventListener('change', () => { app.debugShapes = ui['debug-shapes'].checked; });
   new ResizeObserver(() => { releasePointer(); releaseTouchPad(); renderer.resize(); }).observe(ui.arena);
-  document.addEventListener('visibilitychange', () => { releasePointer(); releaseTouchPad(); if (document.hidden) sound.stopTimeClock(); lastTime = 0; accumulator = 0; });
-  window.addEventListener('blur', () => { releasePointer(); releaseTouchPad(); heldKeys.clear(); sound.stopTimeClock(); });
+  document.addEventListener('visibilitychange', () => { releasePointer(); releaseTouchPad(); if (document.hidden) { sound.stopTimeClock(); clearReadyFeedback(); } lastTime = 0; accumulator = 0; });
+  window.addEventListener('blur', () => { releasePointer(); releaseTouchPad(); heldKeys.clear(); sound.stopTimeClock(); clearReadyFeedback(); });
   /**
    * Runs responsive input/effects at display rate and gameplay at a fixed step.
    * The accumulator is cleared during presentation holds so hit stop never causes simulation catch-up.
@@ -790,11 +886,25 @@
     const journeyChange=J.tick(app.journey,dt,app.reducedMotion,Stage.status(app.journey.active)==='ready');
     if(journeyChange==='map')showWorldMap();
     else if(journeyChange==='battle'){Stage.prepare(app.journey.active,true);updateUi();ui.arena.focus({preventScroll:true});}
-    else if(journeyChange==='ending'){updateUi();mapUi['map-notice'].textContent='5 / 5 AREAS ONLINE';mapUi['ending-restart'].focus({preventScroll:true});}
+    else if(journeyChange==='ending'){saveProgress();updateUi();mapUi['map-notice'].textContent='5 / 5 AREAS ONLINE';mapUi['ending-restart'].focus({preventScroll:true});}
     const presentationKey=[app.journey.mode,Stage.status(app.journey.active),J.restorationFrame(app.journey,app.reducedMotion).stage,J.finaleFrame(app.journey,app.reducedMotion).sync].join('/');
     if(app.presentationKey!==presentationKey){app.presentationKey=presentationKey;syncJourneyUi();}
     if(J.onMap(app.journey))mapView.animate(app.journey,app.reducedMotion);
     applyTouchPadInput();
+    const deathHold=app.world.failed&&app.deathFx.hitStopRemaining>0;
+    let deathReactionDt = 0;
+    if(app.world.failed){
+      deathReactionDt = Math.max(0, dt - app.deathFx.hitStopRemaining);
+      app.deathFx.hitStopRemaining=Math.max(0,app.deathFx.hitStopRemaining-dt);
+      app.deathFx.flashRemaining=Math.max(0,app.deathFx.flashRemaining-dt);
+      app.deathFx.reactionRemaining=Math.max(0,app.deathFx.reactionRemaining-deathReactionDt);
+      app.deathFx.resultDelayRemaining=Math.max(0,app.deathFx.resultDelayRemaining-dt);
+      if(!app.deathFx.resultVisible&&app.deathFx.resultDelayRemaining<=0){
+        app.deathFx.resultVisible=true;updateUi();
+        const queued=app.deathFx.retryQueued;
+        if(queued!=null)requestRetry(queued);else ui.retry.focus({preventScroll:true});
+      }
+    }
     const releaseHold = app.world.phase === 'executing' && app.combatFx.releaseRemaining > 0;
     const resumeHold = app.combatFx.resumeRemaining > 0;
     if (releaseHold) {
@@ -808,7 +918,7 @@
         if (app.combatFx.pendingCompletion) { app.combatFx.completionRemaining = 0.08; }
       }
     }
-    if (app.titleActive || app.briefingActive || J.paused(app.journey) || releaseHold || resumeHold) accumulator = 0;
+    if (app.titleActive || app.briefingActive || J.paused(app.journey) || releaseHold || resumeHold || deathHold) accumulator = 0;
     else {
       accumulator += dt;
       while (accumulator >= C.world.fixedStep) {
@@ -826,25 +936,32 @@
     app.timeFx.blend = stopTarget ? Math.min(1, app.timeFx.blend + blendStep) : Math.max(0, app.timeFx.blend - blendStep);
     app.timeFx.enterRemaining = Math.max(0, app.timeFx.enterRemaining - dt);
     app.timeFx.exitRemaining = Math.max(0, app.timeFx.exitRemaining - dt);
-    app.damageFx.remaining = Math.max(0, app.damageFx.remaining - dt);
-    app.combatFx.releasePulse = Math.max(0, app.combatFx.releasePulse - dt);
+    const effectDt=app.world.failed?deathReactionDt:dt;
+    app.readyFx.flashRemaining=Math.max(0,app.readyFx.flashRemaining-dt);
+    app.readyFx.waveRemaining=Math.max(0,app.readyFx.waveRemaining-dt);
+    document.body.classList.toggle('gauge-ready-flash',app.readyFx.flashRemaining>0);
+    document.body.classList.toggle('gauge-ready-wave',app.readyFx.waveRemaining>0);
+    app.damageFx.remaining = Math.max(0, app.damageFx.remaining - effectDt);
+    app.nearMissFx.remaining=Math.max(0,app.nearMissFx.remaining-dt);app.nearMissFx.ringRemaining=Math.max(0,app.nearMissFx.ringRemaining-dt);app.nearMissFx.chainRemaining=Math.max(0,app.nearMissFx.chainRemaining-dt);
+    if(app.nearMissFx.remaining<=0){ui['near-miss-feedback'].hidden=true;document.body.classList.remove('near-miss');}
+    app.combatFx.releasePulse = Math.max(0, app.combatFx.releasePulse - effectDt);
     for (let i = app.routeFx.lockFlashes.length - 1; i >= 0; i--) {
       app.routeFx.lockFlashes[i].life -= dt;
       if (app.routeFx.lockFlashes[i].life <= 0) app.routeFx.lockFlashes.splice(i, 1);
     }
     if (app.world.phase !== 'stopped') {
-      app.shake = Math.max(0, app.shake - dt * 28);
+      app.shake = Math.max(0, app.shake - effectDt * 28);
       if (app.pendingFinal) {
-        app.pendingFinal.wait -= dt;
+        app.pendingFinal.wait -= effectDt;
         if (app.pendingFinal.wait <= 0) { const event = app.pendingFinal; app.pendingFinal = null; showCallout(event.kills, true, true, true); sound.play('perfect'); app.shake = C.feedback.perfectShake; }
       }
-      if (app.calloutLife > 0) { app.calloutLife -= dt; if (app.calloutLife <= 0) ui.callout.textContent = ''; }
+      if (app.calloutLife > 0) { app.calloutLife -= effectDt; if (app.calloutLife <= 0) ui.callout.textContent = ''; }
       for (let i = app.particles.length - 1; i >= 0; i--) {
-        const p = app.particles[i]; p.life -= dt;
-        if (p.life <= 0) { app.particles.splice(i, 1); continue; } p.x += p.vx * dt; p.y += p.vy * dt;
+        const p = app.particles[i]; p.life -= effectDt;
+        if (p.life <= 0) { app.particles.splice(i, 1); continue; } p.x += p.vx * effectDt; p.y += p.vy * effectDt;
       }
-      for (let i = app.hits.length - 1; i >= 0; i--) { app.hits[i].life -= dt; if (app.hits[i].life <= 0) app.hits.splice(i, 1); }
-      for (let i = app.combatFx.trail.length - 1; i >= 0; i--) { app.combatFx.trail[i].life -= dt; if (app.combatFx.trail[i].life <= 0) app.combatFx.trail.splice(i, 1); }
+      for (let i = app.hits.length - 1; i >= 0; i--) { app.hits[i].life -= effectDt; if (app.hits[i].life <= 0) app.hits.splice(i, 1); }
+      for (let i = app.combatFx.trail.length - 1; i >= 0; i--) { app.combatFx.trail[i].life -= effectDt; if (app.combatFx.trail[i].life <= 0) app.combatFx.trail.splice(i, 1); }
       if (!app.reducedMotion && app.world.phase === 'executing' && app.combatFx.releaseRemaining <= 0) {
         const point = app.world.player, last = app.combatFx.lastTrail;
         if (!last || S.distance(last, point) >= C.feedback.executeVisual.trailSampleSpacing) {
@@ -854,15 +971,15 @@
         }
       }
       if (app.combatFx.completionRemaining > 0) {
-        app.combatFx.completionRemaining -= dt;
+        app.combatFx.completionRemaining -= effectDt;
         if (app.combatFx.completionRemaining <= 0 && app.combatFx.pendingCompletion) { sound.play(app.combatFx.pendingCompletion); app.combatFx.pendingCompletion = null; }
       }
     }
-    app.artFx.flash = Math.max(0, app.artFx.flash - dt);
-    app.artFx.life = Math.max(0, app.artFx.life - dt);
+    app.artFx.flash = Math.max(0, app.artFx.flash - effectDt);
+    app.artFx.life = Math.max(0, app.artFx.life - effectDt);
     if (app.artFx.life <= 0) app.artFx.echo = null;
     for (let i = app.artFx.scores.length - 1; i >= 0; i--) {
-      app.artFx.scores[i].life -= dt;
+      app.artFx.scores[i].life -= effectDt;
       if (app.artFx.scores[i].life <= 0) app.artFx.scores.splice(i, 1);
     }
     if(!J.onMap(app.journey))renderer.draw(app);
@@ -872,10 +989,10 @@
     }
     requestAnimationFrame(frame);
   }
-  touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
+  touchSensitivity = loadTouchSensitivity(); syncTouchSensitivityUi(); syncSoundUi(); updateBriefingPage(); reset();restoreCheckpoint(); titleUi.start.focus({ preventScroll: true }); requestAnimationFrame(frame);
   if (app.debugEnabled) root.Deadline.inspect = () => JSON.parse(JSON.stringify({ world: app.world, drawing: !!gesture,
     trainingPreference: trainingPreference.status(), journey: app.journey, stageArt: Stage.inspect(),
     particles: app.particles, hits: app.hits, timeFx: app.timeFx, routeFx: app.routeFx, combatFx: app.combatFx, artFx: app.artFx, tutorial: app.tutorial, practice: app.practice,
     touchPad: { active: touchPad.id !== null, drawing: touchPad.drawing, contactDistance: touchPad.contactDistance, sensitivity: touchSensitivity }, touchDraw: app.touchDraw,
-    damageFx: app.damageFx, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));
+    damageFx: app.damageFx, nearMissFx: app.nearMissFx, readyFx: app.readyFx, deathFx: app.deathFx, areaReplayActive:!!areaReplayReturn, audio: sound.inspect(), titleActive: app.titleActive, titleLeaving: app.titleLeaving, briefingActive: app.briefingActive, briefingPage: app.briefingPage, touchControls, reducedMotion: app.reducedMotion }));
 })(globalThis);

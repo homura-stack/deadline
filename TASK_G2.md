@@ -7,7 +7,7 @@ Git調査後のユーザー確認で、`69521cfb207585eaa7336c76664ad76869090dcc
 - 使用branch: `codex/deadline-classic-training-experience`（調査時に作成した指定branch）
 - 開始HEAD / parent: `396cd80cefb0b196a21d61a0fe981f43734e44a2`（TASK G.1）
 - 開始時のstaged・unstaged・非ignored未追跡ファイル: なし。
-- G.1 branch `codex/deadline-title-quality-first-training`を保持。全履歴を含む `D:/Desktop/AIWorkSpace/backups/deadline-task-g1-complete-20260906-396cd80/deadline-g1.bundle` を検証済み。
+- G.1 branch `codex/deadline-title-quality-first-training`を保持。全履歴を含む `<local-backup-path>/deadline-task-g1-complete-20260906-396cd80/deadline-g1.bundle` を検証済み。
 - merge / push・ファイル削除は行わない。
 
 ## 旧遷移と新遷移

@@ -9,7 +9,7 @@ const out=path.join(__dirname,'artifacts','tutorial-e1');fs.mkdirSync(out,{recur
   const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],external=[],report={browser:browser.version(),runs:[],layouts:[]};
   function hook(p){p.on('pageerror',e=>errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')errors.push(m.text());});p.on('request',r=>{if(!r.url().startsWith(new URL(base).origin)&&!r.url().startsWith('data:'))external.push(r.url());});}
   async function open(p){hook(p);await p.goto(base+'?debug');await p.waitForLoadState('networkidle');}
-  async function first(p){await p.locator('#title-start').click();await p.waitForFunction(()=>Deadline.inspect().briefingActive);assert.equal(await p.locator('#world-map').isVisible(),false);assert.equal(await p.evaluate(()=>document.activeElement.id),'briefing-begin');}
+  async function first(p,completed=false){await p.locator('#title-start').click();await p.waitForFunction(()=>!Deadline.inspect().titleActive);if(completed){await map(p);assert.equal(await p.locator('#world-map').isVisible(),true);}else{await p.waitForFunction(()=>Deadline.inspect().briefingActive);assert.equal(await p.locator('#world-map').isVisible(),false);assert.equal(await p.evaluate(()=>document.activeElement.id),'briefing-begin');}}
   async function map(p){await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map'&&!Deadline.inspect().practice.active);}
   try{
     const p=await browser.newPage({viewport:{width:1920,height:1080}});await open(p);await first(p);
@@ -17,8 +17,8 @@ const out=path.join(__dirname,'artifacts','tutorial-e1');fs.mkdirSync(out,{recur
     await p.screenshot({path:path.join(out,'01-first-flight.png')});
     assert.equal((await state(p)).briefingActive,true);
     for(let run=0;run<2;run++){
-      assert.equal(await p.locator('.briefing-page').count(),4);assert.equal(await p.locator('.demo-player-body').count(),0);
-      assert.equal(await p.locator('.demo-pico-sprite').count(),4);
+      assert.equal(await p.locator('.briefing-page').count(),5);assert.equal(await p.locator('.demo-player-body').count(),0);
+      assert.equal(await p.locator('.demo-pico-sprite').count(),5);
       assert.ok((await p.locator('.demo-enemy-sprite').evaluateAll(images=>images.map(i=>i.getAttribute('href')))).every(url=>url==='assets/characters/enemy-02.png'));
       if(!run)await p.screenshot({path:path.join(out,'02-briefing-pico.png')});
       // Back is a native keyboard control, not an accidental NEXT.
@@ -44,10 +44,10 @@ const out=path.join(__dirname,'artifacts','tutorial-e1');fs.mkdirSync(out,{recur
     const normal=await state(p);assert.equal(normal.world.wave,1);assert.equal(normal.world.score,0);assert.equal(normal.world.life,1);assert.equal(normal.journey.restored,0);
     await p.screenshot({path:path.join(out,'06-garden.png')});
     // Completed preference survives reload. HOW TO PLAY still offers training directly.
-    await p.reload();await p.waitForLoadState('networkidle');await first(p);await begin(p);await plan(p);await p.keyboard.press('Space');await map(p);assert.equal((await state(p)).trainingPreference,'completed');
+    await p.reload();await p.waitForLoadState('networkidle');await first(p,true);await p.locator('#map-training').click();await begin(p);await plan(p);await p.keyboard.press('Space');await map(p);assert.equal((await state(p)).trainingPreference,'completed');
     await p.locator('#map-title').click();await p.locator('[data-title-info="how"]').click();await p.locator('#title-training').click();await begin(p);
     // Cancel, restart and exit affect only practice. Exiting through a focused button does not execute.
-    await move(p,{x:240,y:470});await p.keyboard.press('Space');await stroke(p,[{x:300,y:390}]);await p.keyboard.press('KeyC');assert.equal((await state(p)).practice.step,'freeze');
+    await move(p,{x:240,y:470},1);await move(p,(await state(p)).practice.nearMissTarget);await p.keyboard.press('Space');await stroke(p,[{x:300,y:390}]);await p.keyboard.press('KeyC');assert.equal((await state(p)).practice.step,'freeze');
     await p.keyboard.press('KeyR');assert.equal((await state(p)).practice.step,'move');
     await p.locator('#practice-exit').focus();await p.keyboard.press('Space');await map(p);assert.equal((await state(p)).trainingPreference,'completed');
     await p.close();
@@ -56,14 +56,14 @@ const out=path.join(__dirname,'artifacts','tutorial-e1');fs.mkdirSync(out,{recur
     await skip.locator('#briefing-skip').focus();await skip.keyboard.press('Space');assert.equal((await state(skip)).titleActive,true);
     assert.equal((await state(skip)).trainingPreference,null);await skip.reload();await skip.waitForLoadState('networkidle');await first(skip);await skip.close();
     // Storage-denied browsers retain actual completion for this page session and remain playable.
-    const blocked=await browser.newPage({viewport:{width:1280,height:720}});await blocked.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));await open(blocked);await first(blocked);await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);await blocked.locator('#map-title').click();await first(blocked);await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);assert.equal((await state(blocked)).trainingPreference,'completed');await blocked.close();
+    const blocked=await browser.newPage({viewport:{width:1280,height:720}});await blocked.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));await open(blocked);await first(blocked);await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);await blocked.locator('#map-title').click();await first(blocked,true);await blocked.locator('#map-training').click();await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);assert.equal((await state(blocked)).trainingPreference,'completed');await blocked.close();
     for(const viewport of [{width:1920,height:1080},{width:1280,height:720},{width:768,height:800},{width:390,height:844},{width:320,height:800},{width:844,height:390}]){
       const v=await browser.newPage({viewport,reducedMotion:'reduce'});await open(v);await first(v);
       for(const selector of ['#briefing-begin','#briefing-skip']){const box=await v.locator(selector).boundingBox();assert.ok(box.x>=0&&box.x+box.width<=viewport.width&&box.y>=0&&box.y+box.height<=viewport.height);assert.ok(box.height>0,'existing briefing controls remain visible');}
       assert.equal(await v.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await v.screenshot({path:path.join(out,`first-${viewport.width}.png`)});
-      await v.locator('#briefing-skip').click();assert.equal((await state(v)).titleActive,true);await v.evaluate(()=>localStorage.setItem('deadline.tutorial.v1','completed'));await v.reload();await v.waitForLoadState('networkidle');await first(v);await v.locator('#briefing-skip').click();await map(v);await v.locator('#map-training').scrollIntoViewIfNeeded();const button=await v.locator('#map-training').boundingBox();assert.ok(button.height>=50);assert.ok(button.x>=0&&button.x+button.width<=viewport.width);report.layouts.push(viewport);await v.close();
+      await v.locator('#briefing-skip').click();assert.equal((await state(v)).titleActive,true);await v.evaluate(()=>localStorage.setItem('deadline.tutorial.v1','completed'));await v.reload();await v.waitForLoadState('networkidle');await first(v,true);await v.locator('#map-training').scrollIntoViewIfNeeded();const button=await v.locator('#map-training').boundingBox();assert.ok(button.height>=50);assert.ok(button.x>=0&&button.x+button.width<=viewport.width);report.layouts.push(viewport);await v.close();
     }
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.errors=errors;report.externalRequests=external;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
-    console.log('PASS E.1: first START -> four-page Pico briefing -> two-target practice -> automatic MAP -> Garden; replay, HOW TO PLAY, incomplete exit/reload, blocked storage, keyboard controls, six layouts; console errors 0');
+    console.log('PASS E.1: first START -> five-page Pico briefing -> two-target practice -> automatic MAP -> Garden; replay, HOW TO PLAY, incomplete exit/reload, blocked storage, keyboard controls, six layouts; console errors 0');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

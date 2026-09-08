@@ -26,8 +26,17 @@ body.map-open #game-shell { display: none; }
 .connection-core { fill: none; stroke: #f5d695; stroke-width: .75; stroke-linejoin: round; stroke-linecap: round; opacity: 0; }
 [data-powered="true"] .connection-core { opacity: calc(.23 * var(--wire-light,1)); filter: drop-shadow(0 0 3px #f5d695); }
 .connection-current { fill: none; stroke: #f5d695; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: var(--soak-offset,100); opacity: var(--soak-light,0); filter: blur(3px); }
-.world-pico path { fill: none; stroke: #f5d695; stroke-width: .8; opacity: .6; }
-.world-pico image { filter: drop-shadow(0 0 4px #f5d69555); }
+/* After the restored SVG in DOM order; keep AREA labels (z-index 3) above Pico. */
+.world-pico { --pico-side-used: var(--pico-side,-56px); position: absolute; width: clamp(44px,5vw,68px); transform: translate(calc(-50% + var(--pico-side-used)),calc(-100% + var(--pico-y,4px))); z-index: 2; pointer-events: none; }
+.world-pico-hover { display: block; animation: map-pico-hover 2.8s ease-in-out infinite; }
+.world-pico img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 5px #f5d69580); }
+.world-pico img[hidden],.world-pico-fallback[hidden] { display: none; }
+.world-pico-fallback { display: block; color: #fff2d2; text-align: center; font: 10px var(--utility); text-shadow: 0 0 6px #f5d695; }
+@keyframes map-pico-hover { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.map-board[data-reduced-motion="true"] .world-pico-hover { animation: none; }
+/* CORE sits below SKYLINE's long label; the small Garden map needs space beside its neighbours. */
+@media (min-width: 501px) { .world-pico[data-location="4"] { --pico-side-used: -108px; } }
+@media (max-width: 360px) { .world-pico[data-location="0"] { --pico-side-used: -60px; --pico-y: 18px; } }
 .map-node { position: absolute; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; transform: translate(-50%,-50%); color: #bdcad3; }
 .map-node:hover, .map-node:active { background: transparent; transform: translate(-50%,-50%); }
 .map-node-beacon { position: absolute; inset: 6px; border: 1px solid transparent; border-radius: 50%; transition: border-color .25s, box-shadow .25s; }
@@ -136,5 +145,5 @@ body.map-open #game-shell { display: none; }
   .map-node[data-area="3"] .map-node-label { top: auto; bottom: 33px; }
   .map-notice { font-size: 10px; }.map-header .masthead-logo { font-size: 22px; }.map-detail { margin-top: 30px; }
 }
-@media (prefers-reduced-motion: reduce) { .map-node-beacon { transition: none; }.world-pico image { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .map-node-beacon { transition: none; }.world-pico-hover { animation: none; } }
 @media (max-width: 700px) { .area-caption { font-size: 8px; top: 6px; left: 9px; } }

@@ -12,6 +12,13 @@ function finish(w, inspect = () => {}) { S.executeRoute(w); for (let i = 0; i < 
 function physical(w) { return { time: w.time, bullets: structuredClone(w.bullets), enemies: w.enemies.map(({ alive, hp, ...rest }) => rest) }; }
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-6, `${a} != ${b}`);
 
+test('optional world start index begins an isolated replay at that Wave without changing defaults', () => {
+ const normal=S.createWorld(),replay=S.createWorld(4),invalid=S.createWorld(99);
+ assert.equal(normal.wave,1);assert.equal(normal.waveIndex,0);assert.equal(replay.wave,5);assert.equal(replay.waveIndex,4);
+ assert.equal(replay.score,0);assert.equal(replay.totalKills,0);assert.equal(replay.waveFailures.length,C.waves.definitions.length);
+ assert.equal(invalid.wave,1);assert.equal(invalid.waveIndex,0);
+});
+
 test('normal mode immediately moves enemies and fires at the actual current player', () => {
  const w = world([enemy(1, 600, 300)]); w.enemies[0].vx = 24; w.enemies[0].shotRemaining = C.world.fixedStep;
  S.movePlayer(w, p(100, 200)); S.step(w); assert.equal(w.phase, 'normal'); assert.ok(w.enemies[0].x > 600); assert.equal(w.bullets.length, 1);

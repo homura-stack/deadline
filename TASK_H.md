@@ -16,7 +16,7 @@
 | BEFORE | `assets/world-map/before.jpeg` | 2752 × 1536 | `dda4a2d70d7cfb28d8f286466c9af0c4484725b807afe7820b3abae78af7676a` |
 | AFTER | `assets/world-map/after.jpeg` | 2750 × 1536 | `6dd325544d929130d9ffaf98313c43aa37349995bb280fb31359d5ee2cecee30` |
 
-原本は`D:/Desktop/DEADLINE/完全復旧前WORLD MAP.jpeg`と`完全復旧後WORLD MAP.jpeg`。両方ともコピー前後のハッシュが一致。元ファイルを加工せず使用した。[素材記録](assets/world-map/README.md)を参照。
+原本は`<local-asset-path>/完全復旧前WORLD MAP.jpeg`と`完全復旧後WORLD MAP.jpeg`。両方ともコピー前後のハッシュが一致。元ファイルを加工せず使用した。[素材記録](assets/world-map/README.md)を参照。
 
 BEFOREは`<img>`、AFTERはSVG内の`<image>`で原JPEGを直接描画する。製品側でCanvasへ画像を再描画・縮小保存する処理はない。画像自身へのblur・ズーム・再圧縮はない。両方を共通の1000 × 558.139535座標と2752:1536の表示領域へ合わせ、2pxの横幅差だけを非破壊的に正規化する。表示幅の上限は2750px。
 
@@ -92,7 +92,7 @@ Chromeの対象: `title-quality-training-browser`、`title-routes-browser`、`wo
 Windowsでサーバーを再起動する場合:
 
 ```powershell
-Set-Location 'D:\Desktop\AIWorkSpace\01_projects\web\deadline'
+Set-Location '.'
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

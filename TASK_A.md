@@ -20,7 +20,7 @@ TASK B、ワールドマップ、背景の全面改装、エンディング、�
 | merge / push | 未実施。今回remoteへの更新は不要 |
 
 コード変更前に、上記アストラcommitへの保護用branchを作成しました。
-`D:\Desktop\AIWorkSpace\backups\deadline-pre-pico-task-a-20260906` に次も保存しています。
+`<local-backup-path>/deadline-pre-pico-task-a-20260906` に次も保存しています。
 
 - `deadline-before-pico.bundle`：開始時の全Git履歴・全参照。`git bundle verify` 合格。
 - `deadline-working-files.zip`：`.git` 以外の作業ファイル140件。ignoreされた過去の検証画像も含む。ファイル数とZIPのCRCを検証済み。
@@ -109,7 +109,7 @@ node tests/astra-browser.cjs
 PowerShellを開き、最初に次の2行を実行します。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 git status
 ```
 

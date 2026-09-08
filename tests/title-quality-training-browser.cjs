@@ -1,4 +1,4 @@
-/* G.1 quality / G.2 START routing: all saved states enter the unchanged rehearsal. */
+/* G.1 quality / G.2 START routing: completed saves bypass rehearsal; TRAINING remains replayable. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {state,begin,plan}=require('./tutorial-helpers.cjs');
@@ -15,10 +15,10 @@ const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive
     if(saved){await p.evaluate(value=>localStorage.setItem('deadline.tutorial.v1',value),saved);await p.reload();}
     await p.waitForLoadState('networkidle');return p;
   }
-  async function start(p){
+  async function start(p,completed=false){
     await p.locator('#title-start').click();await p.waitForFunction(()=>!Deadline.inspect().titleActive);
-    const s=await state(p);assert.equal(s.briefingActive,true,'every START must enter TRAINING, including completed saves');
-    assert.equal(s.briefingPage,0);assert.equal(await p.locator('#world-map').isVisible(),false);
+    const s=await state(p);assert.equal(s.briefingActive,!completed,'completed START alone bypasses TRAINING');
+    if(completed){await map(p);assert.equal(await p.locator('#world-map').isVisible(),true);}else{assert.equal(s.briefingPage,0);assert.equal(await p.locator('#world-map').isVisible(),false);}
   }
   async function map(p){await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map'&&!Deadline.inspect().practice.active);}
   async function complete(p){await begin(p);await plan(p);await p.keyboard.press('Space');await p.waitForFunction(()=>Deadline.inspect().practice.step==='complete');await map(p);assert.equal(await p.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),'completed');}
@@ -34,9 +34,9 @@ const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive
     assert.equal(await p.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),null);
     await p.reload();await p.waitForLoadState('networkidle');await start(p);await complete(p);
     report.cases.A='fresh START -> TRAINING; briefing/practice abort and reload stay incomplete; actual completion -> MAP';
-    await p.locator('#map-title').click();await start(p);await complete(p);
-    await p.reload();await p.waitForLoadState('networkidle');await start(p);await complete(p);
-    report.cases.B='completed START -> TRAINING -> normal completion -> MAP, including reload';
+    await p.locator('#map-title').click();await start(p,true);
+    await p.locator('#map-title').click();await p.reload();await p.waitForLoadState('networkidle');await start(p,true);
+    report.cases.B='completed START -> WORLD MAP directly, including reload';
     await p.locator('#map-title').click();await p.locator('#title-training-launch').click();await complete(p);
     await p.locator('#map-training').click();await p.locator('#briefing-skip').click();await map(p);
     report.cases.C='permanent TRAINING -> actual completion -> MAP; MAP replay/exit preserved';
@@ -44,18 +44,18 @@ const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive
     for(const viewport of [{width:1920,height:1080},{width:2560,height:1440},{width:1366,height:768},{width:3840,height:2160}]){
       await p.setViewportSize(viewport);
       const quality=await p.locator('#title-art').evaluate(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return {natural:[e.naturalWidth,e.naturalHeight],render:[r.width,r.height],scale:r.width/e.naturalWidth,tag:e.tagName,fit:s.objectFit,position:s.objectPosition,imageRendering:s.imageRendering,filter:s.filter,transform:s.transform,opacity:s.opacity,src:e.currentSrc};});
-      assert.deepEqual(quality.natural,[2752,1536]);assert.ok(quality.scale<=1,'do not upscale beyond source size');assert.equal(quality.tag,'IMG');assert.equal(quality.fit,'contain');assert.equal(quality.filter,'none');assert.equal(quality.transform,'none');assert.equal(quality.opacity,'1');
+      assert.deepEqual(quality.natural,[1678,937]);assert.ok(quality.scale<=1,'do not upscale beyond source size');assert.equal(quality.tag,'IMG');assert.equal(quality.fit,'contain');assert.equal(quality.filter,'none');assert.equal(quality.transform,'none');assert.equal(quality.opacity,'1');
       report.layouts.push({viewport,...quality});await p.screenshot({path:path.join(out,`after-${viewport.width}.png`)});
     }
-    const title=fs.readFileSync(path.join(__dirname,'..','assets/title/pico-dead-circuit-original.jpeg'));
-    report.sourceSHA256=crypto.createHash('sha256').update(title).digest('hex');assert.equal(report.sourceSHA256,'db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592');assert.equal(title.length,2304414);
-    report.cases.D='original 2752 x 1536 bytes, contain, no CSS blur/transform/opacity, source-size cap';
+    const title=fs.readFileSync(path.join(__dirname,'..','assets/title/title.png'));
+    report.sourceSHA256=crypto.createHash('sha256').update(title).digest('hex');assert.equal(report.sourceSHA256,'5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9');assert.equal(title.length,1787537);
+    report.cases.D='official 1678 x 937 PNG bytes, contain, no CSS blur/transform/opacity, source-size cap';
     // Clearing the existing key behaves as first play again; regular restart does not clear it.
     await p.evaluate(()=>localStorage.removeItem('deadline.tutorial.v1'));await p.reload();await p.waitForLoadState('networkidle');await start(p);assert.equal((await state(p)).briefingActive,true);await p.close();
     for(const saved of ['started','skipped']){
       const legacy=await open(saved);await start(legacy);assert.equal((await state(legacy)).briefingActive,true,saved+' is not completed');
       await legacy.locator('#briefing-skip').click();assert.equal((await state(legacy)).titleActive,true);assert.equal(await legacy.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),saved);
-      await start(legacy);await complete(legacy);await legacy.reload();await legacy.waitForLoadState('networkidle');await start(legacy);await complete(legacy);await legacy.close();
+      await start(legacy);await complete(legacy);await legacy.reload();await legacy.waitForLoadState('networkidle');await start(legacy,true);await legacy.close();
     }
     assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS G.2 START cases A-C, completed/legacy saves, abort/reload, replay, unchanged title quality; errors 0');
   }finally{await browser.close();}

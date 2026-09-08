@@ -6,7 +6,7 @@
 - 開始HEAD / この変更のparent: `56a1376acbc8bd88a0695cf6be2ede72d956c9d4`（TASK G）
 - 開始時のstaged・unstaged・非ignored未追跡ファイル: すべてなし。
 - 作業branch: `codex/deadline-title-quality-first-training`
-- TASK Gのbranchを保持し、完全履歴・23参照を含む `D:/Desktop/AIWorkSpace/backups/deadline-task-g-complete-20260906/deadline-g.bundle` の検証に成功した。
+- TASK Gのbranchを保持し、完全履歴・23参照を含む `<local-backup-path>/deadline-task-g-complete-20260906/deadline-g.bundle` の検証に成功した。
 - origin: `https://github.com/homura-stack/deadline.git`。merge / push・既存ファイルの削除はしない。
 
 ## 画質低下の原因と修正
@@ -15,7 +15,7 @@ TASK Gの画像は、そのとき提供されたクリップボード添付の10
 
 実Chromeの1920×1080、deviceScaleFactor 1では、この画像を1920×1072.5 CSS pxへ**1.875倍に拡大**していた。`IMG`要素で、`object-fit: contain`、`object-position: 50% 50%`。`image-rendering: auto`、`transform: none`、`filter: none`、`opacity: 1`で、親要素にもblur・変形・透過はなかった。CSS背景は使用していないため`background-size: auto`、`background-position: 0% 0%`は画像の倍率に無関係。Canvasへの再描画や画像上のoverlayもない。主因は低解像度の添付を拡大していたこと。
 
-今回指定された **`D:/Desktop/DEADLINE/タイトル.jpeg` は2752×1536、2,304,414 bytes**。`assets/title/pico-dead-circuit-original.jpeg`へ元バイトのままコピーし、参照を変更した。元・コピー双方のSHA-256は `db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592`。JPEG再圧縮、WebP変換、再生成、描き直しは行っていない。旧 `assets/title/pico-dead-circuit.jpg` も保持している。
+今回指定された **`<local-asset-path>/タイトル.jpeg` は2752×1536、2,304,414 bytes**。`assets/title/pico-dead-circuit-original.jpeg`へ元バイトのままコピーし、参照を変更した。元・コピー双方のSHA-256は `db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592`。JPEG再圧縮、WebP変換、再生成、描き直しは行っていない。旧 `assets/title/pico-dead-circuit.jpg` も保持している。
 
 表示は引き続きHTMLの`<img>`＋`object-fit: contain`。intrinsic width/heightとCSSの縦横比を原寸へ揃え、画面全体に収める。CSS表示サイズの上限を2752×1536に設定し、それを超える大画面で不要に拡大しない。画像内のPico・ロゴ・コピーとボタンの配置関係は維持した。
 
@@ -79,7 +79,7 @@ G.1専用Chromeテスト `tests/title-quality-training-browser.cjs`:
 Windowsで再起動するときはPowerShellで以下を実行し、サーバーのウィンドウを開いたままにする。
 
 ```powershell
-Set-Location 'D:\Desktop\AIWorkSpace\01_projects\web\deadline'
+Set-Location '.'
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

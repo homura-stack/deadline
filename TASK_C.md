@@ -17,7 +17,7 @@ TASK DのCORE最終演出・エンディングは含みません。
 | origin | `https://github.com/homura-stack/deadline.git` |
 | merge / push | 未実施 |
 
-コードを変更する前に、`D:\Desktop\AIWorkSpace\backups\deadline-pre-task-c-20260906` へ全履歴の `deadline-before-task-c.bundle` と `.git` 以外の166ファイルを含む `working-files-before-c.zip` を保存。bundle検証、ZIPのCRC・件数検証は合格。TASK A、TASK B、アストラ版、元版の既存branchを保持しています。
+コードを変更する前に、`<local-backup-path>/deadline-pre-task-c-20260906` へ全履歴の `deadline-before-task-c.bundle` と `.git` 以外の166ファイルを含む `working-files-before-c.zip` を保存。bundle検証、ZIPのCRC・件数検証は合格。TASK A、TASK B、アストラ版、元版の既存branchを保持しています。
 
 ## 画面とアートディレクション
 
@@ -107,7 +107,7 @@ Chrome検証は既存の開発用PlaywrightとChromeを使用。ローカルサ�
 このPCで使用したモジュール探索先：
 
 ```powershell
-$env:NODE_PATH = 'C:\Users\F0Bet\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules'
+$env:NODE_PATH = '<local-node-modules-path>'
 ```
 
 ## 変更ファイル（20ファイル）
@@ -127,7 +127,7 @@ $env:NODE_PATH = 'C:\Users\F0Bet\.cache\codex-runtimes\codex-primary-runtime\dep
 WindowsのPowerShellで：
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

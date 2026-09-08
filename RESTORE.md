@@ -17,7 +17,7 @@
 ゲームを開いているブラウザをいったん閉じてから、PowerShellで一行ずつ実行します。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 git status
 git switch backup/deadline-before-astra-20260906
 ```
@@ -33,7 +33,7 @@ git switch backup/deadline-before-astra-20260906
 同様に、変更がないことを確認してから実行します。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 git status
 git switch codex/web-contest-astra-redesign
 ```
@@ -55,7 +55,7 @@ git rev-parse codex/web-contest-astra-redesign
 
 ## 作業フォルダー以外のバックアップ
 
-`D:\Desktop\AIWorkSpace\backups\deadline-pre-astra-20260906` に次を保存しました。
+`<local-backup-path>/deadline-pre-astra-20260906` に次を保存しました。
 
 - `deadline-before-astra.bundle`：改装前の全Git履歴・全参照。作成後に `git bundle verify` 成功。
 - `deadline-working-files.zip`：`.git` 以外の作業ファイル全体。Git管理外の過去の検証画像も含みます。

@@ -24,11 +24,12 @@
     // Sampling limits stabilize geometry cost across mouse and high-frequency touch hardware.
     drawing: { pointSpacing: 3, maxPoints: 4096 },
     timeStop: { seconds: 5, lockRadius: 48 },
-    gauge: { max: 100, initial: 20, recoveryPerSecond: 20, nearMissGain: 8, nearMissRadius: 32, cost: 100, cancelCost: 40 },
+    gauge: { max: 100, initial: 20, recoveryPerSecond: 15, nearMissGain: 16, nearMissRadius: 40, cost: 100, cancelCost: 40 },
     safety: { afterExecution: 0.5 },
     execution: { speed: 2600, minDuration: 0.2, maxDuration: 0.72 },
     enemy: { radius: 15, spawnClearance: 110 },
-    audio: { storageKey: 'deadline.audio.v1', masterDefault: 80, sfxDefault: 90 },
+    audio: { storageKey: 'deadline.audio.v1', masterDefault: 80, sfxDefault: 90,
+      referenceGain: 4.0, limiterKnee: 0.8, limiterCeiling: 0.95 },
     // Each Wave owns composition and tuning; simulation.js contains no Wave-specific branches.
     waves: { bannerSeconds: 0.7, intermissionSeconds: 1.1, finalIntermissionSeconds: 1.45, startGraceSeconds: 0.8, retryGaugeInitial: 0,
       timeLimitAssist: { firstUnlockFailures: 3, secondUnlockFailures: 5, standard: 1, first: 1.5, second: 2 },
@@ -43,50 +44,51 @@
             { type: 'aim', x: 340, y: 155, angle: 0.4 }, { type: 'aim', x: 610, y: 170, angle: 2.2 },
             { type: 'aim', x: 450, y: 405, angle: 4.3 }, { type: 'aim', x: 735, y: 390, angle: 5.5 }
           ] },
-        { number: 3, oneStopRequired: false, timeStopSeconds: 5, enemyHp: 1, enemySpeed: 20, fireIntervalScale: 1.08, bulletSpeedScale: 0.9,
+        { number: 3, oneStopRequired: false, timeStopSeconds: 6.5, enemyHp: 1, enemySpeed: 19, fireIntervalScale: 1.1, bulletSpeedScale: 0.87,
           counts: { aim: 3, fan: 3 }, enemies: [
             { type: 'aim', x: 330, y: 150, angle: 0.2 }, { type: 'fan', x: 585, y: 160, angle: 2.0 },
             { type: 'aim', x: 430, y: 410, angle: 4.8 }, { type: 'fan', x: 745, y: 385, angle: 1.2 }
           ] },
-        { number: 4, oneStopRequired: false, timeStopSeconds: 5, enemyHp: 1, enemySpeed: 21, fireIntervalScale: 1.02, bulletSpeedScale: 0.92,
-          counts: { aim: 3, fan: 5, burst: 8 }, enemies: [
+        { number: 4, oneStopRequired: false, timeStopSeconds: 7, enemyHp: 1, enemySpeed: 19, fireIntervalScale: 1.12, bulletSpeedScale: 0.88,
+          counts: { aim: 3, fan: 4, burst: 7 }, enemies: [
             { type: 'aim', x: 300, y: 145, angle: 0.4 }, { type: 'fan', x: 520, y: 155, angle: 2.2 },
             { type: 'burst', x: 725, y: 260, angle: 3.4 }, { type: 'aim', x: 430, y: 420, angle: 5.0 },
             { type: 'fan', x: 720, y: 445, angle: 1.1 }
           ] },
-        { number: 5, oneStopRequired: false, timeStopSeconds: 5, enemyHp: 1, enemySpeed: 22, fireIntervalScale: 0.98, bulletSpeedScale: 0.94,
-          counts: { aim: 3, fan: 5, burst: 8, rotate: 6 }, enemies: [
+        { number: 5, oneStopRequired: false, timeStopSeconds: 7.5, enemyHp: 1, enemySpeed: 20, fireIntervalScale: 1.08, bulletSpeedScale: 0.9,
+          counts: { aim: 3, fan: 4, burst: 7, rotate: 6 }, enemies: [
             { type: 'aim', x: 300, y: 140, angle: 0.3 }, { type: 'fan', x: 535, y: 150, angle: 2.0 },
             { type: 'burst', x: 740, y: 285, angle: 3.6 }, { type: 'rotate', x: 450, y: 425, angle: 5.1 },
             { type: 'fan', x: 730, y: 445, angle: 1.3 }
           ] },
-        { number: 6, oneStopRequired: false, timeStopSeconds: 5.2, enemyHp: 1, enemySpeed: 23, fireIntervalScale: 0.94, bulletSpeedScale: 0.96,
-          counts: { aim: 3, fan: 5, burst: 9, rotate: 7 }, enemies: [
+        { number: 6, oneStopRequired: false, timeStopSeconds: 8, enemyHp: 1, enemySpeed: 21, fireIntervalScale: 1.06, bulletSpeedScale: 0.91,
+          counts: { aim: 3, fan: 4, burst: 8, rotate: 6 }, enemies: [
             { type: 'aim', x: 285, y: 135, angle: 0.2 }, { type: 'fan', x: 495, y: 145, angle: 1.9 },
             { type: 'burst', x: 720, y: 175, angle: 3.5 }, { type: 'rotate', x: 350, y: 420, angle: 5.2 },
             { type: 'fan', x: 575, y: 430, angle: 0.8 }, { type: 'aim', x: 790, y: 400, angle: 2.6 }
           ] },
-        { number: 7, oneStopRequired: true, timeStopSeconds: 5.4, enemyHp: 1, enemySpeed: 21, fireIntervalScale: 1, bulletSpeedScale: 0.94,
+        { number: 7, oneStopRequired: true, timeStopSeconds: 8.1, enemyHp: 1, enemySpeed: 20, fireIntervalScale: 1.1, bulletSpeedScale: 0.9,
           counts: { aim: 3, fan: 4, burst: 8 }, enemies: [
             { type: 'aim', x: 300, y: 155, angle: 0.3 }, { type: 'fan', x: 520, y: 145, angle: 2.1 },
             { type: 'burst', x: 735, y: 290, angle: 3.7 }, { type: 'aim', x: 455, y: 425, angle: 5.0 },
             { type: 'fan', x: 745, y: 445, angle: 1.2 }
           ] },
-        { number: 8, oneStopRequired: true, timeStopSeconds: 5.7, enemyHp: 1, enemySpeed: 22, fireIntervalScale: 0.92, bulletSpeedScale: 0.96,
-          counts: { aim: 3, fan: 5, burst: 9, rotate: 7 }, enemies: [
+        { number: 8, oneStopRequired: true, timeStopSeconds: 9, enemyHp: 1, enemySpeed: 21, fireIntervalScale: 1.04, bulletSpeedScale: 0.92,
+          counts: { aim: 3, fan: 4, burst: 8, rotate: 6 }, enemies: [
             { type: 'aim', x: 270, y: 130, angle: 0.2 }, { type: 'fan', x: 455, y: 145, angle: 1.8 },
             { type: 'burst', x: 660, y: 150, angle: 3.4 }, { type: 'rotate', x: 790, y: 290, angle: 4.7 },
             { type: 'aim', x: 335, y: 430, angle: 5.4 }, { type: 'fan', x: 570, y: 440, angle: 0.9 },
             { type: 'burst', x: 765, y: 455, angle: 2.7 }
           ] },
-        { number: 9, oneStopRequired: true, timeStopSeconds: 6, enemyHp: 1, enemySpeed: 23, fireIntervalScale: 0.86, bulletSpeedScale: 0.98,
+        // Preserve the late-Wave volley shapes; slower threats and more DRAW time provide the relief.
+        { number: 9, oneStopRequired: true, timeStopSeconds: 10.5, enemyHp: 1, enemySpeed: 19, fireIntervalScale: 1.35, bulletSpeedScale: 0.84,
           counts: { aim: 3, fan: 5, burst: 10, rotate: 8 }, enemies: [
             { type: 'aim', x: 260, y: 125, angle: 0.2 }, { type: 'fan', x: 430, y: 145, angle: 1.7 },
             { type: 'burst', x: 615, y: 135, angle: 3.2 }, { type: 'rotate', x: 790, y: 220, angle: 4.6 },
             { type: 'fan', x: 300, y: 410, angle: 5.5 }, { type: 'rotate', x: 500, y: 445, angle: 0.9 },
             { type: 'aim', x: 685, y: 430, angle: 2.4 }, { type: 'burst', x: 820, y: 455, angle: 3.8 }
           ] },
-        { number: 10, oneStopRequired: true, timeStopSeconds: 6.4, enemyHp: 1, enemySpeed: 24, fireIntervalScale: 0.8, bulletSpeedScale: 1,
+        { number: 10, oneStopRequired: true, timeStopSeconds: 13, enemyHp: 1, enemySpeed: 19, fireIntervalScale: 1.55, bulletSpeedScale: 0.86,
           counts: { aim: 3, fan: 5, burst: 10, rotate: 8 }, enemies: [
             { type: 'aim', x: 245, y: 115, angle: 0.1 }, { type: 'fan', x: 395, y: 135, angle: 1.4 },
             { type: 'burst', x: 550, y: 120, angle: 2.9 }, { type: 'rotate', x: 705, y: 145, angle: 4.2 },
@@ -107,8 +109,11 @@
       } },
     scoring: { baseKill: 100, chainBonus: 50, allClearBonus: 500 },
     // Presentation tuning is centralized so visual/audio polish can be adjusted without scattering constants.
-    feedback: { hitStop: 0.02, finalHitStop: 0.04, hitStopBudget: 0.22,
-      shake: 2.5, finalShake: 5, maxShake: 7, damageShake: 3.2, damageFlashSeconds: 0.18, mobileShakeScale: 0.45,
+    feedback: { hitStop: 0.02, finalHitStop: 0.055, hitStopBudget: 0.22,
+      shake: 2.5, finalShake: 5, maxShake: 7, damageShake: 5.2, damageFlashSeconds: 0.26, mobileShakeScale: 0.45,
+      nearMiss: { displaySeconds: 0.58, ringSeconds: 0.32, chainWindowSeconds: 0.9, soundMinGapSeconds: 0.07 },
+      ready: { flashSeconds: 0.12, waveSeconds: 0.32, waveExpand: 6, soundSeconds: 0.11, idlePeriodSeconds: 1.1, idleWaveExpand: 14, idleWaveOpacity: 0.32 },
+      death: { hitStopSeconds: 0.3, resultDelaySeconds: 0.65, playerFlashSeconds: 0.3, reactionSeconds: 0.35 },
       calloutSeconds: 0.8, perfectCalloutSeconds: 1.15, perfectShake: 6.5, finalSilence: 0.14, maxParticles: 140, particlesPerEnemy: 12, particleLifetime: 0.32,
       hitEffectLifetime: 0.22, drawSoundInterval: 0.075, trailLength: 170,
       combatAudio: { tickInterval: 0.96, warningTickInterval: 0.76, criticalTickInterval: 0.6, finalTickInterval: 0.52,
@@ -116,9 +121,19 @@
         tickFilterQ: 4.2, tockFilterQ: 3.6, clockAttack: 0.0015, tickRelease: 0.007, tockRelease: 0.008,
         criticalTickGainScale: 1.05, finalTickGainScale: 1.1,
         drawStartVolume: 0.018, drawVolume: 0.009, uiVolume: 0.027, targetVolume: 0.03, stopVolume: 0.038, resumeVolume: 0.034,
-        executeVolume: 0.046, damageVolume: 0.052, slashVolume: 0.062, killVolume: 0.07,
+        executeVolume: 0.046, damageVolume: 0.052, nearMissVolume: 0.032, readyVolume: 0.04, slashVolume: 0.062, killVolume: 0.07,
         incompleteVolume: 0.045, clearVolume: 0.05, perfectVolume: 0.06,
-        slashPitchVariation: 0.026 },
+        slashPitchVariation: 0.026,
+        // Opt-in envelopes: attack -> brief hold -> body -> release, without boosting peak gains.
+        presence: {
+          lock: { toneSeconds: 0.052, noiseSeconds: 0.022, holdSeconds: 0.006, bodyRatio: 0.22, releaseSeconds: 0.01 },
+          execute: { toneSeconds: 0.125, noiseSeconds: 0.145, holdSeconds: 0.024, bodyRatio: 0.28, releaseSeconds: 0.024 },
+          kill: { toneSeconds: 0.095, noiseSeconds: 0.075, holdSeconds: 0.01, bodyRatio: 0.24, releaseSeconds: 0.02,
+            midSeconds: 0.055, midGainScale: 0.18, midStart: 880, midEnd: 480 },
+          finalKill: { toneSeconds: 0.12, noiseSeconds: 0.1, holdSeconds: 0.016, bodyRatio: 0.25, releaseSeconds: 0.024,
+            midSeconds: 0.07, midGainScale: 0.2, midStart: 1000, midEnd: 600 },
+          damage: { toneSeconds: 0.12, noiseSeconds: 0.085, holdSeconds: 0.018, bodyRatio: 0.28, releaseSeconds: 0.024 }
+        } },
       executeVisual: { chargeSeconds: 0.065, resumeAfterglowSeconds: 0.055, trailLife: 0.18, trailSampleSpacing: 12,
         maxAfterimages: 20, releasePulseSeconds: 0.16, hitFlashSeconds: 0.075, fragmentCount: 6 },
       timeStopVisual: { enterSeconds: 0.22, exitSeconds: 0.16, warningSeconds: 2, criticalSeconds: 1, finalSeconds: 0.5,

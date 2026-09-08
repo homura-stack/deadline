@@ -27,6 +27,13 @@
       const glow = flash.getContext('2d'); glow.drawImage(stamp, 0, 0);
       glow.globalCompositeOperation = 'source-in'; glow.fillStyle = '#fff5dc'; glow.fillRect(0, 0, flash.width, flash.height);
       entry.stamp = stamp; entry.flash = flash; entry.height = definition.width * image.naturalHeight / image.naturalWidth;
+      if (key === 'pico') {
+        // A neutral-white damage silhouette; retain the warm stamp for other combat highlights.
+        const white = document.createElement('canvas'); white.width = stamp.width; white.height = stamp.height;
+        const mask = white.getContext('2d'); mask.drawImage(stamp, 0, 0);
+        mask.globalCompositeOperation = 'source-in'; mask.fillStyle = '#ffffff'; mask.fillRect(0, 0, white.width, white.height);
+        entry.deathFlash = white;
+      }
       entry.status = 'ready'; resolve(entry.status);
     };
     image.onerror = () => { entry.status = 'error'; resolve(entry.status); };

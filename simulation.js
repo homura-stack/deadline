@@ -194,16 +194,17 @@
     w.timeLimitMultiplier = C.waves.timeLimitAssist.standard;
     w.events.push({ type: 'waveStart', wave: w.wave });
   }
-  /** @returns {GameWorld} A fresh deterministic run beginning at Wave 1. */
-  function createWorld() {
+  /** @returns {GameWorld} A fresh deterministic run, optionally beginning at a replay Wave. */
+  function createWorld(startWaveIndex = 0) {
+    const firstWave = Number.isInteger(startWaveIndex) && C.waves.definitions[startWaveIndex] ? startWaveIndex : 0;
     const player = copyPoint(C.player.start);
     const w = { player, enemies: [], nextEnemyId: 1,
       bullets: [], nextBulletId: 1, time: 0, life: 1, failed: false, phase: 'normal',
-      gauge: clamp(C.gauge.initial, 0, C.gauge.max), stopGaugeBefore: 0, safetyRemaining: 0, waveGraceRemaining: 0,
+      gauge: clamp(C.gauge.initial, 0, C.gauge.max), passiveRecoveryScale: 1, stopGaugeBefore: 0, safetyRemaining: 0, waveGraceRemaining: 0,
       stopRemaining: 0, route: null, execution: null, lastKills: 0, totalKills: 0, score: 0, maxChain: 0, perfectExecutions: 0, hitsTaken: 0,
       wave: 1, waveIndex: 0, waveBannerRemaining: 0, transitionRemaining: 0, pendingWaveIndex: null, oneStopFailure: null, waveStartSnapshot: null,
       waveFailures: Array(C.waves.definitions.length).fill(0), timeLimitMultiplier: C.waves.timeLimitAssist.standard, lastWavePerfect: false, events: [] };
-    beginWave(w, 0); return w;
+    beginWave(w, firstWave); return w;
   }
   function recordWaveFailure(w) {
     const count = (w.waveFailures[w.waveIndex] || 0) + 1; w.waveFailures[w.waveIndex] = count; return count;
@@ -226,11 +227,21 @@
     w.player = contact || end; if (contact) fail(w);
   }
   const immune = w => w.phase === 'normal' && (w.safetyRemaining > EPS || w.waveGraceRemaining > EPS);
+  // Charge transitions belong to the simulation, never to a repeatedly rendered HUD.
+  function chargeGauge(w, amount, source, center = null) {
+    const before = w.gauge;
+    w.gauge = clamp(before + amount, 0, C.gauge.max);
+    if (w.gauge >= C.gauge.max - EPS) w.gauge = C.gauge.max;
+    const gain = w.gauge - before;
+    if (source === 'nearMiss' && gain > EPS) w.events.push({ type: 'nearMiss', x: center.x, y: center.y, gain });
+    if (before < C.gauge.max - EPS && w.gauge >= C.gauge.max) w.events.push({ type: 'gaugeReady', source });
+    return gain;
+  }
   function graze(w, bullet, a, b, center) {
     if (w.phase !== 'normal' || immune(w) || bullet.grazed || C.gauge.nearMissGain <= 0) return;
     if (segmentCircleTime(a, b, center, C.gauge.nearMissRadius) !== null &&
         segmentCircleTime(a, b, center, C.player.radius + C.shooting.bulletRadius) === null) {
-      bullet.grazed = true; w.gauge = Math.min(C.gauge.max, w.gauge + C.gauge.nearMissGain);
+      if (chargeGauge(w, C.gauge.nearMissGain, 'nearMiss', center) > EPS) bullet.grazed = true;
     }
   }
   function canStop(w) { return w.phase === 'normal' && w.gauge >= C.gauge.max - EPS; }
@@ -487,7 +498,7 @@
   }
   function stepNormal(w, dt) {
     w.time += dt; w.waveBannerRemaining = Math.max(0, w.waveBannerRemaining - dt);
-    w.gauge = Math.min(C.gauge.max, w.gauge + C.gauge.recoveryPerSecond * dt);
+    chargeGauge(w, C.gauge.recoveryPerSecond * (w.passiveRecoveryScale ?? 1) * dt, 'passive');
     const margin = C.world.margin + C.enemy.radius;
     for (const e of w.enemies) {
       if (!e.alive) continue;

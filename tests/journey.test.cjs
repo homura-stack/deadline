@@ -11,6 +11,12 @@ test('fresh map allows only Garden and never marks it restored merely by enterin
  for(const i of [-1,1,2,3,4,5,.5])assert.equal(J.enter(j,i),false);
  assert.equal(J.enter(j,0),true);assert.equal(j.restored,0);assert.equal(J.paused(j),true);assert.equal(tickUntilChange(j),'battle');assert.equal(J.paused(j),false);
 });
+test('an explicit replay may enter only an online area and can never start restoration',()=>{
+ const j={...J.create(),mode:'map',restored:3,selected:1};
+ assert.equal(J.enter(j,1),false);assert.equal(J.enter(j,4,true),false);assert.equal(J.enter(j,1,true),true);
+ assert.equal(j.active,1);assert.equal(j.replay,true);assert.equal(tickUntilChange(j),'battle');assert.equal(J.cleared(j,4,[],{x:20,y:30}),false);
+ assert.equal(j.mode,'battle');assert.equal(j.restored,3);
+});
 test('first Wave stays in battle; second Wave alone starts restoration',()=>{
  const j=J.create();j.mode='map';J.enter(j,0);tickUntilChange(j);
  assert.equal(J.cleared(j,1,[]),false);assert.equal(j.mode,'battle');assert.equal(J.cleared(j,4,[]),false);

@@ -10,7 +10,7 @@
 - 今回のbranch: `codex/deadline-tutorial-restore`
 - origin: `https://github.com/homura-stack/deadline.git`。今回はmerge・pushともに行わない。
 
-コード変更前に `D:/Desktop/AIWorkSpace/backups/deadline-pre-task-e1-20260906/` へ全Git参照を含むbundleと作業ファイルZIPを保存した。bundleを検証済み。ZIPは`.git`以外の274ファイルを含み、ignoredの検証成果物も保持し、ファイル数とCRCを検証済み。削除・履歴書換え・既存branchへの上書きは行っていない。
+コード変更前に `<local-backup-path>/deadline-pre-task-e1-20260906/` へ全Git参照を含むbundleと作業ファイルZIPを保存した。bundleを検証済み。ZIPは`.git`以外の274ファイルを含み、ignoredの検証成果物も保持し、ファイル数とCRCを検証済み。削除・履歴書換え・既存branchへの上書きは行っていない。
 
 ## Gitから確認した旧体験
 
@@ -79,7 +79,7 @@
 PowerShellで以下を実行し、サーバーのウィンドウを開いたままにする。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

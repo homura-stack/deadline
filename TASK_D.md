@@ -17,7 +17,7 @@
 | remote | `origin` = `https://github.com/homura-stack/deadline.git` |
 | merge / push | 未実施 |
 
-コード変更前に `D:\Desktop\AIWorkSpace\backups\deadline-pre-task-d-20260906` へ全履歴bundleと181ファイルのZIPを保存。bundle verify、ZIP件数とCRC検証は合格。TASK A / B / C、アストラ版、mainの既存branchを保持しています。
+コード変更前に `<local-backup-path>/deadline-pre-task-d-20260906` へ全履歴bundleと181ファイルのZIPを保存。bundle verify、ZIP件数とCRC検証は合格。TASK A / B / C、アストラ版、mainの既存branchを保持しています。
 
 ## 正式背景
 
@@ -29,7 +29,7 @@
 | SKYLINE / 天蓋区 | 7–8 | `skyline_before.jpeg` | `skyline_after.jpeg` |
 | CORE / 中央核 | 9–10 | `core_before.jpeg` | `core_after.jpeg` |
 
-提供元 `D:\Desktop\DEADLINE` の完成素材を `assets/stages/` へそのままコピー。10枚合計26,169,191 bytes（約25 MiB）。元画像とのSHA-256一致を確認し、[manifest.json](assets/stages/manifest.json)に原寸とハッシュを記録しました。再生成・画像編集・変換・再圧縮はありません。
+提供元 `<local-asset-path>` の完成素材を `assets/stages/` へそのままコピー。10枚合計26,169,191 bytes（約25 MiB）。元画像とのSHA-256一致を確認し、[manifest.json](assets/stages/manifest.json)に原寸とハッシュを記録しました。再生成・画像編集・変換・再圧縮はありません。
 
 `stage-art.js` が縦横比を維持する中央coverで論理座標960×600へ配置。戦闘時のBEFOREだけ、Canvas上で14〜30%の暗い紺を重ね、Pico・黄金LINE・赤紫の敵弾・シアンTARGETを前面に残します。AFTERは戦闘中・TIME STOP・EXECUTE・地区内WAVE遷移には合成しません。
 
@@ -131,7 +131,7 @@ node --test tests/simulation.test.cjs tests/loop.test.cjs tests/barrage.test.cjs
 このPCの既存Playwrightで新規検証を再実行する場合（サーバー起動後）：
 
 ```powershell
-$env:NODE_PATH = 'C:\Users\F0Bet\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules'
+$env:NODE_PATH = '<local-node-modules-path>'
 node tests/restoration-browser.cjs
 node tests/stage-performance-browser.cjs
 ```
@@ -141,7 +141,7 @@ node tests/stage-performance-browser.cjs
 PowerShellで：
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

@@ -17,7 +17,7 @@
 | originのfetch / push URL | `https://github.com/homura-stack/deadline.git` |
 | merge / push | 未実施 |
 
-コード変更前に保護用branchを作成し、`D:\Desktop\AIWorkSpace\backups\deadline-pre-task-b-20260906` に全履歴の `deadline-before-task-b.bundle` と、`.git` 以外の作業ファイル156件の `working-files-before-b.zip` を保存しました。bundle検証、ZIPのCRCと件数照合は合格しています。以前のアストラ版とその前の完成版のbranchも維持しています。
+コード変更前に保護用branchを作成し、`<local-backup-path>/deadline-pre-task-b-20260906` に全履歴の `deadline-before-task-b.bundle` と、`.git` 以外の作業ファイル156件の `working-files-before-b.zip` を保存しました。bundle検証、ZIPのCRCと件数照合は合格しています。以前のアストラ版とその前の完成版のbranchも維持しています。
 
 ## 視覚設計
 
@@ -120,7 +120,7 @@ LINEの標本は `[255,243,206]`、先端は `[255,247,219]`。シアンのTARGE
 ## 起動・再検証
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

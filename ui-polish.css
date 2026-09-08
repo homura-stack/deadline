@@ -1,6 +1,21 @@
 /* TASK I: decision hierarchy. No arena dimensions or simulation timing are changed.
    Gold = Pico/action, cyan = TARGET, warning colors appear only near the time limit. */
 :root { --ui-text: #e9f0ed; --ui-secondary: #b8c7d2; --ui-font: "Yu Gothic UI", "Meiryo", sans-serif; }
+/* READY stays in the charge bar; the pulse wins over the simultaneous near-miss tint. */
+body.ready:not(.stopped) .charge { box-shadow: inset 0 0 14px #fff3c414; }
+body.ready:not(.stopped) .charge #gauge-value { color: #fff3ce; text-shadow: 0 0 7px #ffe8b64d; }
+body.gauge-ready-idle .charge::after,body.gauge-ready-wave .charge::after { content: ''; position: absolute; inset: 1px; border: 1px solid #fff; pointer-events: none; z-index: 2; }
+body.gauge-ready-idle .charge::after { animation: gauge-ready-idle var(--ready-idle-period) ease-out infinite; }
+/* Same phase as the idle wave; arrival keeps its brighter white flash and halo. */
+body.gauge-ready-idle:not(.gauge-ready-wave):not(.gauge-ready-flash) .charge progress { animation: gauge-ready-bar var(--ready-idle-period) ease-out infinite; }
+body.gauge-ready-wave .charge::after { animation: gauge-ready-wave var(--ready-wave-seconds) ease-out both; }
+body.ready.gauge-ready-flash .charge { animation: none; filter: none; box-shadow: inset 0 0 20px #ffffff45; }
+body.gauge-ready-flash .charge progress::-webkit-progress-value { background: #fff; box-shadow: 0 0 10px #ffffffc0; }
+body.gauge-ready-flash .charge progress::-moz-progress-bar { background: #fff; box-shadow: 0 0 10px #ffffffc0; }
+@keyframes gauge-ready-wave { from { opacity: .9; inset: 1px; } to { opacity: 0; inset: calc(-1 * var(--ready-wave-expand)); } }
+@keyframes gauge-ready-idle { 0%,60% { opacity: 0; inset: 1px; } 65% { opacity: var(--ready-idle-opacity); inset: 1px; } 100% { opacity: 0; inset: calc(-1 * var(--ready-idle-expand)); } }
+@keyframes gauge-ready-bar { 0%,60%,82%,100% { filter: none; box-shadow: none; } 65% { filter: brightness(1.22) saturate(.25); box-shadow: 0 0 5px #ffffff20; } }
+@media (prefers-reduced-motion: reduce) { body.gauge-ready-idle .charge::after { animation: none; opacity: 0; } body.gauge-ready-idle .charge progress { animation: none !important; filter: none; box-shadow: none; } body.gauge-ready-wave .charge::after { animation: none; opacity: .25; inset: 1px; } }
 .play-footer { gap: 8px 20px; flex-wrap: wrap; }
 #hint { color: var(--ui-text); font: 14px/1.5 var(--ui-font); margin: 0; }
 .play-footer .score-stat { display: flex; align-items: baseline; gap: 10px; margin-left: auto; white-space: nowrap; font: 12px var(--utility); color: var(--ui-secondary); }

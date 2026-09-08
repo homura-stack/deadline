@@ -13,7 +13,7 @@
 | TASK E branch | `codex/deadline-pico-tutorial` |
 | origin | `https://github.com/homura-stack/deadline.git`（通信・pushなし） |
 
-コード変更前に `D:\Desktop\AIWorkSpace\backups\deadline-pre-task-e-20260906` へ全履歴の `deadline-before-task-e.bundle` と、ignore対象を含む248ファイルの `working-files-before-e.zip` を保存。Git bundle verify、ZIP件数・CRCを検証済み。TASK Dとそれ以前のbranchを保持しています。ファイル削除はありません。
+コード変更前に `<local-backup-path>/deadline-pre-task-e-20260906` へ全履歴の `deadline-before-task-e.bundle` と、ignore対象を含む248ファイルの `working-files-before-e.zip` を保存。Git bundle verify、ZIP件数・CRCを検証済み。TASK Dとそれ以前のbranchを保持しています。ファイル削除はありません。
 
 ## 実習
 
@@ -65,7 +65,7 @@ Pico・敵3種は既存PNGと現行Rendererのキャッシュをそのまま利�
 Windowsのターミナル（PowerShell）で：
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

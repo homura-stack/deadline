@@ -11,7 +11,7 @@
 - 修正branch: `codex/deadline-training-recovery`
 - origin: `https://github.com/homura-stack/deadline.git`。merge / pushなし。
 
-作品変更前に `D:/Desktop/AIWorkSpace/backups/deadline-task-f-complete-20260906-06c1bf4/deadline-f.bundle` を検証し、Fを含む19参照と完全な履歴が復元できることを確認した。Fのbranchと安全な基準点を残し、新branch上で修正。既存ファイル・画像の削除や履歴書換えは行わない。
+作品変更前に `<local-backup-path>/deadline-task-f-complete-20260906-06c1bf4/deadline-f.bundle` を検証し、Fを含む19参照と完全な履歴が復元できることを確認した。Fのbranchと安全な基準点を残し、新branch上で修正。既存ファイル・画像の削除や履歴書換えは行わない。
 
 ## 原因とGit比較
 
@@ -75,7 +75,7 @@ E.1の`deadline.tutorial.v1`が`started` / `skipped` / `completed`なら、`shou
 未起動の場合、PowerShellで次を実行し、ウィンドウを開いたままにする。
 
 ```powershell
-cd D:\Desktop\AIWorkSpace\01_projects\web\deadline
+cd .
 python -m http.server 4186 --bind 127.0.0.1
 ```
 

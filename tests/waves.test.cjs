@@ -99,3 +99,16 @@ test('Wave 7 timeout and cancel report distinct causes without returning to Wave
 test('enemy HP remains a Wave-local data parameter',()=>{
  const wave=C.waves.definitions[0],saved=wave.enemyHp;try{wave.enemyHp=2;const w=S.createWorld();assert.ok(w.enemies.every(e=>e.hp===2));clearCurrentWave(w);assert.ok(w.enemies.every(e=>e.alive&&e.hp===1));assert.equal(w.score,0);assert.equal(w.phase,'normal');}finally{wave.enemyHp=saved;}
 });
+
+test('TASK K approved tuning reaches the simulation and assisted STOP without changing climax volleys',()=>{
+ const rows=[[5,18,1.2,.85],[5,19,1.12,.88],[6.5,19,1.1,.87],[7,19,1.12,.88],[7.5,20,1.08,.9],[8,21,1.06,.91],[8.1,20,1.1,.9],[9,21,1.04,.92],[10.5,19,1.35,.84],[13,19,1.55,.86]];
+ const counts=[{aim:3},{aim:3},{aim:3,fan:3},{aim:3,fan:4,burst:7},{aim:3,fan:4,burst:7,rotate:6},{aim:3,fan:4,burst:8,rotate:6},{aim:3,fan:4,burst:8},{aim:3,fan:4,burst:8,rotate:6},{aim:3,fan:5,burst:10,rotate:8},{aim:3,fan:5,burst:10,rotate:8}];
+ for(let i=0;i<10;i++){
+  const wave=C.waves.definitions[i],w=S.createWorld(i);
+  assert.deepEqual([wave.timeStopSeconds,wave.enemySpeed,wave.fireIntervalScale,wave.bulletSpeedScale],rows[i]);assert.deepEqual(wave.counts,counts[i]);
+  assert.ok(w.enemies.every(e=>Math.abs(Math.hypot(e.vx,e.vy)-rows[i][1])<1e-6&&e.fireIntervalScale===rows[i][2]&&e.bulletSpeedScale===rows[i][3]));
+  w.timeLimitMultiplier=2;w.gauge=100;S.stopTime(w);assert.equal(w.stopRemaining,rows[i][0]*2);
+ }
+ // These are the approved composition/timing values, not a claim about perceived difficulty.
+ assert.equal(C.waves.definitions[8].enemies.length,8);assert.equal(C.waves.definitions[9].enemies.length,10);
+});

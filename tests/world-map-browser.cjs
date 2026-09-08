@@ -16,6 +16,7 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   await p.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});
   await visitCompleted(p,base+'?debug');await p.waitForLoadState('networkidle');await mapStart(p);
   assert.equal((await state(p)).world.time,0);assert.equal((await state(p)).journey.restored,0);
+  assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'0');
   assert.equal(await p.locator('[data-area][data-status="locked"]').count(),4);assert.equal(await p.locator('[data-city][data-status="online"]').count(),0);
   await frozen(p);
   for(const index of [1,2,3,4]){await p.locator(`[data-area="${index}"]`).click();assert.match(await p.locator('#map-notice').innerText(),/LOCKED/);assert.equal(await p.locator('#map-enter').isDisabled(),true);assert.equal((await state(p)).journey.mode,'map');}
@@ -48,6 +49,8 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   }
   await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map');const cleared=await frozen(p);
   assert.equal((await state(p)).journey.restored,1);assert.equal(cleared.wave,2);
+  const savedGarden=await p.evaluate(()=>JSON.parse(localStorage.getItem('deadline.progress.v1')));assert.equal(savedGarden.restored,1);assert.equal(savedGarden.run.score,cleared.score);
+  assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'1','real Garden clear moves Pico to Forge');
   assert.equal(await p.locator('[data-city="0"]').getAttribute('data-status'),'online');assert.equal(await p.locator('[data-city="1"]').getAttribute('data-status'),'available');
   assert.equal(await p.locator('[data-city][data-status="online"]').count(),1);assert.equal(await p.locator('[data-connection][data-powered="true"]').count(),0);
   assert.match(await p.locator('#map-notice').innerText(),/FORGE UNLOCKED/);
@@ -61,12 +64,22 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   const replayed=await state(p);assert.deepEqual(replayed.world,campaign.world);assert.deepEqual(replayed.journey,campaign.journey);
   await p.locator('#map-training').click();await p.locator('#briefing-skip').click();assert.deepEqual((await state(p)).world,campaign.world);assert.deepEqual((await state(p)).journey,campaign.journey);
   report.flow.push({trainingReplay:'complete and abort preserve real Garden-restored campaign exactly'});
+  await p.locator('[data-area="0"]').click();assert.equal(await p.locator('#map-enter').isDisabled(),false);assert.match(await p.locator('#map-enter').innerText(),/REPLAY GARDEN/);const campaignAtReplay=await state(p);
+  assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'1','past-area selection does not move Pico');
+  await p.locator('#map-enter').click();await battleReady(p);let replay=await state(p);assert.equal(replay.areaReplayActive,true);assert.equal(replay.journey.replay,true);assert.equal(replay.world.wave,1);assert.equal(replay.world.score,0);
+  for(const wave of [1,2]){if(wave===2)await p.waitForFunction(()=>Deadline.inspect().world.wave===2&&Deadline.inspect().world.phase==='normal');await surviveUntilReady(p);await p.keyboard.press('Space');await planWave(p);await p.keyboard.press('Space');if(wave===1)await p.waitForFunction(()=>Deadline.inspect().world.phase==='wave-clear');}
+  await p.waitForFunction(()=>!Deadline.inspect().areaReplayActive&&Deadline.inspect().journey.mode==='map');const afterAreaReplay=await state(p);assert.deepEqual(afterAreaReplay.world,campaignAtReplay.world);assert.deepEqual(afterAreaReplay.journey,campaignAtReplay.journey);assert.match(await p.locator('#map-notice').innerText(),/REPLAY COMPLETE/);
+  report.flow.push({areaReplay:'Garden Waves 1-2 return to the exact restored campaign without unlocking or score mutation'});
+  assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'1','actual replay returns Pico to campaign location');
+  assert.deepEqual(await p.evaluate(()=>JSON.parse(localStorage.getItem('deadline.progress.v1'))),savedGarden,'real AREA replay cannot write temporary score or progress');
   const audit=await p.evaluate(()=>window.__restoreAudit);assert.ok(audit.frames>20);assert.equal(audit.mutations,0);assert.ok(audit.image);fs.writeFileSync(path.join(output,'restoration-canvas.png'),Buffer.from(audit.image.split(',')[1],'base64'));delete audit.image;report.render=audit;
+  await p.reload();await p.waitForLoadState('networkidle');await mapStart(p);assert.equal((await state(p)).journey.restored,1);assert.equal((await state(p)).world.score,cleared.score);assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'1');
   await p.locator('[data-area="2"]').click();assert.equal(await p.locator('#map-enter').isDisabled(),true);await p.locator('[data-area="1"]').click();await p.locator('#map-enter').click();await battleReady(p);
   const forge=(await state(p)).world;assert.equal(forge.wave,3);assert.equal(forge.score,cleared.score);assert.equal(forge.life,1);assert.equal(forge.totalKills,cleared.totalKills);
   assert.match(await p.locator('#area-caption').innerText(),/FORGE.*WAVE 1 \/ 2/);await p.screenshot({path:path.join(output,'forge-wave-3.png')});
-  await p.keyboard.press('KeyR');assert.equal((await state(p)).journey.mode,'map');assert.equal((await state(p)).journey.restored,0);assert.equal((await state(p)).world.score,0);
-  await p.reload();await p.waitForLoadState('networkidle');assert.equal((await state(p)).titleActive,true);await mapStart(p);assert.equal((await state(p)).journey.restored,0);
+  await p.keyboard.press('KeyR');assert.equal((await state(p)).journey.mode,'map');assert.equal((await state(p)).journey.restored,1);assert.equal((await state(p)).world.score,cleared.score);
+  await p.reload();await p.waitForLoadState('networkidle');assert.equal((await state(p)).titleActive,true);await mapStart(p);assert.equal((await state(p)).journey.restored,1);
+  assert.equal(await p.locator('.world-pico').getAttribute('data-location'),'1','reload restores the committed campaign progress');
   const reduced=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:'reduce'});hook(reduced);await visitCompleted(reduced,base+'?debug');await mapStart(reduced);await reduced.locator('#map-enter').focus();await reduced.keyboard.press('Enter');await battleReady(reduced);assert.equal((await state(reduced)).world.phase,'normal');await reduced.close();
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.externalRequests,[]);
   console.log('PASS real title → map → Garden Waves 1–2 → LIGHT RESTORED → Garden ONLINE → Forge Wave 3; locks, pause, score/life, restart, reload, five layouts, reduced motion and render isolation');

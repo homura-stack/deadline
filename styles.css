@@ -318,6 +318,9 @@ canvas { display: block; width: 100%; height: clamp(280px, calc(100svh - 272px),
 .touch-controls canvas { touch-action: pan-y pinch-zoom; cursor: default; }
 .callout { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; white-space: nowrap; color: #c4f9ff; text-shadow: 0 2px 12px #08121e; font: italic 700 calc(22px + var(--strength, 1) * 2px) Consolas, monospace; }
 .callout small { display: block; margin-top: 4px; font: 16px Consolas, monospace; color: var(--cyan); }
+.near-miss-feedback { position:absolute;left:50%;top:18%;z-index:4;transform:translateX(-50%);pointer-events:none;white-space:nowrap;color:#fff1b8;text-shadow:0 0 12px #ffe09b88,0 2px 7px #07111d;font:italic 700 clamp(16px,2vw,24px) Consolas,monospace;letter-spacing:.08em;animation:near-miss-pop .18s ease-out; }
+.near-miss-feedback[hidden]{display:none}.near-miss-feedback small{margin-left:9px;color:#9ef5f2;font-size:.72em}
+body.near-miss .charge{animation:near-miss-charge .28s ease-out}body.near-miss .charge progress::-webkit-progress-value{background:#fff3be;box-shadow:0 0 14px #ffe69d}body.near-miss .charge progress::-moz-progress-bar{background:#fff3be;box-shadow:0 0 14px #ffe69d}
 .wave-banner { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; color: #d6fbff; text-shadow: 0 2px 18px #08121e; font: italic 700 clamp(28px, 5vw, 52px) Consolas, monospace; letter-spacing: .12em; }
 .wave-banner[hidden] { display: none; }
 .wave-banner.wave-enter { animation: wave-enter .7s cubic-bezier(.16,.8,.25,1) both; }
@@ -437,6 +440,8 @@ canvas { display: block; width: 100%; height: clamp(280px, calc(100svh - 272px),
 @keyframes practice-pad-swipe { 0%,100% { transform:translate(-22px,8px); opacity:.35 } 25% { opacity:1 } 70% { transform:translate(35px,-15px); opacity:1 } 88% { opacity:.15 } }
 @keyframes practice-button-tap { 0%,100% { transform:translateY(-7px); opacity:.25 } 45%,65% { transform:translateY(6px); opacity:1 } }
 @keyframes result-in { from { opacity: 0; } }
+@keyframes near-miss-pop{from{opacity:0;transform:translate(-50%,8px) scale(.9)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes near-miss-charge{0%{filter:brightness(1)}35%{filter:brightness(1.9)}100%{filter:brightness(1)}}
 @keyframes life-hit { 45% { color: #fff; text-shadow: 0 0 15px #ff6971; transform: scale(1.35); } }
 .result { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 11px; background: #0d1727e8; animation: result-in .18s ease-out; }
 .result[hidden], details[hidden] { display: none; }
@@ -568,7 +573,7 @@ details label { display: block; margin-top: 12px; } details output { display: bl
   .title-cut { display: none; }
   .title-logo, .title-tagline, .title-start, .title-secondary { animation: none; opacity: 1; transform: none; clip-path: none; }
   .title-content { transition: none; }
-  .wave-banner.wave-enter, .tutorial-prompt, .result, .life-hit { animation: none; }
+  .wave-banner.wave-enter, .tutorial-prompt, .near-miss-feedback, body.near-miss .charge, .result, .life-hit { animation: none; }
   .briefing-demo * { animation: none !important; }
   .demo-player-evade { transform:translate(118px,67px); }
   .demo-input-evade { transform:translate(143px,91px); }

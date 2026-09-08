@@ -2,6 +2,7 @@
 'use strict';
 const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea,initialMap}=require('./journey-helpers.cjs');
+const {surviveUntilReady}=require('./browser.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), path = require('node:path'), fs = require('node:fs');
 const C = require('../config.js'), S = require('../simulation.js');
@@ -112,7 +113,7 @@ async function executeRouteCase(browser, allTargets) {
 }
 async function caseF(browser) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }); hook(page); await open(page); await move(page, { x: 60, y: 550 });
-  await page.waitForFunction(() => Deadline.sim.canStop(Deadline.inspect().world) || Deadline.inspect().world.failed, {}, { timeout: 6500 });
+  await surviveUntilReady(page);
   let current = await state(page); assert.equal(current.world.failed, false); assert.ok(current.world.bullets.length >= 15); const bullets = current.world.bullets.length;
   await page.keyboard.press('Space'); current = await state(page); const points = routeAll(current.world); await stroke(page, points, 1); assert.equal((await state(page)).world.route.locks.length, 3);
   await page.evaluate(() => { window.__perf = []; let previous = null, end = performance.now() + 1400; function sample(now) { if (previous != null) window.__perf.push(now - previous); previous = now; if (now < end) requestAnimationFrame(sample); } requestAnimationFrame(sample); });

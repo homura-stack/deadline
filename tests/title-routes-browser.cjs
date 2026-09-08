@@ -26,9 +26,8 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
     const pico=await page.evaluate(()=>{const e=Deadline.characters.entries.pico;return {file:e.file,width:e.width,anchorX:e.anchorX,anchorY:e.anchorY,status:e.status};});
     assert.deepEqual(pico,{file:'pico-final.png',width:48,anchorX:.56,anchorY:.47,status:'ready'});report.pico=pico;
     await page.reload();await page.waitForLoadState('networkidle');await page.locator('#title-start').click();
-    await page.waitForFunction(()=>!Deadline.inspect().titleActive);assert.equal((await state(page)).briefingActive,true,'completed START also enters training');
-    assert.equal(await page.locator('#world-map').isVisible(),false);await begin(page);await plan(page);await page.keyboard.press('Space');
-    await map(page);await garden(page);report.routes.B='completed TITLE -> START -> TRAINING -> completed -> WORLD MAP -> GARDEN';
+    await page.waitForFunction(()=>!Deadline.inspect().titleActive);assert.equal((await state(page)).briefingActive,false,'completed START bypasses training');
+    await map(page);assert.equal(await page.locator('#world-map').isVisible(),true);await garden(page);report.routes.B='completed TITLE -> START -> WORLD MAP -> GARDEN';
     for(const [route,name]of[['C','how'],['D','settings'],['E','credits']]){
       await page.reload();await page.waitForLoadState('networkidle');const before=(await state(page)).world;
       await page.locator(`[data-title-info="${name}"]`).click();assert.equal(await page.locator('#title-'+name).isVisible(),true);
@@ -53,13 +52,13 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
     await page.close();
     // G.1 supersedes the optional choice: fresh START completes the real rehearsal first.
     const fresh=await open(null);await fresh.locator('#title-start').click();await fresh.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(fresh);await plan(fresh);await fresh.keyboard.press('Space');await map(fresh);await garden(fresh);await fresh.close();report.firstStart='START -> TRAINING -> completed -> MAP -> GARDEN';
-    const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/pico-dead-circuit-original.jpeg'))).digest('hex');assert.equal(digest,'db3cae82f0fde61644714aa92e2cadef661407e8d58acd40f0a99f15fc4df592');report.backgroundSHA256=digest;
+    const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/title.png'))).digest('hex');assert.equal(digest,'5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9');report.backgroundSHA256=digest;
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(oldArt,[]);report.errors=errors;report.externalRequests=external;
-    // Isolated negative case: the title still has its name and working buttons if just its JPG fails.
+    // Isolated negative case: the title still has its name and working buttons if just its PNG fails.
     const failed=await browser.newPage({viewport:{width:1366,height:768}}),pageErrors=[];failed.on('pageerror',e=>pageErrors.push(String(e)));
-    await failed.route('**/assets/title/pico-dead-circuit-original.jpeg',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
+    await failed.route('**/assets/title/title.png',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
     assert.equal(await failed.locator('#title-screen').evaluate(e=>e.classList.contains('title-background-failed')),true);assert.equal(await failed.locator('.title-heading').evaluate(e=>getComputedStyle(e).clipPath),'none');
-    await failed.locator('#title-training-launch').click();assert.equal((await state(failed)).briefingActive,true);assert.deepEqual(pageErrors,[]);await failed.close();report.imageFailureFallback='name + TRAINING usable; expected JPG request failure isolated';
+    await failed.locator('#title-training-launch').click();assert.equal((await state(failed)).briefingActive,true);assert.deepEqual(pageErrors,[]);await failed.close();report.imageFailureFallback='name + TRAINING usable; expected PNG request failure isolated';
     fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS mandatory routes A-E, mandatory fresh completion, unchanged Pico, ten resized layouts, title asset integrity, errors 0 and image failure fallback');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

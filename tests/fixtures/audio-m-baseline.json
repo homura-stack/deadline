@@ -1,0 +1,581 @@
+{
+  "sampleRate": 48000,
+  "master": 100,
+  "sfx": 100,
+  "commonGain": 4,
+  "limiterKnee": 0.8,
+  "limiterCeiling": 0.95,
+  "results": {
+    "hit": {"windowMs":86,"final":{"peak":0.4648319482803345,"rms":0.0680986970089739,"energy20Percent":95.18427310328295,"rms50":0.08929888466240768,"rms100":0.06315213361015784,"tailEnergy":0},"beforeLimiter":{"peak":0.4648319482803345,"rms":0.06809869724799508,"energy20Percent":95.18427321282017,"rms50":0.08929888496371768,"rms100":0.06315213383181696,"tailEnergy":0},"limiter":{"aboveKneePercent":0,"rmsGainDb":-3.048680306941205e-8,"maxReduction":5.960464477539063e-8},"activeVoices":0,"plays":{"slash":1,"kill":1}},
+    "stop": {
+      "windowMs": 138,
+      "final": {
+        "peak": 0.18895995616912842,
+        "rms": 0.03287485926510469,
+        "energy20Percent": 81.77536190897541,
+        "rms50": 0.05431568440001998,
+        "rms100": 0.038620255316959694,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.18895992636680603,
+        "rms": 0.03287485945212933,
+        "energy20Percent": 81.77536186213422,
+        "rms50": 0.0543156847085313,
+        "rms100": 0.03862025553468931,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -4.941391292495898e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "stop": 1
+      }
+    },
+    "nearMiss": {
+      "windowMs": 53,
+      "final": {
+        "peak": 0.15535950660705566,
+        "rms": 0.035224686425922164,
+        "energy20Percent": 87.75007944799272,
+        "rms50": 0.036265990063418206,
+        "rms100": 0.025643958799616114,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.15535950660705566,
+        "rms": 0.035224686275285466,
+        "energy20Percent": 87.75007822714902,
+        "rms50": 0.03626598991005283,
+        "rms100": 0.025643958689950945,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": 3.7144794598896776e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "nearMiss": 1
+      }
+    },
+    "ready": {
+      "windowMs": 118,
+      "final": {
+        "peak": 0.20413869619369507,
+        "rms": 0.05559367658296116,
+        "energy20Percent": 53.320959944862665,
+        "rms50": 0.0799060796060273,
+        "rms100": 0.06038857666113452,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.20413869619369507,
+        "rms": 0.055593676699146416,
+        "energy20Percent": 53.32096033218012,
+        "rms50": 0.07990608003531073,
+        "rms100": 0.060388576787358844,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -1.815264586281514e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "ready": 1
+      }
+    },
+    "lock": {
+      "windowMs": 46,
+      "final": {
+        "peak": 0.11353683471679688,
+        "rms": 0.021244763394007264,
+        "energy20Percent": 99.66939892969296,
+        "rms50": 0.020377261198060034,
+        "rms100": 0.014408899575157761,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.11353684216737747,
+        "rms": 0.021244763618917428,
+        "energy20Percent": 99.66939881398929,
+        "rms50": 0.02037726141378628,
+        "rms100": 0.014408899727699254,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -9.195418280611497e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "target": 1
+      }
+    },
+    "execute": {
+      "windowMs": 112.99999999999999,
+      "final": {
+        "peak": 0.18711304664611816,
+        "rms": 0.02576427781120087,
+        "energy20Percent": 88.79674318668167,
+        "rms50": 0.03866393684975234,
+        "rms100": 0.027387715589925643,
+        "tailEnergy": 5.202593911235454e-10
+      },
+      "beforeLimiter": {
+        "peak": 0.18711307644844055,
+        "rms": 0.02576427814057212,
+        "energy20Percent": 88.79674345351776,
+        "rms50": 0.03866393738522216,
+        "rms100": 0.027387715942572853,
+        "tailEnergy": 5.192576847430207e-10
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -1.1104065659043423e-7,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "execute": 1
+      }
+    },
+    "kill": {
+      "windowMs": 86,
+      "final": {
+        "peak": 0.22466981410980225,
+        "rms": 0.055789732719441605,
+        "energy20Percent": 94.90326996408733,
+        "rms50": 0.07315664413959692,
+        "rms100": 0.05173726972057755,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.22466979920864105,
+        "rms": 0.0557897331308759,
+        "energy20Percent": 94.90326946159101,
+        "rms50": 0.07315664467886715,
+        "rms100": 0.05173727010212602,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -6.40561031230403e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "kill": 1
+      }
+    },
+    "final": {
+      "windowMs": 112.99999999999999,
+      "final": {
+        "peak": 0.454639196395874,
+        "rms": 0.07167608434698115,
+        "energy20Percent": 89.90666560655536,
+        "rms50": 0.10766074597548773,
+        "rms100": 0.07619263606830695,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.4546392261981964,
+        "rms": 0.07167608465477908,
+        "energy20Percent": 89.90666560283155,
+        "rms50": 0.10766074644884523,
+        "rms100": 0.07619263639572244,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -3.7299733252459805e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "slash": 1,
+        "kill": 1
+      }
+    },
+    "damage": {
+      "windowMs": 93,
+      "final": {
+        "peak": 0.20526933670043945,
+        "rms": 0.056157501421112144,
+        "energy20Percent": 67.37650030497554,
+        "rms50": 0.07462670751743246,
+        "rms100": 0.05415633313151711,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.20526930689811707,
+        "rms": 0.056157501645811646,
+        "energy20Percent": 67.37650016807102,
+        "rms50": 0.07462670778502348,
+        "rms100": 0.05415633334820946,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -3.4754307961772464e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "damage": 1
+      }
+    },
+    "perfect": {
+      "windowMs": 228,
+      "final": {
+        "peak": 0.3721163272857666,
+        "rms": 0.052833903363343086,
+        "energy20Percent": 71.28301146233686,
+        "rms50": 0.11066147433560007,
+        "rms100": 0.07971234380907329,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.3721162676811218,
+        "rms": 0.0528339038042947,
+        "energy20Percent": 71.28301070994128,
+        "rms50": 0.11066147532234388,
+        "rms100": 0.0797123444842597,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -7.249241113283553e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {}
+    },
+    "clear": {
+      "windowMs": 168,
+      "final": {
+        "peak": 0.316694974899292,
+        "rms": 0.04322286246183624,
+        "energy20Percent": 81.18670832991829,
+        "rms50": 0.07873414420564938,
+        "rms100": 0.05602045700753853,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.3166949152946472,
+        "rms": 0.04322286263032061,
+        "energy20Percent": 81.1867080168099,
+        "rms50": 0.07873414448666144,
+        "rms100": 0.05602045722945152,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -3.3857929897954555e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {}
+    },
+    "ui": {
+      "windowMs": 43,
+      "final": {
+        "peak": 0.104775071144104,
+        "rms": 0.02733650260353267,
+        "energy20Percent": 93.36746247883976,
+        "rms50": 0.025350829614628704,
+        "rms100": 0.01792574352920871,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.104775071144104,
+        "rms": 0.02733650201036278,
+        "energy20Percent": 93.36746224938841,
+        "rms50": 0.025350829064545576,
+        "rms100": 0.017925743140241198,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": 1.8847357175274442e-7,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "ui": 1
+      }
+    },
+    "clock": {
+      "windowMs": 30,
+      "final": {
+        "peak": 0.05388009548187256,
+        "rms": 0.009170159762238844,
+        "energy20Percent": 99.98696452048235,
+        "rms50": 0.007103175208242481,
+        "rms100": 0.005022703357704426,
+        "tailEnergy": 4.353779559096438e-9
+      },
+      "beforeLimiter": {
+        "peak": 0.05388009920716286,
+        "rms": 0.009170159332937862,
+        "energy20Percent": 99.98696443024622,
+        "rms50": 0.0071031748757073715,
+        "rms100": 0.005022703122566594,
+        "tailEnergy": 4.348150462540616e-9
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": 4.0662988774423406e-7,
+        "maxReduction": 5.957826942903921e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "tick": 1
+      }
+    },
+    "draw": {
+      "windowMs": 43,
+      "final": {
+        "peak": 0.03529554605484009,
+        "rms": 0.008517421300829714,
+        "energy20Percent": 99.27261283725908,
+        "rms50": 0.007898731570930352,
+        "rms100": 0.005585246656577124,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.03529555723071098,
+        "rms": 0.008517422172002242,
+        "energy20Percent": 99.27261375989895,
+        "rms50": 0.007898732378822519,
+        "rms100": 0.005585247227843153,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -8.884036354065116e-7,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {}
+    },
+    "resume": {
+      "windowMs": 98,
+      "final": {
+        "peak": 0.15922093391418457,
+        "rms": 0.029832467584846617,
+        "energy20Percent": 90.53525156402493,
+        "rms50": 0.0417338083501179,
+        "rms100": 0.02953263618028207,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.1592208743095398,
+        "rms": 0.029832467178007856,
+        "energy20Percent": 90.53525086776212,
+        "rms50": 0.041733807775453,
+        "rms100": 0.02953263577753225,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": 1.1845337955572455e-7,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "resume": 1
+      }
+    },
+    "locks": {
+      "windowMs": 496,
+      "final": {
+        "peak": 0.12018769979476929,
+        "rms": 0.020490330082304695,
+        "energy20Percent": 9.936738995512796,
+        "rms50": 0.020377261198060034,
+        "rms100": 0.020385919808987966,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.12018771469593048,
+        "rms": 0.02049033020319418,
+        "energy20Percent": 9.93673907712021,
+        "rms50": 0.02037726141378628,
+        "rms100": 0.020385920285357784,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -5.1245281692214026e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "target": 10
+      }
+    },
+    "executeKill": {
+      "windowMs": 151.00000000000003,
+      "final": {
+        "peak": 0.5019989013671875,
+        "rms": 0.05753903510494627,
+        "energy20Percent": 13.321386099026359,
+        "rms50": 0.03866393684975234,
+        "rms100": 0.07060542580832554,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.5019989013671875,
+        "rms": 0.05753903553784574,
+        "energy20Percent": 13.321386279210355,
+        "rms50": 0.03866393738522216,
+        "rms100": 0.07060542630683567,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -6.534897600275163e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "execute": 1,
+        "slash": 1,
+        "kill": 1
+      }
+    },
+    "tenKills": {
+      "windowMs": 538,
+      "final": {
+        "peak": 0.9305092692375183,
+        "rms": 0.08963364452239955,
+        "energy20Percent": 1.5409446575300767,
+        "rms50": 0.03866393684975234,
+        "rms100": 0.07060542603103744,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 2.6866390705108643,
+        "rms": 0.09233041205720587,
+        "energy20Percent": 1.4522440872221878,
+        "rms50": 0.03866393738522216,
+        "rms100": 0.07060542635425812,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0.007744733581164808,
+        "rmsGainDb": -0.25747436946377494,
+        "maxReduction": 1.756129801273346
+      },
+      "activeVoices": 0,
+      "plays": {
+        "execute": 1,
+        "slash": 10,
+        "kill": 10
+      }
+    },
+    "denseSequence": {
+      "windowMs": 1428,
+      "final": {
+        "peak": 0.5931766033172607,
+        "rms": 0.0610508549440214,
+        "energy20Percent": 4.329583888391271,
+        "rms50": 0.08539318471487241,
+        "rms100": 0.06403373110503391,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.5931766033172607,
+        "rms": 0.06105085500741176,
+        "energy20Percent": 4.329583835524055,
+        "rms50": 0.08539318418273131,
+        "rms100": 0.06403373070099345,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -9.018738594103938e-9,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "nearMiss": 1,
+        "ready": 1,
+        "target": 10,
+        "execute": 1,
+        "slash": 10,
+        "kill": 10
+      }
+    },
+    "damageReady": {
+      "windowMs": 118,
+      "final": {
+        "peak": 0.39445650577545166,
+        "rms": 0.07477737816597117,
+        "energy20Percent": 59.765773143348476,
+        "rms50": 0.10953600813332293,
+        "rms100": 0.0812278246305374,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 0.39445653557777405,
+        "rms": 0.07477737838331414,
+        "energy20Percent": 59.765772852980675,
+        "rms50": 0.10953600823979226,
+        "rms100": 0.0812278248666443,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 0,
+        "rmsGainDb": -2.5245829849655614e-8,
+        "maxReduction": 5.960464477539063e-8
+      },
+      "activeVoices": 0,
+      "plays": {
+        "damage": 1,
+        "ready": 1
+      }
+    },
+    "stress": {
+      "windowMs": 118,
+      "final": {
+        "peak": 0.9305092692375183,
+        "rms": 0.39652154318171956,
+        "energy20Percent": 71.62787872643548,
+        "rms50": 0.6065784749817109,
+        "rms100": 0.43073094006875634,
+        "tailEnergy": 0
+      },
+      "beforeLimiter": {
+        "peak": 3.375669479370117,
+        "rms": 0.6489758777357107,
+        "energy20Percent": 88.63736671192214,
+        "rms50": 0.9954077986863814,
+        "rms100": 0.7049672066348608,
+        "tailEnergy": 0
+      },
+      "limiter": {
+        "aboveKneePercent": 13.930084745762711,
+        "rmsGainDb": -4.279235335833805,
+        "maxReduction": 2.445160210132599
+      },
+      "activeVoices": 0,
+      "plays": {
+        "slash": 10,
+        "kill": 10,
+        "damage": 1,
+        "ready": 1
+      }
+    }
+  },
+  "browser": "152.0.7977.82",
+  "audioSourceSHA256": "495c49ccb7e64c78ab61c7637befe670d2dd0bdf34c4d9ea416698579eba6e2f"
+}

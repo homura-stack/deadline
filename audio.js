@@ -13,7 +13,8 @@
   class Sound {
     constructor() {
       const saved = this.loadPreferences();
-      this.context = null; this.enabled = true; this.noiseBuffer = null; this.masterGain = null; this.sfxGain = null; this.lastLockAt = -Infinity; this.lastDamageAt = -Infinity;
+      this.context = null; this.enabled = true; this.noiseBuffer = null; this.masterGain = null; this.sfxGain = null; this.lastLockAt = -Infinity; this.lastNearMissAt=-Infinity; this.lastDamageAt = -Infinity;
+      this.referenceGain = null; this.limiter = null;
       this.masterVolume = saved.masterVolume; this.sfxVolume = saved.sfxVolume; this.muted = saved.muted;
       this.clockActive = false; this.nextClockAt = Infinity; this.clockStep = 0; this.activeVoices = new Set();
       this.metrics = { plays: Object.create(null), events: [], maxVoices: 0 };
@@ -28,7 +29,17 @@
         if (!this.context) {
           this.context = new (window.AudioContext || window.webkitAudioContext)();
           this.masterGain = this.context.createGain(); this.sfxGain = this.context.createGain();
-          this.sfxGain.connect(this.masterGain); this.masterGain.connect(this.context.destination); this.applyMix();
+          this.referenceGain = this.context.createGain(); this.referenceGain.gain.value = C.audio.referenceGain;
+          this.limiter = this.context.createWaveShaper();
+          const curve = new Float32Array(4097), knee = C.audio.limiterKnee, headroom = C.audio.limiterCeiling - knee;
+          // Linear at ordinary levels; smoothly bounded for overlapping voices. No per-SE boost.
+          for (let i = 0; i < curve.length; i++) {
+            const x = i * 2 / (curve.length - 1) - 1, magnitude = Math.abs(x);
+            curve[i] = Math.sign(x) * (magnitude <= knee ? magnitude : knee + headroom * Math.tanh((magnitude - knee) / headroom));
+          }
+          this.limiter.curve = curve;
+          this.sfxGain.connect(this.referenceGain); this.referenceGain.connect(this.limiter);
+          this.limiter.connect(this.masterGain); this.masterGain.connect(this.context.destination); this.applyMix();
           const length = Math.ceil(this.context.sampleRate * 0.25);
           this.noiseBuffer = this.context.createBuffer(1, length, this.context.sampleRate);
           // Seeded noise keeps the synthesized placeholder timbre repeatable across sessions and tests.
@@ -104,6 +115,19 @@
         if (!voice.ended) { voice.ended = true; this.activeVoices.delete(voice); for (const node of voice.nodes) { try { node.disconnect(); } catch (_) {} } }
       }
     }
+    /** Preserves legacy envelopes unless a combat presence profile explicitly opts in. */
+    shapeEnvelope(param, now, duration, gain, attackTime, release, presence) {
+      param.setValueAtTime(0.0001, now); param.linearRampToValueAtTime(gain, now + attackTime);
+      if (presence) {
+        const bodyEnd = Math.max(attackTime, duration - presence.releaseSeconds);
+        const holdEnd = Math.min(bodyEnd, attackTime + presence.holdSeconds);
+        param.setValueAtTime(gain, now + holdEnd);
+        param.exponentialRampToValueAtTime(Math.max(0.0001, gain * presence.bodyRatio), now + bodyEnd);
+      } else if (release) {
+        param.exponentialRampToValueAtTime(Math.max(0.0001, gain * 0.18), now + Math.max(attackTime, duration - release));
+      }
+      param.exponentialRampToValueAtTime(0.0001, now + duration);
+    }
     /**
      * Creates one bounded oscillator voice; `register` owns cleanup after the scheduled stop.
      * @param {number} frequency
@@ -114,16 +138,15 @@
      * @param {string} [group='effect']
      * @param {?number} [attack]
      * @param {?number} [release]
+     * @param {?Object} [presence] Optional config-owned hold/body/release profile.
      */
-    tone(frequency, duration, type, gain, endFrequency, group = 'effect', attack = null, release = null) {
+    tone(frequency, duration, type, gain, endFrequency, group = 'effect', attack = null, release = null, presence = null) {
       if (!this.enabled || !this.context || this.context.state !== 'running') return;
       const c = this.context, now = c.currentTime, osc = c.createOscillator(), amp = c.createGain();
       osc.type = type; osc.frequency.setValueAtTime(Math.max(20, frequency), now);
       osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency || frequency), now + duration);
       const attackTime = attack ?? Math.min(0.004, duration * 0.2);
-      amp.gain.setValueAtTime(0.0001, now); amp.gain.linearRampToValueAtTime(gain, now + attackTime);
-      if (release) amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain * 0.18), now + Math.max(attackTime, duration - release));
-      amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      this.shapeEnvelope(amp.gain, now, duration, gain, attackTime, release, presence);
       osc.connect(amp); amp.connect(this.sfxGain); this.register(osc, [osc, amp], group); osc.start(now); osc.stop(now + duration + 0.008);
     }
     /**
@@ -138,16 +161,15 @@
      * @param {?number} [q]
      * @param {?number} [attack]
      * @param {?number} [release]
+     * @param {?Object} [presence] Optional config-owned hold/body/release profile.
      */
-    noise(duration, gain, filterType, frequency, endFrequency, playbackRate = 1, group = 'effect', q = null, attack = null, release = null) {
+    noise(duration, gain, filterType, frequency, endFrequency, playbackRate = 1, group = 'effect', q = null, attack = null, release = null, presence = null) {
       if (!this.enabled || !this.context || this.context.state !== 'running' || !this.noiseBuffer) return;
       const c = this.context, now = c.currentTime, source = c.createBufferSource(), filter = c.createBiquadFilter(), amp = c.createGain();
       source.buffer = this.noiseBuffer; source.playbackRate.value = playbackRate; filter.type = filterType; filter.Q.value = q ?? (filterType === 'bandpass' ? 1.2 : 0.55);
       filter.frequency.setValueAtTime(Math.max(30, frequency), now); filter.frequency.exponentialRampToValueAtTime(Math.max(30, endFrequency || frequency), now + duration);
       const attackTime = attack ?? Math.min(0.003, duration * 0.16);
-      amp.gain.setValueAtTime(0.0001, now); amp.gain.linearRampToValueAtTime(gain, now + attackTime);
-      if (release) amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain * 0.18), now + Math.max(attackTime, duration - release));
-      amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      this.shapeEnvelope(amp.gain, now, duration, gain, attackTime, release, presence);
       source.connect(filter); filter.connect(amp); amp.connect(this.sfxGain); this.register(source, [source, filter, amp], group); source.start(now); source.stop(now + duration + 0.008);
     }
     playTimeStopStart() { const gain = C.feedback.combatAudio.stopVolume; this.mark('stop'); this.tone(820, 0.035, 'square', gain * 0.4, 260); this.tone(360, 0.13, 'sine', gain, 62); }
@@ -184,15 +206,29 @@
     }
     /** Stops and disconnects all clock voices so no tick survives CANCEL, timeout or EXECUTE. */
     stopTimeClock() { this.clockActive = false; this.nextClockAt = Infinity; this.stopGroup('clock'); }
+    playNearMiss(chain=1){
+      if(!this.context||this.context.state!=='running'||this.context.currentTime-this.lastNearMissAt<C.feedback.nearMiss.soundMinGapSeconds)return;
+      this.lastNearMissAt=this.context.currentTime;const gain=C.feedback.combatAudio.nearMissVolume,pitch=760+Math.min(chain-1,5)*55;
+      this.mark('nearMiss',{chain});this.tone(pitch,.045,'triangle',gain,pitch+270,'combat',.001,.008);this.tone(pitch*1.5,.028,'sine',gain*.45,pitch*1.75,'combat',.001,.006);
+    }
+    playReady() {
+      if (!this.enabled || this.muted || !this.context || this.context.state !== 'running') return;
+      const gain = C.feedback.combatAudio.readyVolume, duration = C.feedback.ready.soundSeconds;
+      this.mark('ready'); this.tone(880, duration, 'sine', gain, 1320, 'ready', .003, .018);
+      this.tone(1320, duration * .65, 'triangle', gain * .45, 1760, 'ready', .002, .012);
+    }
     playTargetLock(order = 1) {
       if (!this.context || this.context.state !== 'running' || this.context.currentTime - this.lastLockAt < C.feedback.routeVisual.lockSoundMinGap) return;
-      this.lastLockAt = this.context.currentTime; const gain = C.feedback.combatAudio.targetVolume;
-      this.mark('target', { order }); this.tone(720 + Math.min(order, 8) * 44, 0.038, 'triangle', gain, 1040 + Math.min(order, 8) * 35); this.noise(0.022, gain * 0.22, 'bandpass', 2400, 1700);
+      this.lastLockAt = this.context.currentTime; const gain = C.feedback.combatAudio.targetVolume, body = C.feedback.combatAudio.presence.lock;
+      this.mark('target', { order });
+      this.tone(720 + Math.min(order, 8) * 44, body.toneSeconds, 'triangle', gain, 1040 + Math.min(order, 8) * 35, 'effect', null, null, body);
+      this.noise(body.noiseSeconds, gain * 0.22, 'bandpass', 2400, 1700, 1, 'effect', null, null, null, body);
     }
     beginExecute() { this.stopTimeClock(); this.mark('executeCommand'); }
     playExecuteRelease() {
-      const gain = C.feedback.combatAudio.executeVolume; this.mark('execute');
-      this.noise(0.105, gain, 'highpass', 420, 2700, 0.96, 'combat'); this.tone(120, 0.085, 'sawtooth', gain * 0.3, 760, 'combat');
+      const gain = C.feedback.combatAudio.executeVolume, body = C.feedback.combatAudio.presence.execute; this.mark('execute');
+      this.noise(body.noiseSeconds, gain, 'highpass', 420, 2700, 0.96, 'combat', null, null, null, body);
+      this.tone(120, body.toneSeconds, 'sawtooth', gain * 0.3, 760, 'combat', null, null, body);
     }
     playSlash(order = 1, last = false) {
       const audio = C.feedback.combatAudio, variation = 1 + Math.min(order - 1, 7) * audio.slashPitchVariation;
@@ -200,8 +236,11 @@
       this.noise(0.072, gain, 'highpass', 760 * variation, 3900 * variation, variation, 'combat'); this.tone(360 * variation, 0.052, 'triangle', gain * 0.22, 78 * variation, 'combat');
     }
     playKill(order = 1, last = false) {
-      const gain = C.feedback.combatAudio.killVolume * (last ? 1.2 : 1); this.mark('kill', { order, last });
-      this.tone(last ? 118 : 98, last ? 0.105 : 0.078, 'sine', gain, 38, 'combat'); this.noise(last ? 0.095 : 0.062, gain * 0.55, 'bandpass', 620, 150, 0.9, 'combat');
+      const gain = C.feedback.combatAudio.killVolume * (last ? 1.2 : 1), body = C.feedback.combatAudio.presence[last ? 'finalKill' : 'kill']; this.mark('kill', { order, last });
+      this.tone(last ? 118 : 98, body.toneSeconds, 'sine', gain, 38, 'combat', null, null, body);
+      this.noise(body.noiseSeconds, gain * 0.55, 'bandpass', 620, 150, 0.9, 'combat', null, null, null, body);
+      // A quiet midrange edge complements (rather than replaces) the existing low sine.
+      this.tone(body.midStart, body.midSeconds, 'triangle', gain * body.midGainScale, body.midEnd, 'combat', .002, null, body);
     }
     playTimeResume() {
       const gain = C.feedback.combatAudio.resumeVolume; this.mark('resume');
@@ -209,8 +248,9 @@
     }
     playDamage() {
       if (!this.context || this.context.state !== 'running' || this.context.currentTime - this.lastDamageAt < 0.09) return;
-      this.lastDamageAt = this.context.currentTime; const gain = C.feedback.combatAudio.damageVolume; this.mark('damage');
-      this.tone(185, 0.085, 'triangle', gain, 72, 'damage', 0.001, 0.018); this.noise(0.06, gain * 0.5, 'lowpass', 1200, 280, 1, 'damage', 0.7, 0.001, 0.012);
+      this.lastDamageAt = this.context.currentTime; const gain = C.feedback.combatAudio.damageVolume, body = C.feedback.combatAudio.presence.damage; this.mark('damage');
+      this.tone(185, body.toneSeconds, 'triangle', gain, 72, 'damage', 0.001, null, body);
+      this.noise(body.noiseSeconds, gain * 0.5, 'lowpass', 1200, 280, 1, 'damage', 0.7, 0.001, null, body);
     }
     playUiConfirm() {
       const gain = C.feedback.combatAudio.uiVolume; this.mark('ui'); this.tone(620, 0.035, 'triangle', gain, 920, 'ui', 0.001, 0.006);
@@ -231,7 +271,8 @@
     }
     inspect() {
       return { enabled: this.enabled, muted: this.muted, masterVolume: this.masterVolume, sfxVolume: this.sfxVolume,
-        masterGain: this.masterGain?.gain.value ?? null, sfxGain: this.sfxGain?.gain.value ?? null, contextState: this.context?.state || 'none', clockActive: this.clockActive,
+        masterGain: this.masterGain?.gain.value ?? null, sfxGain: this.sfxGain?.gain.value ?? null, referenceGain: this.referenceGain?.gain.value ?? null,
+        limiterCeiling: C.audio.limiterCeiling, contextState: this.context?.state || 'none', clockActive: this.clockActive,
         activeVoices: this.activeVoices.size, activeClockVoices: [...this.activeVoices].filter(voice => voice.group === 'clock').length,
         maxVoices: this.metrics.maxVoices, plays: { ...this.metrics.plays }, events: this.metrics.events.map(event => ({ ...event })) };
     }

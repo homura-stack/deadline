@@ -4,8 +4,8 @@
 
 | 使用ファイル | 元ファイル | 原寸 | ファイルサイズ | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `before.jpeg` | `D:/Desktop/DEADLINE/完全復旧前WORLD MAP.jpeg` | 2752 × 1536 | 2,797,302 bytes | `dda4a2d70d7cfb28d8f286466c9af0c4484725b807afe7820b3abae78af7676a` |
-| `after.jpeg` | `D:/Desktop/DEADLINE/完全復旧後WORLD MAP.jpeg` | 2750 × 1536 | 2,866,012 bytes | `6dd325544d929130d9ffaf98313c43aa37349995bb280fb31359d5ee2cecee30` |
+| `before.jpeg` | `<local-asset-path>/完全復旧前WORLD MAP.jpeg` | 2752 × 1536 | 2,797,302 bytes | `dda4a2d70d7cfb28d8f286466c9af0c4484725b807afe7820b3abae78af7676a` |
+| `after.jpeg` | `<local-asset-path>/完全復旧後WORLD MAP.jpeg` | 2750 × 1536 | 2,866,012 bytes | `6dd325544d929130d9ffaf98313c43aa37349995bb280fb31359d5ee2cecee30` |
 
 `world-map.js`がBEFOREをHTML img、AFTERをSVG imageとして同じ表示領域へ載せる。AFTERの上書き範囲だけをSVGのalpha maskで制御する。ぼかすのはマスク境界であり、画像自体ではない。
 

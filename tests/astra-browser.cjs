@@ -37,9 +37,10 @@ async function recordFrames(page) {
 async function trainingRun(page, index) {
   await page.keyboard.press('Space');
   await training(page);await page.waitForFunction(() => Deadline.inspect().briefingActive);
-  for (let i = 0; i < 4; i++) await page.locator('#briefing-begin').click();
+  for (let i = 0; i < 5; i++) await page.locator('#briefing-begin').click();
   await page.waitForFunction(() => Deadline.inspect().practice.active);
   await move(page, { x: 240, y: 470 }, 8);
+  await page.waitForFunction(() => Deadline.inspect().practice.step === 'near-miss');await move(page,(await state(page)).practice.nearMissTarget);
   await page.waitForFunction(() => Deadline.inspect().practice.step === 'freeze');
   await page.keyboard.press('Space');
   await page.waitForFunction(() => Deadline.inspect().world.phase === 'stopped');
@@ -63,14 +64,15 @@ async function trainingRun(page, index) {
   await page.waitForFunction(() => Deadline.inspect().world.waveGraceRemaining <= 0);
   await move(page, (await state(page)).world.enemies[0]);
   await page.waitForFunction(() => Deadline.inspect().world.failed);
+  await page.waitForFunction(()=>Deadline.inspect().deathFx.resultVisible);
   if (index === 1) {
     await page.locator('#result').evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
     await page.screenshot({ path: path.join(artifacts, 'game-over-1920.png') });
   }
   await page.keyboard.press('Space');
-  assert.equal((await state(page)).world.failed, false); assert.equal((await state(page)).world.wave, 1);
+  await page.waitForFunction(()=>!Deadline.inspect().world.failed);assert.equal((await state(page)).world.wave, 1);
   await page.waitForFunction(() => Deadline.inspect().world.waveGraceRemaining <= 0);
-  await move(page, (await state(page)).world.enemies[0]); await page.waitForFunction(() => Deadline.inspect().world.failed);
+  await move(page, (await state(page)).world.enemies[0]); await page.waitForFunction(() => Deadline.inspect().world.failed);await page.waitForFunction(()=>Deadline.inspect().deathFx.resultVisible);
   await page.locator('#game-over-title').click(); assert.equal((await state(page)).titleActive, true);
   report.liveRuns.push({ run: index, training: 'two locks, 750 score, exact endpoint', retry: 'same Wave', returnToTitle: true, staleEffects: false });
 }

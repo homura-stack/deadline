@@ -52,7 +52,7 @@ async function within(inner, outer, label) {
     await page.locator('#touch-sensitivity').fill('135'); await page.reload(); await page.waitForLoadState('networkidle');
     await page.locator('[data-title-info="settings"]').tap(); assert.equal(await page.locator('#touch-sensitivity').inputValue(), '135');
     await page.locator('#title-start').tap(); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page);
-    const headings = ['01 / EVADE', '02 / FREEZE', '03 / DRAW', '04 / EXECUTE'];
+    const headings = ['01 / EVADE', '02 / NEAR MISS', '03 / FREEZE', '04 / DRAW', '05 / EXECUTE'];
     for (let index = 0; index < headings.length; index++) {
       assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(), headings[index]);
       assert.equal(await page.locator('.briefing-page:visible svg').isVisible(), true);
@@ -64,7 +64,7 @@ async function within(inner, outer, label) {
         assert.equal(await page.locator('.briefing-page:visible .demo-input-touch.demo-input-evade').count(), 0, 'STEP 1 must not show a finger moving on the game field');
         await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-move-pad.png'), fullPage: true });
       }
-      if (index === 2) { await page.waitForTimeout(650); await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-draw-pad.png'), fullPage: true }); }
+      if (index === 3) { await page.waitForTimeout(650); await page.screenshot({ path: path.join(artifacts, 'tutorial-mobile-draw-pad.png'), fullPage: true }); }
       if (index < headings.length - 1) {
         await page.locator('#briefing-begin').tap();
         if (index === 0) { await page.locator('#briefing-back').tap(); assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(), headings[0]); await page.locator('#briefing-begin').tap(); }
@@ -88,6 +88,7 @@ async function within(inner, outer, label) {
     await drag(cdp, pad, [center, { x: center.x + 46, y: center.y - 4 }]);
     const fast = await page.evaluate(() => Deadline.inspect().world.player); const fastDistance = Math.hypot(fast.x - precise.x, fast.y - precise.y);
     assert.ok(fastDistance > preciseDistance * 3, `fast ${fastDistance}, precise ${preciseDistance}`);
+    await page.waitForFunction(() => Deadline.inspect().practice.step === 'near-miss');await padTo(cdp,page,(await page.evaluate(()=>Deadline.inspect())).practice.nearMissTarget);
     await page.waitForFunction(() => Deadline.inspect().practice.step === 'freeze');
     assert.equal(await page.locator('body').evaluate(body => body.classList.contains('practice-freeze')), true);
     assert.equal(await page.locator('#time-stop .practice-button-finger').isVisible(), true);
@@ -137,6 +138,12 @@ async function within(inner, outer, label) {
       const visiblePage = await p.locator('.briefing-page:visible').boundingBox(), next = await p.locator('#briefing-begin').boundingBox();
       assert.ok(visiblePage.y >= 0 && next.y + next.height <= viewport.height, `${viewport.width}x${viewport.height} briefing overflow`);
       await within(await p.locator('.briefing-page:visible .demo-input-touch').boundingBox(), await p.locator('.briefing-page:visible svg').boundingBox(), `${viewport.width}x${viewport.height} touch input`);
+      await p.locator('#briefing-begin').tap();
+      assert.match(await p.locator('.briefing-page:visible .briefing-number').innerText(), /NEAR MISS/);
+      const nearSlide = await p.locator('.briefing-page:visible').boundingBox(), nearNext = await p.locator('#briefing-begin').boundingBox();
+      assert.ok(nearSlide.y >= 0 && nearNext.y + nearNext.height <= viewport.height, `${viewport.width}x${viewport.height} Near Miss briefing overflow`);
+      assert.equal(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      if (viewport.width === 390) await p.screenshot({ path: path.join(artifacts, 'tutorial-mobile-near-miss.png'), fullPage: true });
       await p.locator('#briefing-skip').tap(); await p.waitForFunction(() => document.getElementById('briefing-screen').hidden);await battleReady(p);
       const field = await p.locator('#arena').boundingBox(), movePad = await p.locator('#move-pad').boundingBox(), action = await p.locator('#time-stop').boundingBox();
       assert.ok(field.width >= (viewport.width > viewport.height ? viewport.width * .52 : viewport.width - 60), `${viewport.width}x${viewport.height} field width ${field.width}`);
@@ -149,13 +156,14 @@ async function within(inner, outer, label) {
     const landscapeContext = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
     const landscape = await landscapeContext.newPage(); hook(landscape, errors); const landscapeCdp = await landscapeContext.newCDPSession(landscape);
     await visitCompleted(landscape,base + '?debug'); await landscape.waitForLoadState('networkidle'); await landscape.locator('#title-start').tap();await training(landscape);
-    for (let i = 0; i < 4; i++) await landscape.locator('#briefing-begin').tap();
+    for (let i = 0; i < 5; i++) await landscape.locator('#briefing-begin').tap();
     await landscape.waitForFunction(() => Deadline.inspect().practice.active);
     let landscapePad = await landscape.locator('#move-pad').boundingBox(), landscapeCenter = { x: landscapePad.width / 2, y: landscapePad.height / 2 };
     const landscapeCanvas = await landscape.locator('#arena').boundingBox(), landscapeBefore = await landscape.evaluate(() => Deadline.inspect().world.player);
     await drag(landscapeCdp, landscapeCanvas, [{ x: landscapeCanvas.width * .2, y: landscapeCanvas.height * .75 }, { x: landscapeCanvas.width * .75, y: landscapeCanvas.height * .2 }]);
     assert.deepEqual(await landscape.evaluate(() => Deadline.inspect().world.player), landscapeBefore, '844x390 Canvas drag must not move the player');
     for (let i = 0; i < 3 && await landscape.evaluate(() => Deadline.inspect().practice.step === 'move'); i++) await drag(landscapeCdp, landscapePad, [landscapeCenter, { x: landscapeCenter.x + 46, y: landscapeCenter.y - 5 }]);
+    await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'near-miss');await padTo(landscapeCdp,landscape,(await landscape.evaluate(()=>Deadline.inspect())).practice.nearMissTarget);
     await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'freeze'); await landscape.locator('#time-stop').tap();
     await landscape.waitForFunction(() => Deadline.inspect().practice.step === 'draw');
     const landscapePractice = await landscape.evaluate(() => Deadline.inspect().world), landscapeRouteBefore = landscapePractice.route.points.length;
@@ -182,8 +190,8 @@ async function within(inner, outer, label) {
     assert.ok(Math.abs((evadePlayer.y + evadePlayer.height / 2) - (evadeBullet.y + evadeBullet.height / 2)) > 45, 'STEP 1 player must visibly clear the bullet lane');
     assert.equal(await visual.locator('.briefing-page:visible .demo-mouse-button').evaluate(el=>getComputedStyle(el).fill),'rgb(23, 49, 66)','STEP 1 mouse button must look released');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-01-evade.png'), fullPage: true });
-    await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1850);
-    const freezeColors = await visual.evaluate(() => { const page = document.querySelector('[data-briefing-page="1"]'); return { sprite: page.querySelector('.demo-enemy-sprite').getAttribute('href'), bullet: getComputedStyle(page.querySelector('.demo-bullet')).fill, bulletTransform: getComputedStyle(page.querySelector('.demo-bullet')).transform }; });
+    await visual.locator('#briefing-begin').click(); assert.match(await visual.locator('.briefing-page:visible p').textContent(), /TIME STOPゲージが大きく増える/); await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 1850);
+    const freezeColors = await visual.evaluate(() => { const page = document.querySelector('[data-briefing-page="2"]'); return { sprite: page.querySelector('.demo-enemy-sprite').getAttribute('href'), bullet: getComputedStyle(page.querySelector('.demo-bullet')).fill, bulletTransform: getComputedStyle(page.querySelector('.demo-bullet')).transform }; });
     assert.equal(freezeColors.sprite, 'assets/characters/enemy-02.png'); assert.equal(freezeColors.bullet, 'rgb(255, 195, 207)');
     await setDemoTime(visual, 2850); assert.equal(await visual.locator('.briefing-page:visible .demo-bullet').evaluate(el => getComputedStyle(el).transform), freezeColors.bulletTransform, 'STEP 2 bullet must remain frozen');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-02-freeze.png'), fullPage: true });
@@ -197,11 +205,11 @@ async function within(inner, outer, label) {
     await setDemoTime(visual,2700);assert.equal(await visual.locator('.briefing-page:visible .demo-mouse-button').evaluate(el=>getComputedStyle(el).fill),'rgb(23, 49, 66)','STEP 3 mouse button must visibly release');
     await visual.screenshot({ path: path.join(artifacts, 'tutorial-visual-only-03-draw.png'), fullPage: true });
     await visual.locator('#briefing-begin').click(); await setDemoTime(visual, 500);
-    let executeState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,key:getComputedStyle(page.querySelector('.demo-execute-key')).transform,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:page.querySelector('.demo-enemy-sprite').getAttribute('href')};});
+    let executeState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="4"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,key:getComputedStyle(page.querySelector('.demo-execute-key')).transform,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:page.querySelector('.demo-enemy-sprite').getAttribute('href')};});
     assert.equal(executeState.player,'0%');assert.equal(executeState.enemy,'assets/characters/enemy-02.png');
-    await setDemoTime(visual,700);let releaseState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,ring:getComputedStyle(page.querySelector('.demo-resume-ring')).opacity,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform};});
+    await setDemoTime(visual,700);let releaseState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="4"]');return{player:getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance,ring:getComputedStyle(page.querySelector('.demo-resume-ring')).opacity,bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform};});
     assert.equal(releaseState.player,'0%');assert.ok(Number(releaseState.ring)>0);assert.equal(releaseState.bullet,executeState.bullet,'bullet must remain stopped through SPACE release');
-    await setDemoTime(visual,950);const resumedState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="3"]');return{player:parseFloat(getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance),bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:page.querySelector('.demo-enemy-sprite').getAttribute('href')};});
+    await setDemoTime(visual,950);const resumedState=await visual.evaluate(()=>{const page=document.querySelector('[data-briefing-page="4"]');return{player:parseFloat(getComputedStyle(page.querySelector('.demo-player-execute')).offsetDistance),bullet:getComputedStyle(page.querySelector('.demo-execute-bullet-one')).transform,enemy:page.querySelector('.demo-enemy-sprite').getAttribute('href')};});
     assert.ok(resumedState.player>0);assert.notEqual(resumedState.bullet,executeState.bullet);assert.equal(resumedState.enemy,executeState.enemy);
     await setDemoTime(visual, 1700);
     assert.equal(await visual.locator('.briefing-page:visible .demo-kill-one').evaluate(el => getComputedStyle(el).opacity), '0');
@@ -220,7 +228,7 @@ async function within(inner, outer, label) {
 
     const desktop = await browser.newPage({ viewport: { width: 1280, height: 720 } }); hook(desktop, errors);
     await visitCompleted(desktop,base + '?debug'); await desktop.waitForLoadState('networkidle'); await desktop.keyboard.press('Space'); await desktop.waitForFunction(() => document.getElementById('title-screen').hidden);await training(desktop);
-    for (let i = 0; i < 4; i++) await desktop.locator('#briefing-begin').click();
+    for (let i = 0; i < 5; i++) await desktop.locator('#briefing-begin').click();
     await desktop.waitForFunction(() => Deadline.inspect().practice.active);
     assert.equal(await desktop.locator('#move-pad').isVisible(), false); assert.equal(await desktop.locator('.tutorial-prompt .guide-mouse').isVisible(), true);
     const before = await desktop.evaluate(() => Deadline.inspect().world.player), arena = await desktop.locator('#arena').boundingBox();
