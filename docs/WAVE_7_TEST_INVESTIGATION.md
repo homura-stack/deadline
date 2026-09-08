@@ -36,11 +36,11 @@
 | 探索アルゴリズム | 下端欠落と出発点の余白処理が直接原因。固定配置でも決定的に失敗 |
 | ランダム性 | `simulation.js` はMath.randomを使用しない。seed固定は演出乱数を固定するだけで、戦闘の操作タイミングを固定しない |
 | タイミング | 回避ヘルパーは4分割のマウス移動と90ms実時間待ち、ゲームはrequestAnimationFrameから1/120秒stepを回す。固定seedでもSTOP時刻・Pico位置・弾配置が変化する |
-| TASK Q | 専用ページで保存・復元呼び出しのみ無効化した比較でもWave 7失敗を再現。戦闘への意味的な依存はない。保存等の実行時間がスケジューリングへ全く影響しないとまでは断定しない |
+| 永続セーブ導入 | 専用ページで保存・復元呼び出しのみ無効化した比較でもWave 7失敗を再現。戦闘への意味的な依存はない。保存等の実行時間がスケジューリングへ全く影響しないとまでは断定しない |
 
-TASK Q比較はHTTPレスポンスを専用ブラウザ内だけで置換するアブレーション。
+永続セーブ導入比較はHTTPレスポンスを専用ブラウザ内だけで置換するアブレーション。
 `game.js` の保存・復元呼び出しを除外し、Wave設定／本番ファイルは変更しない。
-TASK Q以前の完全なリビジョンとの比較ではない。新規ブラウザコンテキストで既存の進行セーブはない。
+永続セーブ導入以前の完全なリビジョンとの比較ではない。新規ブラウザコンテキストで既存の進行セーブはない。
 コード上も、この新規通しプレイでは復元処理はタイトル／START時だけで、Wave 1開始後にworldを再構築しない。
 AREA境界の保存処理はworldの数値をコピーするだけで、敵・弾・ゲージへ書き戻さない。
 
@@ -53,10 +53,10 @@ Chrome 152.0.7977.82、1366×900、固定seed `0xdead1e`、通常パラメータ
 | 修正前の条件 | Wave 7失敗 / 実行数 |
 |---|---:|
 | 通常 | 0 / 3 |
-| TASK Q保存・復元呼び出し無効 | 1 / 3 |
+| 永続セーブ導入保存・復元呼び出し無効 | 1 / 3 |
 | Wave 7のSTOP入力だけ50ms遅延 | 2 / 3 |
 
-直前のTASK Q検証での2回連続失敗は履歴として区別し、今回の分母に混ぜない。
+直前の永続セーブ導入検証での2回連続失敗は履歴として区別し、今回の分母に混ぜない。
 成功したseedを選ぶ、失敗を再試行で隠す、ゲージ高速回復、制限時間延長、敵／弾移動、無敵化は行わない。
 50ms遅延は原因切り分け用だけで、リリース回帰テストには追加しない。
 
@@ -82,11 +82,19 @@ Chrome 152.0.7977.82、1366×900、固定seed `0xdead1e`、通常パラメータ
 - `tests/wave-k-browser.cjs`: 探索失敗時にSTOPスナップショットを報告へ保存。クリア／無救済／config不変の検証は維持。
 - `tests/route-planner.test.cjs`: 2種類の失敗をテスト先行で再現し、実境界での衝突拒否と実シミュレーションのクリアを検証。
 - `tests/fixtures/wave7-grid-trap.json`, `tests/fixtures/wave7-padding-trap.json`: 実ブラウザから捕捉した変更なしのSTOP状態。
-- `tests/wave-investigation.cjs`, `tests/analyze-wave-snapshot.cjs`, `tests/summarize-wave-investigation.cjs`: 再現／比較用ツール。自動全Chromeスイートには含めない。
+- 当時の一時調査ツールは公開ツリーには含めない。現在の再現確認には上記fixtureと経路探索回帰テストを使用する。
 - 本文書。
 
-調査用ログは `tests/artifacts/wave-investigation/`（gitignore対象）。ユーザーのプロファイルやセーブは触らない。
-旧探索は同ディレクトリの`legacy-browser.cjs`に保存し、固定状態の比較に使用する。
+調査時のログと比較用旧コードは `tests/artifacts/wave-investigation/`（Git管理外）に保存したもので、公開cloneには含まれない。以下の数値は当時の履歴であり、一時ツールを用いた実験全体の再実行手順ではない。
+
+現在の公開ツリーでの回帰確認：
+
+```sh
+node --test tests/route-planner.test.cjs
+node tests/wave-k-browser.cjs
+```
+
+ブラウザ検証の準備は[README](../README.md#テスト)を参照。fixtureによる固定配置確認と、通常設定の全Wave通し確認を区別する。
 
 ## 検証結果
 
@@ -97,7 +105,7 @@ Chrome 152.0.7977.82、1366×900、固定seed `0xdead1e`、通常パラメータ
 - 修正後の固定seed実ブラウザ反復: 通常3/3、50ms遅延3/3 PASS。
 - 捕捉した同一状態の比較: 各20回、旧探索は20/20失敗、修正後は20/20クリア。
 - 起動・保存・TRAINING・Audio・再挑戦・ENDINGを含む既存回帰は削除せず実行。
-- 本番の全JS / CSS / HTMLは調査開始時と同一ハッシュ。TASK Qの実装にも変更なし。
+- 本番の全JS / CSS / HTMLは調査開始時と同一ハッシュ。永続セーブ導入の実装にも変更なし。
 - `node --check` / `git diff --check` PASS。staging / commit / push / ファイル削除なし。
 
 全Chrome結果: `tests/artifacts/wave-investigation/suite-logs/summary.json`。

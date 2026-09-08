@@ -50,7 +50,11 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
       await page.screenshot({path:path.join(out,`title-${viewport.width}x${viewport.height}.png`)});
       await page.locator('#title-training-launch').click();assert.equal((await state(page)).briefingActive,true);report.layouts.push(viewport);await page.close();
     }
-    assert.equal(requests.some(url=>url.endsWith('/assets/characters/pico.png')),false);assert.deepEqual(errors,[]);
+    const characterFiles=new Set(['pico-final.png','enemy-01.png','enemy-02.png','enemy-03.png']);
+    const characterRequests=requests.map(url=>new URL(url).pathname).filter(p=>p.includes('/assets/characters/'));
+    assert.ok(characterRequests.some(p=>p.endsWith('/pico-final.png')),'formal Pico must load');
+    assert.ok(characterRequests.every(p=>characterFiles.has(p.split('/').at(-1))),'only shipped character images may load');
+    assert.deepEqual(errors,[]);
     report.errors=errors;fs.writeFileSync(path.join(out,'entry-regression.json'),JSON.stringify(report,null,2));
     console.log('PASS F.1: permanent TRAINING for all saves; completed START -> MAP; incomplete/legacy START -> TRAINING; final Pico unchanged; six layouts; errors 0');
   }finally{await browser.close();}

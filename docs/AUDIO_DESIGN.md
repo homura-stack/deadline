@@ -1,10 +1,22 @@
-# TASK M — Sound Envelope & Presence Pass
+# Sound Design & Verification
 
-## 実装範囲
+## 音声経路
 
-重要SEだけを Attack → short hold → 緩やかな胴体の減衰 → 短い終端減衰に変更した。共通 gain 4.0、Limiter曲線と接続順、MASTER／SFXのデフォルト80／90・保存・ミュート、個別SEの既存ピークgain、ゲームイベントの発音タイミングは変更していない。Wave・死亡時間・画面演出・操作は対象外。
+現行のSEは[audio.js](../audio.js)のSoundクラスがWeb Audio APIで生成する。外部音源・音声ライブラリは使用しない。調整値は[config.js](../config.js)のaudioとfeedback.combatAudioに集約する。
 
-READY、Near Miss、TIME STOP、UI、clock、draw、resume、CLEAR、PERFECTは従来の包絡を使用する。通常slashも変更していない。
+各tone／noiseの包絡Gain → SFX音量 → 共通基準ゲイン4.0 → WaveShaperソフトリミッター → MASTER音量 → destination。
+
+MASTER／SFXはUIの0〜100を内部で0〜1へ変換する。初期値は80／90、muteはMASTERを0にする。`deadline.audio.v1`で保存・再読込する。AudioContextはユーザー操作で開始／再開し、voice終了時にノードを切断・解放する。
+
+リミッターは振幅0.8から滑らかに抑制し、設定上限0.95へ収める。DynamicsCompressorNodeは使用しない。下記peak／RMSはMASTER 100／SFX 100時で、初期音量設定での測定ではない。
+
+## 包絡設計の意図
+
+重要SEだけAttack → short hold → body decay → releaseを使い、ピークgainの一律増加ではなくアタック後の短い胴体を作る。LOCKの45ms間隔制限を維持する。killは低域の重量を残し、中域を追加して小型スピーカーでも輪郭を認識しやすくする。
+
+READY、Near Miss、TIME STOP、UI、clock、draw、resume、CLEAR、PERFECT、通常slashはこの長い包絡の対象外。Near Missの70ms発音間隔制限も維持する。
+
+以下の「前→後」はRC1以前の包絡改修時の比較記録であり、現在の実行環境で再計測した結果ではない。
 
 ## 包絡・音色の変更
 
@@ -31,7 +43,7 @@ READY、Near Miss、TIME STOP、UI、clock、draw、resume、CLEAR、PERFECTは�
 
 Chrome 152.0.7977.82 / OfflineAudioContext / 48kHz / MASTER 100 / SFX 100 / common gain 4.0。実際のSoundクラス、oscillator、noise、filter、Limiterを使用。Limiter前・後・MASTER後を別チャンネルで測定した。
 
-変更前は本タスクの実装前に採取し、tests/fixtures/audio-m-baseline.jsonに固定。通常撃破の合成音hitも、保持していた変更前audio.jsを独立した測定ページに読み込んで追加計測した。既存のゲームファイルを旧版に書き戻す操作はしていない。
+変更前は包絡改修前に採取し、tests/fixtures/audio-m-baseline.jsonに固定。通常撃破の合成音hitも、保持していた変更前audio.jsを独立した測定ページに読み込んで追加計測した。既存のゲームファイルを旧版に書き戻す操作はしていない。
 
 発音区間RMSの窓は「呼出時刻から最長voiceの停止予約（末尾8msを含む）まで」。固定窓RMSは呼出後50ms／100ms、無音も含む。数値は線形振幅（1.0がデジタルフルスケール）。初20ms比率は、レンダリングされた総エネルギーに占める割合。
 
@@ -65,32 +77,23 @@ Chrome 152.0.7977.82 / OfflineAudioContext / 48kHz / MASTER 100 / SFX 100 / comm
 
 極端な同時重複では音の胴体が重なる分だけ抑制が増える。Limiterを再設計・変更していない。どのシナリオも最終peakは.95以下、非有限値なし、終了後のactiveVoicesは0。
 
-## 回帰テスト
 
-- TDD：追加Nodeテストの「holdなし」「kill中域なし」、追加Chromeテストの「RMS増加なし」が変更前に失敗することを確認してから実装。
-- Node全件：98 / 98 PASS（既存94＋追加4）。
-- 新規Chrome音声回帰：PASS。単音／連続イベントの計測、固定窓、対象外SEの不変、通常撃破とfinal双方の合成音の階層、Limiter、音源解放を確認。
-- 既存Chrome音声出力テスト：PASS。common gain、MASTER／SFXゼロ、ピーク上限、既存イベント階層。
-- Chrome全件：24 / 24スクリプト PASS（既存23＋追加1）。全件ランナーは失敗なし。通常撃破の合成音比較を追加した音声回帰も、その後の単独再実行でPASS。
-- JavaScript構文確認、git diff --check：PASS（既存作業ツリーのCRLF警告のみ）。
-- 保存・再読込・mute・AudioContext再開は既存Node／Chrome回帰でPASS。TRAINING、300ms被弾停止／650ms GAME OVER、先行リトライ、全Wave進行、救済、EXECUTE、マップ再挑戦も既存検証を通過。実機での聴感判定は別途必要。
-- 全件結果：tests/artifacts/task-m/suite-logs/summary.json。追加音声計測の最終結果：tests/artifacts/task-m/audio-envelope.json。個別ログと既存テスト画像は従来のartifacts配下に出力する。
+## 再計測・回帰テスト
 
-## 本タスクの変更ファイル
+- [audio.test.cjs](../tests/audio.test.cjs)：音声API、設定、voice管理と包絡スケジュール。
+- [audio-output-browser.cjs](../tests/audio-output-browser.cjs)：共通gain、Limiter、ゼロ音量、イベント階層。
+- [audio-envelope-browser.cjs](../tests/audio-envelope-browser.cjs)：実AudioNodeによる包絡・RMS・音量階層・重複発音・音源解放。
+- [audio-metrics.cjs](../tests/audio-metrics.cjs)：OfflineAudioContextの測定ヘルパー。
+- [audio-m-baseline.json](../tests/fixtures/audio-m-baseline.json)：改修前の固定比較値。
 
-実装：audio.js、config.js。
-テスト：tests/audio.test.cjs、tests/audio-metrics.cjs（追加）、tests/audio-envelope-browser.cjs（追加）、tests/fixtures/audio-m-baseline.json（追加）。
-報告：TASK_M.md（本書）。
-計測出力：tests/artifacts/task-m/audio-envelope.json、audio-output.json、suite-logs/（Git対象外）。
+[READMEのテスト準備](../README.md#テスト)を済ませ、HTTPサーバー起動後に実行する。
 
-既存のTASK J/K/L変更を維持。既存テスト・素材の削除、外部ライブラリ追加、commit／pushは行っていない。
+```sh
+node --test tests/audio.test.cjs
+node tests/audio-output-browser.cjs
+node tests/audio-envelope-browser.cjs
+```
 
-## 人間が確認すべき音
+結果はGit管理外の`tests/artifacts/task-m/`等へ出力される。共通gainやLimiterを変更せず、単音、連続LOCK、EXECUTEから通常撃破、10体連続撃破、final、damage＋READY、非通常stressを区別して評価する。
 
-1. PCスピーカーでLOCKの輪郭が分かり、連続LOCKが濁らないか。
-2. EXECUTEのアタックと短い胴体がLOCKより強く、直後のkillを隠さないか。
-3. 通常killの低域の重量感と中域の輪郭が両立し、追加成分が耳障りでないか。
-4. final killが通常撃破より明確に強く、10体連続撃破で歪みや音の団子化を感じないか。
-5. damageが300msの白フラッシュ／停止の瞬間を支え、READYと重なっても区別できるか。
-
-自動計測は存在感が増える構造と音量階層を示すが、聴感上の合格を代替しない。
+「最初の20msに90%以上集中しない」は設計目安で、絶対的合否条件ではない。LOCKよりEXECUTE、通常撃破よりfinalを強く認識できるか、連続音が濁らないかはPCスピーカー等で聴取する。自動計測は聴感・実機の合格を代替しない。

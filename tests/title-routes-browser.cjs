@@ -6,12 +6,17 @@ const {assertTitleComposition}=require('./title-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recursive:true});
 (async()=>{
-  const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],external=[],oldArt=[],report={browser:browser.version(),routes:{},layouts:[]};
+  const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],external=[],unexpectedAssets=[],report={browser:browser.version(),routes:{},layouts:[]};
+  const shippedFiles=new Set(['pico-final.png','enemy-01.png','enemy-02.png','enemy-03.png','config.js','simulation.js','audio.js','character-assets.js','battle-art.js','journey.js','stage-art.js','world-map.js','renderer.js','tutorial.js','game.js','title-screen.js']);
   async function open(saved='completed',viewport={width:1920,height:1080}){
     const page=await browser.newPage({viewport});
     page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     page.on('requestfailed',r=>errors.push(r.url()));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`);});
-    page.on('request',r=>{if(!r.url().startsWith(new URL(base).origin)&&!r.url().startsWith('data:'))external.push(r.url());if(/\/(pico\.png|title-art\.js)$/.test(r.url()))oldArt.push(r.url());});
+    page.on('request',r=>{
+      if(!r.url().startsWith(new URL(base).origin)&&!r.url().startsWith('data:'))external.push(r.url());
+      const pathname=new URL(r.url()).pathname;
+      if((r.resourceType()==='script'||pathname.includes('/assets/characters/'))&&!shippedFiles.has(pathname.split('/').at(-1)))unexpectedAssets.push(r.url());
+    });
     if(saved)await page.addInitScript(value=>localStorage.setItem('deadline.tutorial.v1',value),saved);
     await page.goto(base+'?debug');await page.waitForLoadState('networkidle');return page;
   }
@@ -53,7 +58,7 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
     // G.1 supersedes the optional choice: fresh START completes the real rehearsal first.
     const fresh=await open(null);await fresh.locator('#title-start').click();await fresh.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(fresh);await plan(fresh);await fresh.keyboard.press('Space');await map(fresh);await garden(fresh);await fresh.close();report.firstStart='START -> TRAINING -> completed -> MAP -> GARDEN';
     const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/title.png'))).digest('hex');assert.equal(digest,'5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9');report.backgroundSHA256=digest;
-    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(oldArt,[]);report.errors=errors;report.externalRequests=external;
+    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(unexpectedAssets,[]);report.errors=errors;report.externalRequests=external;
     // Isolated negative case: the title still has its name and working buttons if just its PNG fails.
     const failed=await browser.newPage({viewport:{width:1366,height:768}}),pageErrors=[];failed.on('pageerror',e=>pageErrors.push(String(e)));
     await failed.route('**/assets/title/title.png',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
