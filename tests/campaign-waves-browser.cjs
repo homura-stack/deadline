@@ -5,7 +5,7 @@ const {state,planWave,surviveUntilReady}=require('./browser.cjs');
 const {visitCompleted,initialMap,battleReady,nextArea}=require('./journey-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 (async()=>{
- const browser=await chromium.launch({channel:'chrome',headless:true}),report={browser:browser.version(),waves:[],errors:[],note:'Automation verifies mechanics and reachable safe routes; it does not measure perceived difficulty.'},out=path.join(__dirname,'artifacts','task-k');fs.mkdirSync(out,{recursive:true});
+ const browser=await chromium.launch({channel:'chrome',headless:true}),report={browser:browser.version(),waves:[],errors:[],note:'Automation verifies mechanics and reachable safe routes; it does not measure perceived difficulty.'},out=path.join(__dirname,'artifacts','campaign-waves');fs.mkdirSync(out,{recursive:true});
  try{
   const p=await browser.newPage({viewport:{width:1366,height:900}});p.on('pageerror',e=>report.errors.push(String(e)));
   await p.addInitScript(()=>{let seed=0xdead1e;Math.random=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);});

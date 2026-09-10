@@ -19,7 +19,7 @@ async function open(page, options = {}) {
   }, options);
   await page.keyboard.press('Space'); await page.waitForFunction(() => document.getElementById('title-screen').hidden);await training(page);
   await page.locator('#briefing-skip').click(); await page.waitForFunction(() => document.getElementById('briefing-screen').hidden);
-  // Training now preserves the existing campaign. Start a fresh run through TITLE to apply this test's tuning fixture.
+  // Training preserves saved campaign progress. Start a fresh run through TITLE to apply the tuning fixture.
   if (Object.keys(options).length) { await page.locator('#map-title').click(); await page.locator('#title-start').click(); await initialMap(page); }
   await battleReady(page);
 }

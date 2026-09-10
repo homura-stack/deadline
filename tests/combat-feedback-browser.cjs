@@ -4,7 +4,7 @@ const {begin,plan,state}=require('./tutorial-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 (async()=>{
  const browser=await chromium.launch({channel:'chrome',headless:true}),report={cases:[],errors:[]};
- const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'task-l');fs.mkdirSync(out,{recursive:true});
+ const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'combat-feedback');fs.mkdirSync(out,{recursive:true});
  try{
   for(const [reduced,width] of [[false,1280],[false,390],[true,1280],[true,390]]){
    const p=await browser.newPage({viewport:{width,height:width===390?844:900},reducedMotion:reduced?'reduce':'no-preference'});

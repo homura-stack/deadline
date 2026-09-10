@@ -138,7 +138,7 @@
       areaReplayReturn={world:app.world,journey:app.journey};app.journey=replayJourney;app.world=S.createWorld(J.areas[index].first-1);
     }else if(!J.enter(app.journey,index))return;
     sound.unlock();sound.playUiConfirm();releasePointer();releaseTouchPad();heldKeys.clear();resetArtFx();Stage.prepare(index);
-    // Resume only the existing between-Wave transition. No combat step, retuning or recreated Wave.
+    // Resume the stored between-Wave transition without a combat step, retuning or Wave recreation.
     if(!replay&&app.world.phase==='wave-clear')S.step(app.world,app.world.transitionRemaining+C.world.fixedStep);
     handleEvents();renderer.resize();accumulator=0;lastTime=0;updateUi();
   }
@@ -150,7 +150,7 @@
   }
   function openTraining() {
     if (app.titleLeaving || app.practice.active || app.briefingActive || (!app.titleActive && app.journey.mode !== 'map')) return;
-    // Keep the campaign objects untouched while the historical rehearsal uses its own world.
+    // TRAINING uses an isolated world and does not mutate campaign objects.
     trainingReturn = { world: app.world, journey: app.journey };
     const exitLabel = trainingPreference.shouldOffer() ? 'TITLEへ戻る' : 'WORLD MAPへ';
     briefingUi.skip.textContent = exitLabel; $('practice-exit').textContent = exitLabel;
@@ -180,8 +180,8 @@
   function restoreCheckpoint() {
     const saved=progressStore.load(),current=Math.min(J.areas.length-1,saved.restored);
     Object.assign(app.journey,{restored:saved.restored,selected:current,active:current});
-    // Rebuild the closed AREA boundary, then use the existing next-Wave transition on ENTER.
-    // This also preserves the Wave 6 -> 7 ONE STOP acknowledgement without saving battle objects.
+    // Rebuild the closed AREA boundary, then enter through the next-Wave transition.
+    // The transition keeps the Wave 6 -> 7 ONE STOP acknowledgement outside saved battle objects.
     app.world=S.createWorld(saved.restored?J.areas[saved.restored-1].last-1:0);
     Object.assign(app.world,saved.run);Object.assign(app.world.waveStartSnapshot,saved.run);
     if(saved.restored){app.world.phase='wave-clear';app.world.transitionRemaining=0;app.world.enemies=[];app.world.events=[];}
@@ -627,7 +627,7 @@
         if(!app.practice.active&&J.cleared(app.journey,event.wave,app.artFx.echo,app.world.player)){
           saveProgress();
           releasePointer();releaseTouchPad();heldKeys.clear();sound.stopTimeClock();accumulator=0;
-          // The existing simulation has already removed defeated enemies and bullets. Clear only presentation residue.
+          // The simulation has removed defeated enemies and bullets; clear only presentation residue.
           sound.stopAll();resetArtFx();app.particles=[];app.hits=[];app.shake=0;app.pendingFinal=null;app.calloutLife=0;ui.callout.textContent='';
           app.combatFx.releaseRemaining=0;app.combatFx.resumeRemaining=0;app.combatFx.releasePulse=0;app.combatFx.pendingCompletion=null;app.combatFx.completionRemaining=0;app.combatFx.trail=[];
           app.timeFx.blend=0;app.timeFx.enterRemaining=0;app.timeFx.exitRemaining=0;

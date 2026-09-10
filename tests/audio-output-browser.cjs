@@ -45,7 +45,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
       assert.ok(report[name].peak<.8,`${name}: normal use should not drive the limiter excessively`);
     }
     assert.ok(report.final.rms>report.kill.rms);assert.ok(report.perfect.rms>report.clear.rms);assert.deepEqual(errors,[]);
-    const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'task-l');fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'audio-output.json'),JSON.stringify({browser:browser.version(),increase,cases:report,errors},null,2));
+    const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'audio-output');fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'audio-output.json'),JSON.stringify({browser:browser.version(),increase,cases:report,errors},null,2));
     console.log(`PASS audio output: 10 event sounds, real overlap, mute levels, peak ceiling and cleanup; LOCK RMS ${increase.toFixed(3)}x`);
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

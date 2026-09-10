@@ -28,7 +28,7 @@
       glow.globalCompositeOperation = 'source-in'; glow.fillStyle = '#fff5dc'; glow.fillRect(0, 0, flash.width, flash.height);
       entry.stamp = stamp; entry.flash = flash; entry.height = definition.width * image.naturalHeight / image.naturalWidth;
       if (key === 'pico') {
-        // A neutral-white damage silhouette; retain the warm stamp for other combat highlights.
+        // Damage uses a neutral-white silhouette; other combat highlights use the warm stamp.
         const white = document.createElement('canvas'); white.width = stamp.width; white.height = stamp.height;
         const mask = white.getContext('2d'); mask.drawImage(stamp, 0, 0);
         mask.globalCompositeOperation = 'source-in'; mask.fillStyle = '#ffffff'; mask.fillRect(0, 0, white.width, white.height);
@@ -39,6 +39,6 @@
     image.onerror = () => { entry.status = 'error'; resolve(entry.status); };
     image.src = `assets/characters/${definition.file}`;
   })));
-  // Loading / failed images use the renderer's existing vector body; the simulation never waits for an asset.
+  // Loading or failed images use the renderer's vector body; the simulation never waits for an asset.
   root.Deadline.characters = { entries, enemyTypes, ready };
 })(window);

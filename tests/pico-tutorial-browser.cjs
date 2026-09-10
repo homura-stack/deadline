@@ -1,4 +1,4 @@
-/* E.1 acceptance: genuine title choices, historical rehearsal, replay and browser preference. */
+/* Tutorial-flow acceptance: title choices, training, replay and browser preference. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,move,stroke,begin,plan}=require('./tutorial-helpers.cjs');
@@ -59,11 +59,11 @@ const out=path.join(__dirname,'artifacts','tutorial-e1');fs.mkdirSync(out,{recur
     const blocked=await browser.newPage({viewport:{width:1280,height:720}});await blocked.addInitScript(()=>Object.defineProperty(window,'localStorage',{get(){throw new DOMException('Blocked','SecurityError');}}));await open(blocked);await first(blocked);await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);await blocked.locator('#map-title').click();await first(blocked,true);await blocked.locator('#map-training').click();await begin(blocked);await plan(blocked);await blocked.keyboard.press('Space');await map(blocked);assert.equal((await state(blocked)).trainingPreference,'completed');await blocked.close();
     for(const viewport of [{width:1920,height:1080},{width:1280,height:720},{width:768,height:800},{width:390,height:844},{width:320,height:800},{width:844,height:390}]){
       const v=await browser.newPage({viewport,reducedMotion:'reduce'});await open(v);await first(v);
-      for(const selector of ['#briefing-begin','#briefing-skip']){const box=await v.locator(selector).boundingBox();assert.ok(box.x>=0&&box.x+box.width<=viewport.width&&box.y>=0&&box.y+box.height<=viewport.height);assert.ok(box.height>0,'existing briefing controls remain visible');}
+      for(const selector of ['#briefing-begin','#briefing-skip']){const box=await v.locator(selector).boundingBox();assert.ok(box.x>=0&&box.x+box.width<=viewport.width&&box.y>=0&&box.y+box.height<=viewport.height);assert.ok(box.height>0,'briefing controls remain visible');}
       assert.equal(await v.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await v.screenshot({path:path.join(out,`first-${viewport.width}.png`)});
       await v.locator('#briefing-skip').click();assert.equal((await state(v)).titleActive,true);await v.evaluate(()=>localStorage.setItem('deadline.tutorial.v1','completed'));await v.reload();await v.waitForLoadState('networkidle');await first(v,true);await v.locator('#map-training').scrollIntoViewIfNeeded();const button=await v.locator('#map-training').boundingBox();assert.ok(button.height>=50);assert.ok(button.x>=0&&button.x+button.width<=viewport.width);report.layouts.push(viewport);await v.close();
     }
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);report.errors=errors;report.externalRequests=external;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
-    console.log('PASS E.1: first START -> five-page Pico briefing -> two-target practice -> automatic MAP -> Garden; replay, HOW TO PLAY, incomplete exit/reload, blocked storage, keyboard controls, six layouts; console errors 0');
+    console.log('PASS tutorial flow: first START -> five-page Pico briefing -> two-target practice -> automatic MAP -> Garden; replay, HOW TO PLAY, incomplete exit/reload, blocked storage, keyboard controls, six layouts; console errors 0');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

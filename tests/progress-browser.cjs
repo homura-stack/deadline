@@ -6,7 +6,7 @@ const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 const run={score:5300,maxChain:5,totalKills:16,perfectExecutions:2,hitsTaken:1,time:80};
 const key='deadline.progress.v1',save=restored=>({version:1,restored,run});
 (async()=>{
- const browser=await chromium.launch({channel:'chrome',headless:true}),report={cases:[],errors:[]},out=path.join(__dirname,'artifacts','task-q');fs.mkdirSync(out,{recursive:true});
+ const browser=await chromium.launch({channel:'chrome',headless:true}),report={cases:[],errors:[]},out=path.join(__dirname,'artifacts','persistent-progress');fs.mkdirSync(out,{recursive:true});
  try{
   for(const touch of [false,true]){
    const p=await browser.newPage({viewport:touch?{width:390,height:844}:{width:1366,height:900},isMobile:touch,hasTouch:touch});p.on('pageerror',e=>report.errors.push(String(e)));

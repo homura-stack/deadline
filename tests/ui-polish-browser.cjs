@@ -4,12 +4,12 @@ const {begin,plan,move,stroke,state}=require('./tutorial-helpers.cjs');
 const {planWave,surviveUntilReady}=require('./browser.cjs');
 const {assertTitleComposition,overlap}=require('./title-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
-const out=path.join(__dirname,'artifacts','task-i');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts','ui-polish');fs.mkdirSync(out,{recursive:true});
 const report={layouts:[],routes:[],errors:[]};
 async function snap(p,name){await p.screenshot({path:path.join(out,`after-${name}.png`)});}
 async function layout(p,size){
   const m=await p.evaluate(()=>{const selectors=['#arena','.hud','.charge','#phase','#status-action','#stop-time','#life','#score','#lock-count','#hint','.controls'];return Object.fromEntries(selectors.map(s=>{const el=document.querySelector(s),r=el.getBoundingClientRect(),c=getComputedStyle(el);return[s,{font:parseFloat(c.fontSize),x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,right:r.right}]}));});
-  // Pre-I shell and arena measurements. Critical HUD growth must not cost play space.
+  // Shell and arena measurements keep HUD growth from reducing play space.
   const expected=size.width===1920?[1192,745]:size.width===1366?[772.797,483]:[1390,820];
   assert.ok(Math.abs(m['#arena'].width-expected[0])<.1);assert.equal(m['#arena'].height,expected[1]);
   for(const key of ['#stop-time','#life','#lock-count','#phase'])assert.ok(m[key].font>m['#score'].font,`${key} outranks score`);
@@ -26,7 +26,7 @@ async function map(p,size){
   const sample=await p.evaluate(()=>{const e=document.querySelector('.world-before'),r=e.getBoundingClientRect(),c=document.createElement('canvas');c.width=Math.round(r.width);c.height=Math.round(r.height);const ctx=c.getContext('2d');ctx.drawImage(e,0,0,c.width,c.height);const x=Math.round(r.width*.72),y=Math.round(r.height*.1);return {x:Math.round(r.x+x),y:Math.round(r.y+y),rgb:[...ctx.getImageData(x,y,1,1).data].slice(0,3)};});
   const shot=PNG.sync.read(await p.screenshot()),pixel=[...shot.data.slice((sample.y*shot.width+sample.x)*4,(sample.y*shot.width+sample.x)*4+3)];
   await snap(p,`map-${size.width}`);
-  assert.ok(pixel.reduce((n,v,i)=>n+Math.abs(v-sample.rgb[i]),0)<12,'live WORLD MAP must show the supplied photograph '+JSON.stringify({sample,pixel}));
+  assert.ok(pixel.reduce((n,v,i)=>n+Math.abs(v-sample.rgb[i]),0)<12,'live WORLD MAP must show the source photograph '+JSON.stringify({sample,pixel}));
   const d=await p.locator('.map-detail').boundingBox();for(const l of await p.locator('.map-node-label').all())assert.equal(overlap(await l.boundingBox(),d),false);
   assert.match(await p.locator('[aria-current="location"] em').innerText(),/CURRENT/);
   await snap(p,`map-${size.width}`);
@@ -59,7 +59,7 @@ try{
   // A keyboard-accessible help disclosure does not move the arena or fire a command.
   const arena=await p.locator('#arena').boundingBox();await p.locator('.play-help summary').focus();await p.keyboard.press('Enter');assert.equal(await p.locator('.play-help').getAttribute('open'),'');assert.equal((await state(p)).world.phase,'normal');
   const after=await p.locator('#arena').boundingBox();assert.equal(after.width,arena.width);assert.equal(after.height,arena.height);
-  report.routes.push({size,flow:'fresh START → 4 pages → 5 practice steps → MAP → Garden W1/W2 → RESTORED → MAP; permanent TRAINING → restored MAP → Forge → impact pause → GAME OVER → RETRY',pico});await p.close();console.log('PASS UI hierarchy, live map pixels, complete original-input routes:',size.width,size.height);
+  report.routes.push({size,flow:'fresh START → 4 pages → 5 practice steps → MAP → Garden W1/W2 → RESTORED → MAP; permanent TRAINING → restored MAP → Forge → impact pause → GAME OVER → RETRY',pico});await p.close();console.log('PASS UI hierarchy, live map pixels, complete real-input routes:',size.width,size.height);
  }
  assert.deepEqual(report.errors,[]);
 }finally{fs.writeFileSync(path.join(out,'ui-report.json'),JSON.stringify(report,null,2));await browser.close();}

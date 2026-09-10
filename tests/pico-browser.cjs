@@ -1,4 +1,4 @@
-/* TASK A asset acceptance. Development-only Playwright; never loaded by the game. */
+/* Sprite asset acceptance. Development-only Playwright; never loaded by the game. */
 'use strict';
 const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
@@ -44,7 +44,7 @@ async function fixture(page, mode) {
     g.translate(renderer.offsetX, renderer.offsetY); g.scale(renderer.scale, renderer.scale);
     g.fillStyle = '#d2d9e2'; g.font = '12px monospace'; g.textAlign = 'center';
     for (const e of world.enemies) g.fillText(e.pattern.toUpperCase(), e.x, 160);
-    g.textAlign = 'left'; g.fillText('TASK A / ISOLATED RENDER FIXTURE / ' + mode.toUpperCase(), 40, 52);
+    g.textAlign = 'left'; g.fillText('SPRITE ASSET / ISOLATED RENDER FIXTURE / ' + mode.toUpperCase(), 40, 52);
     g.fillText('PICO', 120, 478); g.fillText('ACTUAL BULLET SHAPES / UNCHANGED', 300, 345);
     return { worldUnchanged:before === JSON.stringify(world), locks:world.route?.locks.length || 0,
       radii:{ player:C.player.radius, enemy:C.enemy.radius, bullet:C.shooting.bulletRadius },
@@ -75,7 +75,7 @@ async function fixture(page, mode) {
       assert.deepEqual(asset.cornerAlpha, [0,0,0,0], name); assert.ok(asset.anchorAlpha > 200, name);
       assert.ok(asset.transparentFraction > .3, name); assert.ok(asset.visibleFraction > .15, name);
     }
-    // Compare cutouts over two opaque backgrounds. Original reference is intentionally not requested by the game.
+    // Compare cutouts over two opaque backgrounds. The game runtime does not load the reference image.
     await page.evaluate(() => {
       const canvas = document.createElement('canvas'); canvas.id='asset-sheet'; canvas.width=1200; canvas.height=640;
       canvas.style.cssText='position:fixed;inset:0;width:1200px;height:640px;z-index:9999'; document.body.append(canvas);
@@ -126,7 +126,7 @@ async function fixture(page, mode) {
     assert.deepEqual(await local.evaluate(()=>Deadline.characters.ready),['ready','ready','ready','ready']);
     await enter(local); report.file={fourSpritesLoaded:true,gameStarted:true}; await local.close();
     assert.deepEqual(report.errors,[]); assert.deepEqual(report.externalRequests,[]);
-    console.log('PASS 4 transparent sprites, original aspect ratios, opaque anchors, 5 enemy patterns, unchanged hitboxes/world, TARGET, DPR 2, delayed/failed loading and file:// startup');
+    console.log('PASS 4 transparent sprites, source aspect ratios, opaque anchors, 5 enemy patterns, unchanged hitboxes/world, TARGET, DPR 2, delayed/failed loading and file:// startup');
   } finally {
     fs.writeFileSync(path.join(artifacts,'acceptance.json'),JSON.stringify(report,null,2)); await browser.close();
   }

@@ -7,7 +7,7 @@ const {measureAudio}=require('./audio-metrics.cjs'),baseline=require('./fixtures
   const p=await browser.newPage(),errors=[];p.on('pageerror',e=>errors.push(String(e)));
   await p.addScriptTag({path:path.join(__dirname,'..','config.js')});await p.addScriptTag({path:path.join(__dirname,'..','audio.js')});
   const report=await measureAudio(p);report.browser=browser.version();report.before=baseline.results;
-  const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'task-m');fs.mkdirSync(out,{recursive:true});
+  const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'audio-envelope');fs.mkdirSync(out,{recursive:true});
   fs.writeFileSync(path.join(out,'audio-envelope.json'),JSON.stringify(report,null,2));
   assert.equal(report.commonGain,4);assert.equal(report.limiterKnee,.8);assert.equal(report.limiterCeiling,.95);
   for(const [name,r]of Object.entries(report.results)){
@@ -29,7 +29,7 @@ const {measureAudio}=require('./audio-metrics.cjs'),baseline=require('./fixtures
   assert.ok(r.final.final.rms100>r.hit.final.rms100,'final kill must also lead the full normal slash + kill event');
   assert.equal(r.locks.plays.target,10);assert.equal(r.tenKills.plays.kill,10);assert.equal(r.damageReady.plays.damage,1);assert.equal(r.damageReady.plays.ready,1);
   for(const name of ['locks','executeKill','tenKills','denseSequence','damageReady'])assert.ok(r[name].limiter.aboveKneePercent<10,`${name}: limiter must not be active throughout normal use`);
-  assert.deepEqual(errors,[]);console.log('PASS TASK M: per-SE envelope metrics, fixed windows, unchanged non-target sounds, hierarchy, overlap, limiter and cleanup');
+  assert.deepEqual(errors,[]);console.log('PASS audio envelope: per-SE metrics, fixed windows, unchanged non-target sounds, hierarchy, overlap, limiter and cleanup');
   for(const name of ['lock','execute','kill','damage','final','locks','executeKill','tenKills','denseSequence','damageReady'])console.log(name,JSON.stringify({before:baseline.results[name].final,after:r[name].final,limiter:r[name].limiter}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,4 +1,4 @@
-/* TASK B: color separation, background readability and render isolation in real Chrome. */
+/* Color separation, background readability and render isolation in real Chrome. */
 'use strict';
 const {visitCompleted}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
@@ -68,7 +68,7 @@ function save(name,data) { fs.writeFileSync(path.join(artifacts,name+'.png'),Buf
           line:pixel(230,430),tip:pixel(860,440),picoWarm:region(w.player.x,w.player.y,20,warm),
           targetCyan:mode==='normal'?0:region(450,230,23,cyan),enemyCyan:region(450,230,15,cyan),enemyDanger:region(450,230,15,redPurple),patternMarks,
           bullets:mode==='dense'?[]:w.bullets.map(b=>({pattern:b.pattern,pixel:pixel(b.x+2,b.y)})),image:canvas.toDataURL()};
-        // A generated visual never changes after a kill/Wave transition; no recovery is encoded in the background.
+        // The procedural backdrop is stable across kill and Wave transitions; recovery is a separate layer.
         const original=Deadline.battleArt.backdrop(renderer.scale*renderer.ratio).toDataURL();
         const oldWave=w.wave;w.wave=10;w.enemies.forEach(enemy=>{enemy.alive=false;});renderer.backdrop(0);
         metrics.backgroundAfterClear=original===Deadline.battleArt.backdrop(renderer.scale*renderer.ratio).toDataURL();w.wave=oldWave;

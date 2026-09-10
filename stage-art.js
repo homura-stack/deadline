@@ -43,7 +43,7 @@
     const w=image.naturalWidth*scale,h=image.naturalHeight*scale;
     g.drawImage(image,(width-w)/2,(height-h)/2,w,h);
   }
-  /** One current-area pair, resized only on area/resolution changes. Original JPEG bytes are untouched. */
+  /** One current-area pair, resized only on area or resolution changes; source JPEG bytes remain immutable. */
   function stamps(renderer,area) {
     const before=entries.get(key(area,'before')),after=entries.get(key(area,'after'));
     if(before?.status!=='ready'||after?.status!=='ready')return null;

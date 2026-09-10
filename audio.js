@@ -115,7 +115,7 @@
         if (!voice.ended) { voice.ended = true; this.activeVoices.delete(voice); for (const node of voice.nodes) { try { node.disconnect(); } catch (_) {} } }
       }
     }
-    /** Preserves legacy envelopes unless a combat presence profile explicitly opts in. */
+    /** Extended envelopes apply only to sounds with an explicit combat presence profile. */
     shapeEnvelope(param, now, duration, gain, attackTime, release, presence) {
       param.setValueAtTime(0.0001, now); param.linearRampToValueAtTime(gain, now + attackTime);
       if (presence) {
@@ -239,7 +239,7 @@
       const gain = C.feedback.combatAudio.killVolume * (last ? 1.2 : 1), body = C.feedback.combatAudio.presence[last ? 'finalKill' : 'kill']; this.mark('kill', { order, last });
       this.tone(last ? 118 : 98, body.toneSeconds, 'sine', gain, 38, 'combat', null, null, body);
       this.noise(body.noiseSeconds, gain * 0.55, 'bandpass', 620, 150, 0.9, 'combat', null, null, null, body);
-      // A quiet midrange edge complements (rather than replaces) the existing low sine.
+      // A quiet midrange edge complements the low sine.
       this.tone(body.midStart, body.midSeconds, 'triangle', gain * body.midGainScale, body.midEnd, 'combat', .002, null, body);
     }
     playTimeResume() {

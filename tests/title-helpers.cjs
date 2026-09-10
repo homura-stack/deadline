@@ -1,12 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict');
 const overlap=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
-// Protect the official TASK O artwork's baked logo, Pico, trail and subtitle.
+// Protect the official title artwork's baked logo, Pico, trail, and subtitle.
 async function assertTitleComposition(page,viewport){
   const art=page.locator('#title-art');
   assert.deepEqual(await art.evaluate(img=>({loaded:img.complete,w:img.naturalWidth,h:img.naturalHeight})),{loaded:true,w:1678,h:937});
   const box=await art.boundingBox();assert.ok(box&&box.x>=-.1&&box.y>=-.1&&box.x+box.width<=viewport.width+.1&&box.y+box.height<=viewport.height+.1,'the complete illustration stays in view');
-  assert.ok(Math.abs(box.width/box.height-1678/937)<.002,'the supplied image keeps its aspect ratio');
+  assert.ok(Math.abs(box.width/box.height-1678/937)<.002,'the title image keeps its aspect ratio');
   const scale=box.width/1678,region=(x,y,width,height)=>({x:box.x+x*scale,y:box.y+y*scale,width:width*scale,height:height*scale});
   const logo=region(45,315,785,185),pico=region(880,28,585,665),trail=region(720,400,160,450),copy=region(65,500,715,35);
   for(const selector of ['#title-start','#title-training-launch','[data-title-info="how"]','[data-title-info="settings"]','[data-title-info="credits"]']){

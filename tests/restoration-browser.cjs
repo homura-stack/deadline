@@ -72,7 +72,7 @@ async function start(p){await p.locator('#title-start').click();await initialMap
     await p.waitForTimeout(400);await p.screenshot({path:path.join(out,`${id}-after.png`),fullPage:true});assert.deepEqual((await state(p)).world,frozen);
     await p.waitForFunction(()=>Deadline.journey.onMap(Deadline.inspect().journey));
     const map=await state(p);assert.equal(map.journey.restored,area+1);assert.equal(await p.locator('[data-city][data-status="online"]').count(),area+1);assert.deepEqual(map.world,frozen);
-    // TASK H: real Wave clears must retain every earlier photographic region and no future region.
+    // Each real Wave clear reveals its region while retaining every earlier region.
     await p.waitForFunction(i=>Number(document.querySelector(`[data-reveal="${i}"]`).getAttribute('opacity'))>.99,area);
     const mask=await p.locator('[data-reveal]').evaluateAll(nodes=>nodes.map(n=>Number(n.getAttribute('opacity'))));
     mask.forEach((amount,i)=>assert.ok(i<=area?amount>.99:amount===0,`map region ${i} after ${id}`));
@@ -117,6 +117,6 @@ async function start(p){await p.locator('#title-start').click();await initialMap
   assert.equal((await state(cancel)).titleActive,true);await cancel.waitForLoadState('networkidle');assert.equal((await state(cancel)).titleActive,true);assert.equal((await state(cancel)).world.time,0);await cancel.close();
   assert.deepEqual(delayedErrors,[]);assert.deepEqual(failureErrors,[]);report.loading={delayed:'waits without combat time or white frame',failure:'retry returns to Garden; no uncaught exception'};
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.failedRequests,[]);
-  console.log(loadingOnly?'PASS background loading delay, keyboard retry, keyboard TITLE and stale-load cancellation':'PASS full original-input journey → all five official AFTER scenes → synchronized map → ending → restart; image masks, layouts and delayed/failed-load recovery');
+  console.log(loadingOnly?'PASS background loading delay, keyboard retry, keyboard TITLE and stale-load cancellation':'PASS full real-input journey → all five official AFTER scenes → synchronized map → ending → restart; image masks, layouts and delayed/failed-load recovery');
  }finally{fs.writeFileSync(path.join(out,loadingOnly?'loading.json':'acceptance.json'),JSON.stringify(report,null,2));await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

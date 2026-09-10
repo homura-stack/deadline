@@ -98,7 +98,7 @@
         } g.closePath(); }
         if (enemy.delayRemaining != null) g.fillStyle = colors.delayFill;
         g.fill(); g.stroke();
-        // Faceted casing stays within the original radius; type silhouettes remain distinct.
+        // Faceted casing stays within the enemy radius; type silhouettes remain distinct.
         g.save(); g.translate(enemy.x, enemy.y); g.strokeStyle = colors.stroke; g.globalAlpha *= .4;
         g.beginPath(); g.moveTo(-r * .62, r * .45); g.lineTo(0, -r * .56); g.lineTo(r * .62, r * .45); g.stroke();
         g.restore();
@@ -227,7 +227,7 @@
       g.beginPath(); g.arc(fx.origin.x, fx.origin.y, Math.max(1, radius + 5), 0, Math.PI * 2); g.stroke();
       g.restore();
     }
-    /** Official BEFORE art in combat; only the separate restoration mode can expose AFTER. */
+    /** Combat displays BEFORE art; restoration mode alone can expose AFTER. */
     backdrop(stopBlend, app) {
       const g = this.ctx;
       if (!root.Deadline.stageArt?.draw(this,app)) g.drawImage(root.Deadline.battleArt.backdrop(this.scale * this.ratio), 0, 0, C.world.width, C.world.height);

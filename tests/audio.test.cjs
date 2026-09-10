@@ -27,7 +27,7 @@ test('mute, zero gain, saved sliders and suspended context remain compatible',()
   context.state='suspended';s.unlock();assert.equal(context.state,'running');assert.equal(s.referenceGain.gain.value,4);
   assert.deepEqual(JSON.parse(writes.at(-1).value),{masterVolume:0,sfxVolume:64,muted:false});assert.ok(writes.every(w=>w.key===C.audio.storageKey));
 });
-test('invalid preferences use existing defaults and all important sound APIs remain callable',()=>{
+test('invalid preferences use configured defaults and all important sound APIs remain callable',()=>{
   const {sound:s}=fixture('{invalid');s.unlock();assert.equal(s.masterVolume,80);assert.equal(s.sfxVolume,90);
   s.playTimeStopStart();s.playNearMiss();s.playReady();s.playTargetLock();s.playExecuteRelease();s.playKill();s.playKill(10,true);s.playDamage();s.play('perfect');s.play('clear');
   assert.ok(s.activeVoices.size>0);s.stopAll();assert.equal(s.activeVoices.size,0);
@@ -68,7 +68,7 @@ test('LOCK rate limiting is unchanged while EXECUTE remains a bounded 100-180ms 
   assert.ok(duration>=.1&&duration<=.188);s.setMuted(true);assert.equal(s.activeVoices.size,0);
 });
 
-test('READY and UI keep their existing envelopes rather than inheriting a combat hold',()=>{
+test('READY and UI keep their short envelopes rather than inheriting a combat hold',()=>{
   for(const method of ['playReady','playUiConfirm']){
     const {sound:s}=fixture();s.unlock();s[method]();
     for(const voice of s.activeVoices){const events=voice.nodes.find(n=>n.kind==='gain').gain.events;assert.equal(events.filter(e=>e[0]==='set').length,1);}

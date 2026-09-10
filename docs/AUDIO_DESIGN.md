@@ -43,7 +43,7 @@ READY、Near Miss、TIME STOP、UI、clock、draw、resume、CLEAR、PERFECT、�
 
 Chrome 152.0.7977.82 / OfflineAudioContext / 48kHz / MASTER 100 / SFX 100 / common gain 4.0。実際のSoundクラス、oscillator、noise、filter、Limiterを使用。Limiter前・後・MASTER後を別チャンネルで測定した。
 
-変更前は包絡改修前に採取し、tests/fixtures/audio-m-baseline.jsonに固定。通常撃破の合成音hitも、保持していた変更前audio.jsを独立した測定ページに読み込んで追加計測した。既存のゲームファイルを旧版に書き戻す操作はしていない。
+変更前は包絡改修前に採取し、tests/fixtures/audio-m-baseline.jsonに固定。通常撃破の合成音hitも、保持していた変更前audio.jsを独立した測定ページに読み込んで追加計測した。
 
 発音区間RMSの窓は「呼出時刻から最長voiceの停止予約（末尾8msを含む）まで」。固定窓RMSは呼出後50ms／100ms、無音も含む。数値は線形振幅（1.0がデジタルフルスケール）。初20ms比率は、レンダリングされた総エネルギーに占める割合。
 
@@ -94,6 +94,6 @@ node tests/audio-output-browser.cjs
 node tests/audio-envelope-browser.cjs
 ```
 
-結果はGit管理外の`tests/artifacts/task-m/`等へ出力される。共通gainやLimiterを変更せず、単音、連続LOCK、EXECUTEから通常撃破、10体連続撃破、final、damage＋READY、非通常stressを区別して評価する。
+結果はGit管理外の`tests/artifacts/audio-envelope/`等へ出力される。共通gainやLimiterを変更せず、単音、連続LOCK、EXECUTEから通常撃破、10体連続撃破、final、damage＋READY、非通常stressを区別して評価する。
 
 「最初の20msに90%以上集中しない」は設計目安で、絶対的合否条件ではない。LOCKよりEXECUTE、通常撃破よりfinalを強く認識できるか、連続音が濁らないかはPCスピーカー等で聴取する。自動計測は聴感・実機の合格を代替しない。

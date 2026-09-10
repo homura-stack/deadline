@@ -2,14 +2,14 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{PNG}=require('pngjs');
 const {begin,plan}=require('./tutorial-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
-const out=path.join(__dirname,'artifacts','task-h');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts','world-map-restoration');fs.mkdirSync(out,{recursive:true});
 const report={layouts:[],pixels:[],errors:[],requests:[]};
 const delta=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0);
 (async()=>{
  const browser=await chromium.launch({channel:'chrome',headless:true});report.browser=browser.version();
  function hook(p){p.on('pageerror',e=>report.errors.push(String(e)));p.on('console',m=>{if(m.type()==='error')report.errors.push(m.text());});p.on('requestfailed',r=>report.requests.push(r.url()));}
  try{
-  for(const [file,sha]of [['before','dda4a2d70d7cfb28d8f286466c9af0c4484725b807afe7820b3abae78af7676a'],['after','6dd325544d929130d9ffaf98313c43aa37349995bb280fb31359d5ee2cecee30']])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets','world-map',file+'.jpeg'))).digest('hex'),sha,'original JPEG bytes preserved');
+  for(const [file,sha]of [['before','dda4a2d70d7cfb28d8f286466c9af0c4484725b807afe7820b3abae78af7676a'],['after','6dd325544d929130d9ffaf98313c43aa37349995bb280fb31359d5ee2cecee30']])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets','world-map',file+'.jpeg'))).digest('hex'),sha,'source JPEG bytes match the manifest');
   const p=await browser.newPage({viewport:{width:1920,height:1080}});hook(p);await p.goto(base+'?debug');await p.waitForLoadState('networkidle');
   await p.locator('#title-start').click();await p.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(p);await plan(p);await p.keyboard.press('Space');await p.waitForFunction(()=>Deadline.inspect().journey.mode==='map');
   await p.waitForSelector('#map-board[data-art-status="ready"]');assert.equal(await p.locator('[data-area][data-status="locked"]').count(),4);assert.equal(await p.locator('.world-full-reveal').getAttribute('opacity'),'0.0000');
@@ -25,9 +25,9 @@ const delta=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0);
    report.layouts.push({size,...layout});await p.screenshot({path:path.join(out,`map-${size.width}x${size.height}.png`),fullPage:true});
   }
   await p.setViewportSize({width:1920,height:1080});await p.locator('[data-area="1"] .map-node-label').click();assert.equal(await p.locator('#map-enter').isDisabled(),true);await p.locator('[data-area="1"]').focus();await p.keyboard.press('Enter');assert.equal(await p.locator('#map-enter').isDisabled(),true);await p.locator('[data-area="0"]').focus();await p.keyboard.press('Enter');assert.equal(await p.locator('#map-enter').isEnabled(),true);
-  await p.locator('#map-enter').click();await p.waitForFunction(()=>Deadline.inspect().journey.mode==='battle');assert.equal(await p.evaluate(()=>Deadline.inspect().world.wave),1);report.routeA='fresh START -> unchanged real TRAINING -> MAP -> GARDEN';
-  await p.reload();await p.waitForLoadState('networkidle');await p.locator('#title-training-launch').click();await p.waitForFunction(()=>Deadline.inspect().briefingActive);assert.equal(await p.evaluate(()=>Deadline.inspect().briefingPage),0);report.routeB='permanent TRAINING -> same briefing';await p.close();
-  // The actual SVG mask is rasterized by Chrome. Pixel comparison uses the original JPEGs,
+  await p.locator('#map-enter').click();await p.waitForFunction(()=>Deadline.inspect().journey.mode==='battle');assert.equal(await p.evaluate(()=>Deadline.inspect().world.wave),1);report.campaignEntry='fresh START -> real TRAINING -> MAP -> GARDEN';
+  await p.reload();await p.waitForLoadState('networkidle');await p.locator('#title-training-launch').click();await p.waitForFunction(()=>Deadline.inspect().briefingActive);assert.equal(await p.evaluate(()=>Deadline.inspect().briefingPage),0);report.trainingEntry='permanent TRAINING -> same briefing';await p.close();
+  // The actual SVG mask is rasterized by Chrome. Pixel comparison uses the source JPEGs,
   // and isolates presentation fixtures from the live campaign's progression.
   const v=await browser.newPage({viewport:{width:1100,height:700},deviceScaleFactor:1});hook(v);await v.goto(base+'?debug');await v.waitForLoadState('networkidle');
   await v.evaluate(()=>{const box=document.createElement('div');box.id='art-fixture';box.className='map-board';box.style.cssText='position:fixed;left:0;top:0;width:1000px;height:558.139535px;z-index:99999';document.body.append(box);window.artView=new Deadline.WorldMapView(box,()=>{});window.artState={...Deadline.journey.create(),mode:'map',elapsed:4};const style=document.createElement('style');style.textContent='#art-fixture .map-node,#art-fixture .world-city,#art-fixture .world-pico,#art-fixture .world-connections{visibility:hidden}';document.head.append(style);});
@@ -61,6 +61,6 @@ const delta=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0);
   await fail.locator('#title-start').click();await fail.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(fail);await plan(fail);await fail.keyboard.press('Space');await fail.waitForFunction(()=>Deadline.inspect().journey.mode==='map');
   await fail.waitForSelector('#map-board[data-art-status="error"]');await fail.unroute('**/world-map/after.jpeg');await fail.locator('.map-art-message button').click();await fail.waitForSelector('#map-board[data-art-status="ready"]');assert.deepEqual(failureErrors,[]);await fail.close();
   assert.deepEqual(report.errors,[]);assert.deepEqual(report.requests,[]);report.loading='normal images ready; intentional failure retries without changing campaign';
-  console.log('PASS H: real START/training/Garden, permanent training, original hashes, 8 layouts, exact nodes, 0-4 regional AFTER pixels, soft spreading, gated SYNC/full AFTER, immutable state, failed-image retry');
+  console.log('PASS world-map restoration: real START/training/Garden, permanent training, source hashes, 8 layouts, exact nodes, 0-4 regional AFTER pixels, soft spreading, gated SYNC/full AFTER, immutable state, failed-image retry');
  }finally{fs.writeFileSync(path.join(out,'map-art-report.json'),JSON.stringify(report,null,2));await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

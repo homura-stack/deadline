@@ -80,7 +80,7 @@
             { type: 'aim', x: 335, y: 430, angle: 5.4 }, { type: 'fan', x: 570, y: 440, angle: 0.9 },
             { type: 'burst', x: 765, y: 455, angle: 2.7 }
           ] },
-        // Preserve the late-Wave volley shapes; slower threats and more DRAW time provide the relief.
+        // Late-Wave volley shapes stay intact; slower threats and more DRAW time provide the relief.
         { number: 9, oneStopRequired: true, timeStopSeconds: 10.5, enemyHp: 1, enemySpeed: 19, fireIntervalScale: 1.35, bulletSpeedScale: 0.84,
           counts: { aim: 3, fan: 5, burst: 10, rotate: 8 }, enemies: [
             { type: 'aim', x: 260, y: 125, angle: 0.2 }, { type: 'fan', x: 430, y: 145, angle: 1.7 },

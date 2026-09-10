@@ -1,4 +1,4 @@
-/* Title presentation only. Existing game.js owns START, TRAINING and every game transition. */
+/* Title presentation only. game.js owns START, TRAINING and every game transition. */
 (function () {
   'use strict';
   const screen = document.getElementById('title-screen'), art = document.getElementById('title-art');

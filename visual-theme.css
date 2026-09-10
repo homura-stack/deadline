@@ -175,7 +175,7 @@ footer { padding-top: 13px; align-items: center; color: #a7b8c8; }
 .lock-ready small { color: #d9c9ac; margin-top: 8px; font: 11px var(--utility); }
 .tutorial-prompt { border-color: var(--cyan); background: #101a2eee; color: #d5f4ed; font-size: clamp(10px, 1.2vw, 14px); border-radius: 2px; }
 
-/* BRIEFING retains the original synchronized, input-faithful SVG demonstrations. */
+/* BRIEFING uses synchronized, input-faithful SVG demonstrations. */
 .briefing-screen { background: radial-gradient(ellipse at 10% 0, #2c253d80, transparent 65%), #080c1b; }
 .briefing-screen::before { opacity: .09; }
 .briefing-panel { width: min(100%, 1080px); }

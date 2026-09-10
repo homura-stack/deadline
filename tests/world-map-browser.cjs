@@ -56,7 +56,7 @@ async function frozen(p){const before=(await state(p)).world;await p.waitForTime
   assert.match(await p.locator('#map-notice').innerText(),/FORGE UNLOCKED/);
   await p.screenshot({path:path.join(output,'map-garden-online.png')});
   // Replay after a real restored area must preserve the complete paused campaign, not just its displayed score.
-  // Let the existing four-second map unlock animation settle before taking an exact state snapshot.
+  // Let the four-second map unlock animation settle before taking an exact state snapshot.
   await p.waitForFunction(()=>Deadline.inspect().journey.elapsed>=4);
   const campaign=await state(p);await p.locator('#map-training').click();
   await require('./tutorial-helpers.cjs').begin(p);await require('./tutorial-helpers.cjs').plan(p);await p.keyboard.press('Space');

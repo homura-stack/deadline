@@ -1,4 +1,4 @@
-/* Supplied circuit atlas. Image, masks, beacons and hit targets share one aspect ratio. */
+/* Circuit atlas image, masks, beacons and hit targets share one aspect ratio. */
 body.map-open { overflow: auto; }
 body.map-open #game-shell { display: none; }
 .world-map[hidden], .map-art-message[hidden] { display: none; }
@@ -84,7 +84,7 @@ body.map-open #game-shell { display: none; }
 .area-transition.is-restoring { background: transparent; justify-content: flex-end; padding-bottom: 9%; text-shadow: 0 2px 16px #030911; }
 .area-transition.is-restoring strong { font-size: clamp(29px,3.7vw,54px); }
 .restoring-area #wave-banner, .restoring-area #callout { visibility: hidden; }
-/* The completed atlas stays in view; the epilogue occupies the former area-detail column. */
+/* The completed atlas stays in view while the epilogue occupies the area-detail column. */
 .world-map { position: relative; }
 .map-detail[hidden],.journey-ending[hidden],.world-sync[hidden],.stage-loading-actions[hidden] { display: none; }
 .area-transition.is-restoring > :not(.stage-loading-actions) { opacity: 0; transform: translateY(5px); transition: opacity .35s ease, transform .35s ease; }

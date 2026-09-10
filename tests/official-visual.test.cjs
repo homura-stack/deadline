@@ -9,7 +9,7 @@ test('Pico location derives only from restored progress, including selected past
   assert.equal(V.currentArea(JSON.parse(JSON.stringify(s))),Math.min(4,restored));
  }
 });
-test('Pico advances on existing restoration completion and fresh campaign state remains Garden',()=>{
+test('Pico advances when restoration completes and fresh campaign state remains Garden',()=>{
  const s=J.create();s.mode='map';assert.equal(V.currentArea(s),0);
  J.enter(s,0);while(s.mode==='entering')J.tick(s,.05,true);J.cleared(s,2,[],{x:1,y:1});
  assert.equal(V.currentArea(s),0);while(s.mode==='restoring')J.tick(s,.05,true);

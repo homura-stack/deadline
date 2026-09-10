@@ -64,7 +64,7 @@ test('each lock is killed at arrival in path order, with a distinct hit and a st
  finish(w, current => { for (const ev of current.events.filter(e => e.type === 'hit')) { order.push(ev.enemyId); close(S.distance(ev.from, ev), C.timeStop.lockRadius); if (ev.last) close(current.execution.pause, C.feedback.finalHitStop); } current.events.length = 0; });
  assert.deepEqual(order, [2, 3, 5]); assert.equal(w.lastKills, 3); assert.equal(w.failed, false); assert.deepEqual(w.player, p(550, 100)); assert.ok(w.execution.elapsed >= .2 && w.execution.elapsed < 1);
 });
-test('all enemy coordinates/timers and existing bullet identities stay frozen throughout execution', () => {
+test('all enemy coordinates/timers and bullet identities stay frozen throughout execution', () => {
  const w = world([enemy(1, 300, 100), enemy(2, 500, 500)]); w.bullets.push(bullet(1, 800, 500)); w.enemies[0].vx = 24;
  plan(w, [p(450, 100)]); const snapshot = physical(w); finish(w, current => assert.deepEqual(physical(current), snapshot));
  assert.equal(w.enemies[0].alive, false); S.step(w); assert.ok(w.time > snapshot.time); assert.ok(w.bullets[0].x > snapshot.bullets[0].x); assert.ok(w.enemies[1].shotRemaining < snapshot.enemies[1].shotRemaining);

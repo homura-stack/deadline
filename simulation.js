@@ -1,4 +1,4 @@
-/* Original deterministic route geometry and real-time simulation. No prediction engine. */
+/* Deterministic route geometry and real-time simulation. No prediction engine. */
 (function (root) {
   'use strict';
   const C = root.Deadline.config, EPS = 1e-8;

@@ -1,8 +1,8 @@
-/* Runs every existing and new Chrome suite; each owns an isolated browser profile. */
+/* Runs every Chrome suite; each owns an isolated browser profile. */
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const suites=fs.readdirSync(__dirname).filter(name=>/(?:^browser|-browser)\.cjs$/.test(name)).sort();
-const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'task-k','suite-logs');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts',process.env.DEADLINE_REPORT_DIR||'browser-suite','suite-logs');fs.mkdirSync(out,{recursive:true});
 const results=[];
 for(const suite of suites){
  console.log(`RUN ${suite}`);const started=Date.now();

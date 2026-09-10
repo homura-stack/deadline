@@ -4,7 +4,7 @@ const {assertTitleComposition,overlap}=require('./title-helpers.cjs');
 const {visitCompleted,initialMap}=require('./journey-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
 (async()=>{
- const browser=await chromium.launch({channel:'chrome',headless:true}),report={layouts:[],overlaps:[],errors:[]},out=path.join(__dirname,'artifacts','task-o');fs.mkdirSync(out,{recursive:true});
+ const browser=await chromium.launch({channel:'chrome',headless:true}),report={layouts:[],overlaps:[],errors:[]},out=path.join(__dirname,'artifacts','official-visual');fs.mkdirSync(out,{recursive:true});
  try{
   for(const [file,sha]of [['title.png','5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9'],['logo.png','c53c85065ee3b42c381922b7d1b364966710a47db133eee26eaea8ee941ecc5c']])assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'../assets/title',file))).digest('hex'),sha);
   for(const touch of [false,true]){
@@ -52,9 +52,9 @@ const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
   await visitCompleted(failed,base+'?debug');await failed.waitForLoadState('networkidle');assert.equal(await failed.locator('#title-screen').evaluate(e=>e.classList.contains('title-background-failed')),true);
   await failed.locator('#title-start').tap();await initialMap(failed);assert.equal(await failed.locator('.world-pico-fallback').isVisible(),true);
   await failed.locator('#map-enter').tap();await failed.waitForFunction(()=>Deadline.inspect().journey.mode==='battle');assert.equal(await failed.locator('#arena').isVisible(),true);
-  // No safe supplied HUD crop: retain the existing minimal wordmark, not a generated replacement.
+  // The HUD uses a minimal text wordmark so the title artwork is not cropped into a separate logo.
   assert.equal(await failed.locator('#game-shell .masthead-logo').getAttribute('aria-label'),'DEAD/LINE');assert.equal(await failed.locator('#game-shell .masthead-logo img').count(),0);
   await failed.close();assert.deepEqual(report.errors,[]);assert.deepEqual(report.overlaps,[],'Pico must not obscure AREA labels or nodes');
-  console.log('PASS TASK O official title, responsive non-overlap, current vs selected Pico, all locations, unchanged reload semantics, reduced motion, touch controls, image failures and HUD hold');
+  console.log('PASS official visual: title, responsive non-overlap, current vs selected Pico, all locations, reload semantics, reduced motion, touch controls, image failures and HUD hold');
  }finally{fs.writeFileSync(path.join(out,'official-visual.json'),JSON.stringify(report,null,2));await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

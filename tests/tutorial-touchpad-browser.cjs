@@ -57,7 +57,7 @@ async function within(inner, outer, label) {
       assert.equal((await page.locator('.briefing-page:visible .briefing-number').innerText()).trim(), headings[index]);
       assert.equal(await page.locator('.briefing-page:visible svg').isVisible(), true);
       assert.equal(await page.locator('.briefing-page:visible .demo-pico-sprite').count(), 1);
-      assert.equal(await page.locator('.briefing-page:visible .demo-player > path').count(), 0, 'tutorial uses the current Pico image, not historical diamond geometry');
+      assert.equal(await page.locator('.briefing-page:visible .demo-player > path').count(), 0, 'tutorial uses the Pico image instead of fallback diamond geometry');
       assert.equal(await page.locator('.briefing-page:visible .demo-input-touch').isVisible(), true);
       if (index === 0) {
         assert.equal(await page.locator('.briefing-page:visible .demo-pad-move').isVisible(), true);

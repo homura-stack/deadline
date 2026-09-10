@@ -1,105 +1,47 @@
 # DEAD/LINE
 
-### 次世代絶望導体により沈黙した極微回路社会において、最後の灯火となったあの超高速電子蛍について
-
-> **弾幕を避け、世界を止め、瞬間移動し、最後は残光だけが残る。**
+> 弾幕を避け、世界を止め、瞬間移動し、最後は残光だけが残る。
 
 **『DEAD/LINE 次世代絶望導体により沈黙した極微回路社会において、最後の灯火となったあの超高速電子蛍について』**は、弾幕回避と時間停止中のルート設計を組み合わせたブラウザアクションゲームです。
 
-機械生命体の電子ホタル「Pico」を操作し、沈黙した回路都市に光を取り戻します。
-
-## ▶ PLAY
-
-**https://homura-stack.github.io/deadline/**
+## [▶ PLAY](https://homura-stack.github.io/deadline/)
 
 インストール不要。PC・タッチ操作に対応しています。
 
----
+## ゲーム概要
 
-## GAMEPLAY
+機械生命体の電子ホタル「Pico」を操作し、沈黙した回路都市に光を取り戻します。
 
-### EVADE
+1. **EVADE / NEAR MISS** — 敵弾を避け、至近距離をかわしてTIME STOPゲージを増やす。
+2. **TIME STOP** — ゲージが満タンになると敵と弾丸を停止する。
+3. **DRAW / LOCK** — 静止した弾幕の中に突破ルートを描き、通過する敵をLOCKする。
+4. **EXECUTE** — Picoがルートを一気に駆け抜け、LOCKした敵を連続撃破する。
 
-通常時間では、Picoを操作して敵弾を回避します。
+反射神経で「避ける」時間と、安全な軌道を「考える」時間、その作戦を一瞬で「解放する」切り替わりが基本ループです。弾に触れる危険な区間は赤く表示されます。
 
-ただ逃げ続けるだけではありません。敵弾のすぐそばをかわす **NEAR MISS** に成功すると、TIME STOPゲージが大きく上昇します。
+## 操作
 
-危険へ踏み込むほど、より早く時間を止められます。
-
-### TIME STOP
-
-ゲージが満タンになったら時間停止。
-
-敵も、弾丸も、すべて静止します。
-
-ここからは反射神経ではなく、突破ルートを考える時間です。
-
-### DRAW & LOCK
-
-止まった弾幕の中に、Picoが駆け抜けるルートを描きます。
-
-敵をルート上に通すことで **LOCK**。弾に触れる危険な区間は赤く表示されるため、敵を狙いながら安全な突破口を探します。
-
-### EXECUTE
-
-ルートを決めたら **EXECUTE**。
-
-Picoが描いた線を一瞬で駆け抜け、LOCKした敵を連続撃破します。
-
-**TIME STOP → DRAW → LOCK → EXECUTE**
-
-避けるアクションと、止まった世界で考えるルート設計。そして、考えた作戦が一瞬で実行される爽快感。
-
-それがDEAD/LINEの基本ループです。
-
----
-
-## CONCEPT
-
-**弾幕を避け、世界を止め、瞬間移動し、最後は残光だけが残る。**
-
-そんな、気持ちよくてかっこいいゲームを作るところから『DEAD/LINE』は始まりました。
-
-通常時間では敵弾をかわし、危険なNEAR MISSを狙う。
-
-時間を止めたら、静止した弾幕の中に突破ルートを描く。
-
-そしてEXECUTEした瞬間、Picoが描いた軌跡を一気に駆け抜ける。
-
-**「避ける」「考える」「一気に解放する」。**
-
-その切り替わりと、一瞬の爽快感をゲームの中心にしています。
-
----
-
-## HOW TO PLAY
-
-初回プレイではTRAININGが始まります。
-
-実際に操作しながら、**EVADE → NEAR MISS → TIME STOP → DRAW → EXECUTE** を順番に体験できます。
+初回プレイではTRAININGが始まり、実際の操作で **EVADE → NEAR MISS → TIME STOP → DRAW → EXECUTE** を体験できます。
 
 ### PC
 
-| 操作 | キー |
+| 操作 | キー・入力 |
 | --- | --- |
 | Pico移動 | マウス |
-| TIME STOP | SPACE |
+| TIME STOP / EXECUTE | Space |
 | ルート描画 / LOCK | マウスドラッグ |
-| EXECUTE | SPACE |
 | UNDO | Z |
 | CLEAR | X |
 | CANCEL | C / Escape |
-| RETRY | SPACE / Enter |
+| RETRY | Space / Enter |
 
-### TOUCH
+### Touch
 
-画面下部のMOVE PADと各操作ボタンを使用します。
+画面下部のMOVE PADでPicoを移動し、TIME STOP、EXECUTE、UNDO、CLEAR、CANCELは画面上の操作ボタンを使います。
 
----
+## WORLD・全10Wave・セーブ
 
-## WORLD
-
-沈黙した回路都市は5つのAREAに分かれています。
+回路都市は5つのAREA、全10Waveで構成されています。
 
 | AREA | Wave |
 | --- | ---: |
@@ -109,61 +51,50 @@ Picoが描いた線を一瞬で駆け抜け、LOCKした敵を連続撃破しま
 | SKYLINE / 天蓋区 | 7–8 |
 | CORE / 中央核 | 9–10 |
 
-全10Wave。
-
 AREAを攻略すると回路に光が戻り、次のAREAが解放されます。復旧済みAREAにはWORLD MAPから再挑戦できます。
 
-ゲームの進行状況はブラウザに自動保存されます。AREAの途中で終了した場合は、そのAREAの最初のWaveから再開します。
+進行状況はブラウザのlocalStorageへ自動保存されます。AREAの途中で終了した場合は、そのAREAの最初のWaveから再開します。
 
----
+## 技術構成
 
-## DEVELOPMENT
+HTML、CSS、JavaScript、Canvas、Web Audio APIで構成した静的Webゲームです。ゲーム本体に外部JavaScriptライブラリ、ビルド工程、サーバーサイド処理はなく、GitHub Pagesからそのまま配信できます。効果音は音声ファイルではなく、Web Audio APIで実行時に合成します。
 
-ZEN大学 Webページコンテスト応募作品として制作しました。
+主なモジュール：
 
-ゲーム本体は以下のWeb標準技術で実装しています。
-
-- HTML
-- CSS
-- JavaScript
-- Canvas
-- Web Audio API
-
-**ゲーム本体に外部JavaScriptライブラリは使用していません。**
-
-SEは音声ファイルを再生するのではなく、Web Audio APIを使ってゲーム実行中に生成しています。
-
-ビルド工程やサーバーサイド処理はなく、GitHub Pages上でそのまま動作します。
-
-### 主なファイル
-
-- `simulation.js` — 戦闘・衝突・Wave進行
-- `game.js` — 入力・ゲーム進行
+- `simulation.js` — 戦闘、衝突判定、Wave進行
+- `game.js` — 入力とゲーム進行
 - `renderer.js` — Canvas描画
-- `audio.js` — サウンド
-- `journey.js` — AREA進行・セーブ
-- `world-map.js` — WORLD MAP
+- `audio.js` — 効果音の合成と出力制御
+- `journey.js` — AREA進行とセーブ
+- `world-map.js` — WORLD MAPの表示と復旧状態
 
----
+技術資料：
 
-## TESTING
+- [素材仕様・クレジット](docs/ASSETS.md)
+- [音響設計](docs/AUDIO_DESIGN.md)
+- [経路探索テスト仕様](docs/ROUTE_PLANNER.md)
 
-ゲームロジックとブラウザ上の動作について、自動回帰テストを用意しています。
+## テスト
 
-- **Node：110 / 110 PASS**
-- **Chrome：26 / 26 PASS**
+Nodeのロジックテストと、Playwright / Chromeによるブラウザ回帰テストを収録しています。TRAINING、全10Wave、ENDING、セーブ・再開、AREA再挑戦、PC・タッチ操作、画像読み込み失敗、reduced motionなどを検証します。
 
-TRAINING、全10Wave、ENDING、セーブ・再開、AREA再挑戦、PC・タッチ操作などを検証しています。
+```powershell
+node --test (Get-ChildItem tests\*.test.cjs | ForEach-Object FullName)
+python -m http.server 4186 --bind 127.0.0.1
+# 別のターミナルで実行
+node tests/run-browser-suite.cjs
+```
 
-より詳しい技術資料：
+確認済みの結果：Node 110 / 110、Chrome 26 / 26。
 
-- [Audio Design](docs/AUDIO_DESIGN.md)
-- [Wave 7 Test Investigation](docs/WAVE_7_TEST_INVESTIGATION.md)
+## 素材クレジット・生成手段・ライセンス
 
----
+WORLD MAPの`before.jpeg`と`after.jpeg`は、画像生成ツールとしてGeminiを使用しています。敵キャラクター画像は集合画像から背景を除去し、透過PNGへ分割した派生素材です。各画像の寸法、SHA-256、描画仕様と詳細な来歴は[素材仕様・クレジット](docs/ASSETS.md)に記載しています。
 
-## PLAY
+生成AI利用が記録されている素材は上記WORLD MAP画像です。そのほかの素材については、生成手段や第三者ライセンスの記録がリポジトリ内にありません。
 
-### ▶ https://homura-stack.github.io/deadline/
+## コンテスト・作者・ライセンス
 
-ブラウザからすぐに遊べます。
+- ZEN大学 Webページコンテスト応募作品
+- 作者: [homura-stack](https://github.com/homura-stack)
+- ライセンス: 明示的なオープンソースライセンスは設定していません。コード・画像の再利用条件は作者へ確認してください。

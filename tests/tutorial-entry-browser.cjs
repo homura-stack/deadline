@@ -1,10 +1,10 @@
-/* F.1 regression: saved FIRST FLIGHT choices must not hide the visible training entrance. */
+/* Training-entry regression: saved FIRST FLIGHT choices must not hide the visible training entrance. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {state,begin,plan}=require('./tutorial-helpers.cjs');
 const {battleReady}=require('./journey-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
-const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts','training-entry');fs.mkdirSync(out,{recursive:true});
 (async()=>{
   const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],requests=[],report={browser:browser.version(),preferences:[],layouts:[]};
   async function open(saved,viewport={width:1920,height:1080}){
@@ -56,6 +56,6 @@ const out=path.join(__dirname,'artifacts','task-f1');fs.mkdirSync(out,{recursive
     assert.ok(characterRequests.every(p=>characterFiles.has(p.split('/').at(-1))),'only shipped character images may load');
     assert.deepEqual(errors,[]);
     report.errors=errors;fs.writeFileSync(path.join(out,'entry-regression.json'),JSON.stringify(report,null,2));
-    console.log('PASS F.1: permanent TRAINING for all saves; completed START -> MAP; incomplete/legacy START -> TRAINING; final Pico unchanged; six layouts; errors 0');
+    console.log('PASS training entry: permanent TRAINING for all saves; completed START -> MAP; incomplete/legacy START -> TRAINING; final Pico unchanged; six layouts; errors 0');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

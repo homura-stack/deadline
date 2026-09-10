@@ -3,8 +3,8 @@
   const J = root.Deadline.journey;
   // Presentation only: selection/replay never moves the campaign's current location.
   const currentArea = state => Math.min(J.areas.length - 1, state.restored);
-  // Coordinates are measured against the supplied photographs, not the retired SVG islands.
-  // Both originals share this normalized viewport; their two-pixel width difference is 0.073%.
+  // Coordinates use the source photographs rather than the decorative SVG overlay.
+  // Both source images share this normalized viewport; their two-pixel width difference is 0.073%.
   const art = Object.freeze({ width: 1000, height: 558.139535, maxWidth: 2750,
     before: 'assets/world-map/before.jpeg', after: 'assets/world-map/after.jpeg' });
   const districts = Object.freeze([

@@ -1,9 +1,9 @@
-/* G.1 quality / G.2 START routing: completed saves bypass rehearsal; TRAINING remains replayable. */
+/* Title quality and START routing: completed saves bypass training; TRAINING remains replayable. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {state,begin,plan}=require('./tutorial-helpers.cjs');
 const base=process.env.DEADLINE_TEST_URL||'http://127.0.0.1:4186/';
-const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive:true});
+const out=path.join(__dirname,'artifacts','title-training-routing');fs.mkdirSync(out,{recursive:true});
 (async()=>{
   const browser=await chromium.launch({channel:'chrome',headless:true}),errors=[],report={browser:browser.version(),cases:{},layouts:[]};
   async function open(saved=null){
@@ -33,13 +33,13 @@ const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive
     await p.locator('#practice-exit').click();assert.equal((await state(p)).titleActive,true,'aborting rehearsal cannot unlock MAP');
     assert.equal(await p.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),null);
     await p.reload();await p.waitForLoadState('networkidle');await start(p);await complete(p);
-    report.cases.A='fresh START -> TRAINING; briefing/practice abort and reload stay incomplete; actual completion -> MAP';
+    report.cases.firstPlay='fresh START -> TRAINING; briefing/practice abort and reload stay incomplete; actual completion -> MAP';
     await p.locator('#map-title').click();await start(p,true);
     await p.locator('#map-title').click();await p.reload();await p.waitForLoadState('networkidle');await start(p,true);
-    report.cases.B='completed START -> WORLD MAP directly, including reload';
+    report.cases.completedStart='completed START -> WORLD MAP directly, including reload';
     await p.locator('#map-title').click();await p.locator('#title-training-launch').click();await complete(p);
     await p.locator('#map-training').click();await p.locator('#briefing-skip').click();await map(p);
-    report.cases.C='permanent TRAINING -> actual completion -> MAP; MAP replay/exit preserved';
+    report.cases.trainingReplay='permanent TRAINING -> actual completion -> MAP; MAP replay/exit preserved';
     await p.locator('#map-title').click();
     for(const viewport of [{width:1920,height:1080},{width:2560,height:1440},{width:1366,height:768},{width:3840,height:2160}]){
       await p.setViewportSize(viewport);
@@ -49,14 +49,14 @@ const out=path.join(__dirname,'artifacts','task-g2');fs.mkdirSync(out,{recursive
     }
     const title=fs.readFileSync(path.join(__dirname,'..','assets/title/title.png'));
     report.sourceSHA256=crypto.createHash('sha256').update(title).digest('hex');assert.equal(report.sourceSHA256,'5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9');assert.equal(title.length,1787537);
-    report.cases.D='official 1678 x 937 PNG bytes, contain, no CSS blur/transform/opacity, source-size cap';
-    // Clearing the existing key behaves as first play again; regular restart does not clear it.
+    report.cases.titleImage='official 1678 x 937 PNG bytes, contain, no CSS blur/transform/opacity, source-size cap';
+    // Clearing the completion key restores first-play routing; regular restart keeps it.
     await p.evaluate(()=>localStorage.removeItem('deadline.tutorial.v1'));await p.reload();await p.waitForLoadState('networkidle');await start(p);assert.equal((await state(p)).briefingActive,true);await p.close();
     for(const saved of ['started','skipped']){
       const legacy=await open(saved);await start(legacy);assert.equal((await state(legacy)).briefingActive,true,saved+' is not completed');
       await legacy.locator('#briefing-skip').click();assert.equal((await state(legacy)).titleActive,true);assert.equal(await legacy.evaluate(()=>localStorage.getItem('deadline.tutorial.v1')),saved);
       await start(legacy);await complete(legacy);await legacy.reload();await legacy.waitForLoadState('networkidle');await start(legacy,true);await legacy.close();
     }
-    assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS G.2 START cases A-C, completed/legacy saves, abort/reload, replay, unchanged title quality; errors 0');
+    assert.deepEqual(errors,[]);report.errors=errors;fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS title training routing: START cases A-C, completed/legacy saves, abort/reload, replay, unchanged title quality; errors 0');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

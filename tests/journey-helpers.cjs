@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-// Existing battle/layout suites use a completed-user profile. Fresh completion is tested
+// Battle/layout fixtures use a completed-user profile. Fresh completion is tested
 // with real input in title-quality-training-browser, pico-tutorial and title-routes.
 async function visitCompleted(page,url,options){
   await page.addInitScript(()=>localStorage.setItem('deadline.tutorial.v1','completed'));
@@ -8,7 +8,7 @@ async function visitCompleted(page,url,options){
 }
 async function initialMap(page){
   await page.waitForFunction(()=>!Deadline.inspect().titleActive);
-  // Battle-only fixtures retain the completed user's existing manual exit.
+  // Battle-only fixtures use the completed user's manual exit.
   // The START acceptance suites complete the real rehearsal instead of using this helper.
   if(await page.evaluate(()=>Deadline.inspect().briefingActive)){
     assert.equal(await page.evaluate(()=>Deadline.inspect().trainingPreference),'completed');

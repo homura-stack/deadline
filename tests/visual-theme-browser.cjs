@@ -1,11 +1,11 @@
-/* Chrome acceptance for the redesign. Real input runs and isolated render checks are reported separately. */
+/* Chrome acceptance for the visual theme. Real input runs and isolated render checks are reported separately. */
 'use strict';
 const {visitCompleted}=require('./journey-helpers.cjs');
 const {training,battleReady,nextArea}=require('./journey-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const base = process.env.DEADLINE_TEST_URL || 'http://127.0.0.1:4186/';
-const artifacts = path.join(__dirname, 'artifacts', 'astra');
+const artifacts = path.join(__dirname, 'artifacts', 'visual-theme');
 fs.mkdirSync(artifacts, { recursive: true });
 const report = { browser: '', liveRuns: [], layouts: [], renderChecks: {}, errors: [], externalRequests: [] };
 const state = page => page.evaluate(() => Deadline.inspect());
@@ -126,7 +126,7 @@ async function trainingRun(page, index) {
     });
     const fixture = report.renderChecks.fixture;
     assert.equal(fixture.worldUnchanged, true); assert.ok(fixture.dangerSpans > 0);
-    // TASK B: Pico's safe route is warm ivory/gold; red danger remains a separate signal.
+    // Pico's safe route is warm ivory/gold; red danger remains a separate signal.
     assert.ok(fixture.safe[0] > fixture.safe[1] && fixture.safe[1] > fixture.safe[2] + 20);
     assert.ok(fixture.danger[0] > fixture.danger[1] + 35);
     assert.ok(fixture.bullet.reduce((a,b) => a+b,0) > 350);

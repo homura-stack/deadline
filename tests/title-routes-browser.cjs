@@ -1,4 +1,4 @@
-/* Mandatory every-task routes A-E: title entry, original training, campaign entry and reading panels. */
+/* Core title routes: training, campaign entry, and the reading panels. */
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {state,begin,plan}=require('./tutorial-helpers.cjs'),{battleReady}=require('./journey-helpers.cjs');
@@ -24,7 +24,7 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
   async function garden(page){await page.locator('#map-enter').click();await battleReady(page);const s=await state(page);assert.equal(s.world.wave,1);assert.equal(s.world.score,0);assert.equal(s.world.life,1);}
   try{
     const page=await open();await assertTitleComposition(page,{width:1920,height:1080});await page.screenshot({path:path.join(out,'title-1920.png')});
-    // A uses real input through the E.1 rehearsal; never inject a completion or rewrite its world.
+    // Training completion uses real input; the test does not inject completion state or rewrite the world.
     await page.locator('#title-training-launch').click();await begin(page);await plan(page);await page.keyboard.press('Space');
     await page.waitForFunction(()=>Deadline.inspect().practice.step==='complete');await page.screenshot({path:path.join(out,'training-complete.png')});await map(page);await garden(page);
     report.routes.A='TITLE -> TRAINING -> completed -> WORLD MAP -> GARDEN';
@@ -55,7 +55,7 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
       report.layouts.push(viewport);
     }
     await page.close();
-    // G.1 supersedes the optional choice: fresh START completes the real rehearsal first.
+    // A fresh START completes the real rehearsal before entering the campaign.
     const fresh=await open(null);await fresh.locator('#title-start').click();await fresh.waitForFunction(()=>Deadline.inspect().briefingActive);await begin(fresh);await plan(fresh);await fresh.keyboard.press('Space');await map(fresh);await garden(fresh);await fresh.close();report.firstStart='START -> TRAINING -> completed -> MAP -> GARDEN';
     const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,'..','assets/title/title.png'))).digest('hex');assert.equal(digest,'5aab8b499f8ea84c645348cbdd9a06095f6b20f8305c2adbf5fa5f91a4fd65b9');report.backgroundSHA256=digest;
     assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(unexpectedAssets,[]);report.errors=errors;report.externalRequests=external;
@@ -64,6 +64,6 @@ const out=path.join(__dirname,'artifacts','title-routes');fs.mkdirSync(out,{recu
     await failed.route('**/assets/title/title.png',r=>r.abort());await failed.goto(base+'?debug');await failed.waitForLoadState('networkidle');
     assert.equal(await failed.locator('#title-screen').evaluate(e=>e.classList.contains('title-background-failed')),true);assert.equal(await failed.locator('.title-heading').evaluate(e=>getComputedStyle(e).clipPath),'none');
     await failed.locator('#title-training-launch').click();assert.equal((await state(failed)).briefingActive,true);assert.deepEqual(pageErrors,[]);await failed.close();report.imageFailureFallback='name + TRAINING usable; expected PNG request failure isolated';
-    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS mandatory routes A-E, mandatory fresh completion, unchanged Pico, ten resized layouts, title asset integrity, errors 0 and image failure fallback');
+    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log('PASS core title routes, fresh completion, Pico continuity, ten resized layouts, title asset integrity, errors 0 and image failure fallback');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
