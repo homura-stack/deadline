@@ -20,7 +20,7 @@
       stamp.width = 192; stamp.height = Math.round(stamp.width * image.naturalHeight / image.naturalWidth);
       const context = stamp.getContext('2d');
       context.imageSmoothingQuality = 'high';
-      // TASK B reserves cyan for TARGET. Recolor only the displayed triangular enemy; source PNG stays intact.
+      // シアンはTARGET表示に予約しているため、三角形の敵だけを表示時に色替えし、元PNGは変更しない。
       if (key === 'enemy02') context.filter = 'hue-rotate(125deg)';
       context.drawImage(image, 0, 0, stamp.width, stamp.height); context.filter = 'none';
       const flash = document.createElement('canvas'); flash.width = stamp.width; flash.height = stamp.height;

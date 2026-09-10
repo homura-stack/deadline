@@ -1,4 +1,4 @@
-/* TASK G: the supplied illustration owns the logo, copy and Pico. Title-only styles. */
+/* 支給イラスト内のロゴ・コピー・Picoを主役として扱うタイトル画面専用スタイル。 */
 .pico-title {
   --flight-gold: #f5d895; --flight-ivory: #fff1ce; --flight-ink: #211d14;
   --flight-night: #050c16; --flight-cyan: #acd4d9; --flight-teal: #76aaa2;

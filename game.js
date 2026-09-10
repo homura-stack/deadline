@@ -71,6 +71,8 @@
   function formatTime(seconds) {
     const total = Math.max(0, Math.floor(seconds)); return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
   }
+  // JOURNEY状態をWORLD MAPとAREA遷移のDOMへ一方向に投影する。
+  // hidden・inert・aria-hiddenを同じ状態から同期し、見えない画面へ操作やフォーカスが残るのを防ぐ。
   function syncJourneyUi() {
     const j=app.journey, area=J.areas[j.active], onMap=J.onMap(j), entering=j.mode==='entering', restoring=j.mode==='restoring';
     const restored=restoring&&J.restorationFrame(j,app.reducedMotion).complete, loading=Stage.status(j.active);
@@ -243,6 +245,8 @@
       ui['tutorial-prompt'].append(document.createTextNode(touchControls ? 'EXECUTEをタップ' : 'EXECUTE THE ROUTE'));
     } else ui['tutorial-prompt'].textContent = 'TUTORIAL COMPLETE · WORLD MAPへ';
   }
+  // シミュレーション状態をHUDと操作可否へ一方向に投影する。
+  // 表示・ARIA・disabled・body classを同じ判定で同期し、視覚表示と支援技術や入力の状態を一致させる。
   function updateUi() {
     const w = app.world, stopped = w.phase === 'stopped', executing = w.phase === 'executing', resting = w.phase === 'wave-clear', complete = w.phase === 'complete';
     const waveConfig = C.waves.definitions[w.waveIndex], oneStop = !!waveConfig.oneStopRequired, preview = w.phase === 'rule-preview', intro = w.phase === 'rule-intro', incomplete = w.phase === 'one-stop-failed';

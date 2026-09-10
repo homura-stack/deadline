@@ -81,6 +81,9 @@
     if(t>=4.4)wire=lights[0];
     return {lights,wire,stage,sync:t>=4.55&&t<5.35};
   }
+  // AREA移動から復帰、最終同期までを進める唯一の時間更新点。
+  // 背景準備前の操作開始を避けるためenteringはassetsReadyを待ち、タブ復帰時に演出を飛ばさないようdtを50msに制限する。
+  // restoredは復帰演出の完了時だけ更新し、表示途中のAREAが進行済みとして保存されるのを防ぐ。
   function tick(state, dt, reduced = false, assetsReady = true) {
     if (!['entering', 'restoring', 'map', 'synchronizing'].includes(state.mode)) return null;
     if(state.mode==='map' && (state.unlockFrom<0 || state.elapsed>=4))return null;

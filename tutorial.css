@@ -1,4 +1,4 @@
-/* E.1: restore the historical tutorial choreography; update only presentation and entry. */
+/* 既存のチュートリアル進行と演出順を維持し、表示と導入だけを調整する。 */
 .pico-how { background: #101729f5; border: 1px solid #647981; padding: 18px; border-radius: 5px; }
 .title-info .pico-how p { padding: 0; border: 0; background: none; box-shadow: none; line-height: 1.8; }
 .pico-how button { margin-top: 14px; min-height: 44px; padding: 9px 14px; border: 1px solid #e9c783; color: #fff0ce; background: #413520; }

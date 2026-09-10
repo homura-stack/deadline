@@ -405,6 +405,9 @@
     if (!travelTo(w, target)) return;
     if (run.along >= route.length - EPS) finishExecution(w);
   }
+  // 高速移動を点ではなく線分で調べ、1フレーム内で敵や弾をすり抜けないようにする。
+  // 複数候補では最初の接触を採用し、見た目どおり最初に触れた位置で失敗させる。
+  // EXECUTEで通過済みの敵は撃破処理の対象なので、同じ移動中の接触判定から除外する。
   function collisionPoint(w, a, b) {
     if (immune(w)) return null;
     let first = null;
@@ -439,6 +442,10 @@
     emitBullet(w, enemy, kind === 'rotate' ? enemy.rotateAngle : aimAngle(w, enemy), pattern.speed);
     if (kind === 'rotate') enemy.rotateAngle = (enemy.rotateAngle + pattern.turnDegrees * Math.PI / 180) % (Math.PI * 2);
   }
+  // 警告待ち(delay)→連射中(burst)→次回発射待ち(cooldown)の順に優先し、
+  // 開始済みの攻撃シーケンスが次の発射周期で上書きされるのを防ぐ。
+  // AIMは各弾の発射時、ROTATEは現在角度から順に、DELAYは警告開始時に照準を確定する。
+  // この順序を変えると追尾タイミングや弾数・間隔が変わり、同じWaveでも回避条件が変化する。
   function updateShooting(w, enemy, dt) {
     const kind = enemy.pattern || 'aim', pattern = C.shooting.patterns[kind];
     enemy.shotRemaining -= dt;
@@ -496,6 +503,8 @@
     }
     w.bullets.length = kept;
   }
+  // 敵を先に移動してその線分上の接触を判定し、接触がなければ移動後の位置から発射、最後に新規分を含む全弾を進める。
+  // この順序が敵弾の発生位置と当たりフレームを定義するため、入れ替えると同じ入力でも被弾結果が変わる。
   function stepNormal(w, dt) {
     w.time += dt; w.waveBannerRemaining = Math.max(0, w.waveBannerRemaining - dt);
     chargeGauge(w, C.gauge.recoveryPerSecond * (w.passiveRecoveryScale ?? 1) * dt, 'passive');

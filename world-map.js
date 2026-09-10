@@ -22,7 +22,8 @@
     'M500 282 L500 354 Q494 389 500 409 L500 462'
   ]);
   const pulse = t => t < 0 || t > 2.8 ? 0 : Math.pow(Math.sin(Math.min(1,t/.8)*Math.PI),2)*.72 + (t>1?Math.pow(Math.sin(Math.min(1,(t-1)/1.5)*Math.PI),2):0);
-  // Pure presentation values: no campaign state, training preference or combat mutations.
+  // 永続的な進行状態は変更せず、現在の状態から描画用の補間値だけを導出する。
+  // これにより演出の再描画やreduced-motion切替が、解放済みAREAやセーブ内容へ影響しない。
   function frame(state, reduced=false) {
     const final=state.mode==='synchronizing'||state.mode==='ending', ending=state.mode==='ending';
     const t=state.elapsed, ft=t/(reduced?4/8.4:1), sequence=final?J.finaleFrame(state,reduced):null;

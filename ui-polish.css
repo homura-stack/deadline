@@ -1,5 +1,5 @@
-/* TASK I: decision hierarchy. No arena dimensions or simulation timing are changed.
-   Gold = Pico/action, cyan = TARGET, warning colors appear only near the time limit. */
+/* 操作判断の階層を整える表示専用CSS。アリーナ寸法とシミュレーション時間は変更しない。
+   ゴールドはPico／操作、シアンはTARGET、警告色は制限時間直前だけに使用する。 */
 :root { --ui-text: #e9f0ed; --ui-secondary: #b8c7d2; --ui-font: "Yu Gothic UI", "Meiryo", sans-serif; }
 /* READY stays in the charge bar; the pulse wins over the simultaneous near-miss tint. */
 body.ready:not(.stopped) .charge { box-shadow: inset 0 0 14px #fff3c414; }
@@ -61,7 +61,7 @@ body:not(.touch-controls).stopped #time-stop.execute-ready:disabled { color: #26
 .result p { font: 16px/1.8 var(--ui-font); }.assist-choices p { font-size: 14px; }
 .area-transition > span { font-size: 16px; letter-spacing: .06em; }.area-transition small { font-size: 15px; }
 .area-transition.is-restoring strong { font-size: clamp(34px,4vw,64px); }
-/* Four original briefing pages and their animated demonstrations stay intact. */
+/* MOVE／FREEZE／DRAW／EXECUTEの既存4ページにNEAR MISSを加えた5ページ構成。各デモ演出は維持する。 */
 .briefing-panel { width: min(100%,1200px); }
 .briefing-header span,.briefing-header strong { font-size: 15px; letter-spacing: .08em; }
 .briefing-page { grid-template-columns: minmax(320px,.85fr) minmax(420px,1.15fr); }
